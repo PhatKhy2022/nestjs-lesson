@@ -6,6 +6,7 @@
   <title>Senior NestJS + Prisma + PostgreSQL Study Roadmap</title>
   <style>
     * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -17,7 +18,7 @@
       margin: 0 auto;
       padding: 24px;
     }
-    h1 { margin-bottom: 6px; }
+    h1 { margin-bottom: 6px; font-size: clamp(24px, 6vw, 32px); line-height: 1.25; }
     .subtitle { color: #666; margin-top: 0; }
     .card {
       background: white;
@@ -62,6 +63,7 @@
     .primary { background: #1a73e8; color: white; }
     .secondary { background: #e8eaed; }
     .danger { background: #fce8e6; color: #b3261e; }
+    #search { flex: 1 1 200px; min-width: 0; }
     input, select {
       border: 1px solid #dadce0;
       border-radius: 8px;
@@ -97,14 +99,19 @@
       align-items: flex-start;
       gap: 10px;
       padding: 9px 0;
+      cursor: pointer;
     }
     .task input[type="checkbox"] {
-      margin-top: 4px;
-      transform: scale(1.15);
+      flex: none;
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      cursor: pointer;
     }
     .task-content { flex: 1; }
-    .task-title { font-weight: 600; }
+    .task-title { display: block; font-weight: 600; }
     .task-note {
+      display: block;
       color: #777;
       font-size: 13px;
       margin-top: 3px;
@@ -118,12 +125,17 @@
       gap: 8px;
       margin-top: 10px;
     }
-    .custom-task input { flex: 1; }
+    .custom-task input { flex: 1; min-width: 0; }
+    .custom-task button { flex: none; white-space: nowrap; }
     .hidden { display: none; }
     .empty { color: #777; text-align: center; padding: 25px; }
     @media (max-width: 600px) {
       .container { padding: 14px; }
+      .card { padding: 14px; }
+      .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      #filter, #search { grid-column: 1 / -1; }
       .phase-title { align-items: flex-start; flex-direction: column; }
+      .task { padding: 11px 0; }
     }
   </style>
 </head>
@@ -455,15 +467,15 @@ function render() {
 
     phaseTasks.forEach(task => {
       const realIndex = phase.tasks.indexOf(task);
-      const row = document.createElement("div");
+      const row = document.createElement("label");
       row.className = "task " + (task.completed ? "completed" : "");
 
       row.innerHTML = `
         <input type="checkbox" ${task.completed ? "checked" : ""} aria-label="Complete task">
-        <div class="task-content">
-          <div class="task-title">${escapeHtml(task.title)}</div>
-          <div class="task-note">${escapeHtml(task.note)}</div>
-        </div>
+        <span class="task-content">
+          <span class="task-title">${escapeHtml(task.title)}</span>
+          <span class="task-note">${escapeHtml(task.note)}</span>
+        </span>
         ${task.custom ? '<button class="danger delete-task">Delete</button>' : ""}
       `;
 
