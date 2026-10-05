@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prisma ORM</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 4 of 12</span>
+  </nav>
+  <h1>4. Prisma ORM</h1>
+  <p class="goal"><strong>Goal:</strong> Model data confidently and query it without guessing.</p>
+  <p class="howto">How to use this page: it continues the online shop from Lesson 3 (users, products, orders, order items), now described in <code>schema.prisma</code>. Follow along in a fresh NestJS project with a local PostgreSQL 16 (for example <code>docker run --name shop-db -e POSTGRES_USER=shop -e POSTGRES_PASSWORD=shop -e POSTGRES_DB=shop -p 5432:5432 -d postgres:16</code>). Turn on query logging so you can see the SQL behind every call, do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#prisma-schema">Prisma schema</a></li>
+      <li><a href="#field-types">Field types</a></li>
+      <li><a href="#migrations">Migrations</a></li>
+      <li><a href="#relations">Relations</a></li>
+      <li><a href="#prisma-client">Prisma Client</a></li>
+      <li><a href="#queries">Queries</a></li>
+      <li><a href="#filtering-pagination">Filtering &amp; pagination</a></li>
+      <li><a href="#mutations">Mutations</a></li>
+      <li><a href="#transactions">Transactions</a></li>
+      <li><a href="#seeding">Seeding</a></li>
+      <li><a href="#prisma-studio">Prisma Studio</a></li>
+      <li><a href="#raw-queries">Raw queries</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="prisma-schema">
+  <div class="topic-head"><span class="num">1</span><h2>Prisma schema</h2></div>
+  <p class="tagline">datasource, generator and models</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>The Prisma schema (<code>prisma/schema.prisma</code>) is the single blueprint of your database. You describe your tables once, in a short readable language, and Prisma uses that blueprint for two jobs: it <strong>creates SQL migrations</strong> that build the real tables in PostgreSQL, and it <strong>generates a TypeScript client</strong> whose types match those tables exactly. Change the blueprint, and both the database and your types follow. The file has three kinds of blocks: <em>where</em> the database is (<code>datasource</code>), <em>what</em> code to generate (<code>generator</code>), and <em>which</em> tables exist (<code>model</code>).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Setting up.</strong> Inside a Nest project:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm install -D prisma           # the CLI (migrate, generate, studio…)
+    npm install @prisma/client      # the runtime client your code imports
+    npx prisma init --datasource-provider postgresql
+    # creates prisma/schema.prisma and a .env file with DATABASE_URL
+  </script>
+  <script type="text/x-code" data-lang="ini" data-title=".env">
+    # postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
+    DATABASE_URL="postgresql://shop:shop@localhost:5432/shop?schema=public"
+  </script>
+
+  <p><strong>The three blocks:</strong></p>
+  <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+    // 1. WHERE is the database?
+    datasource db {
+      provider = "postgresql"
+      url      = env("DATABASE_URL")   // read from .env, never hard-code passwords
+    }
+
+    // 2. WHAT should be generated from this file?
+    generator client {
+      provider = "prisma-client-js"     // generates the TypeScript client into node_modules
+    }
+
+    // 3. WHICH tables exist? One model = one table.
+    model User {
+      id        Int      @id @default(autoincrement())
+      email     String   @unique
+      name      String
+      createdAt DateTime @default(now())
+    }
+
+    model Product {
+      id    Int     @id @default(autoincrement())
+      name  String
+      price Decimal @db.Decimal(10, 2)
+      stock Int     @default(0)
+    }
+  </script>
+  <p>Newer Prisma 6 releases also offer a <code>prisma-client</code> generator (which requires an <code>output</code> path) and a <code>prisma.config.ts</code> file for CLI settings. The ideas in this lesson are the same; the examples use the classic <code>prisma-client-js</code> generator and <code>import { PrismaClient } from '@prisma/client'</code>, which is what most existing NestJS projects use.</p>
+
+  <p><strong>Reading a model line.</strong> Every field is <code>name  Type  attributes</code>:</p>
+  <table>
+    <tr><th>Part</th><th>Example</th><th>Meaning</th></tr>
+    <tr><td>Field name</td><td><code>createdAt</code></td><td>the property name in TypeScript (and the column name, unless <code>@map</code>)</td></tr>
+    <tr><td>Type</td><td><code>DateTime</code>, <code>String?</code>, <code>Order[]</code></td><td>scalar type, optional (<code>?</code>) or a list/relation (<code>[]</code>)</td></tr>
+    <tr><td>Field attribute (<code>@</code>)</td><td><code>@id</code>, <code>@unique</code>, <code>@default(now())</code></td><td>applies to <em>one</em> field</td></tr>
+    <tr><td>Block attribute (<code>@@</code>)</td><td><code>@@unique([a, b])</code>, <code>@@index</code>, <code>@@map</code></td><td>applies to the whole model (several fields)</td></tr>
+  </table>
+
+  <p><strong>Naming: TypeScript style in code, SQL style in the database.</strong> Prisma's convention is PascalCase singular models (<code>User</code>) and camelCase fields (<code>createdAt</code>). By default the table would be called <code>"User"</code> with a column <code>"createdAt"</code>, which forces quotes in every hand-written SQL query. Most teams map them to snake_case:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id        Int      @id @default(autoincrement())
+      email     String   @unique
+      name      String
+      createdAt DateTime @default(now()) @map("created_at")   // column name
+
+      @@map("users")                                          // table name
+    }
+    // TypeScript: prisma.user.findMany() → { id, email, name, createdAt }
+    // SQL:        SELECT id, email, name, created_at FROM users
+  </script>
+
+  <p><strong>Useful CLI commands while editing the schema:</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma format      # auto-format and fix relation fields (run it often)
+    npx prisma validate    # check the schema for errors without touching the DB
+    npx prisma db pull     # the opposite direction: read an EXISTING database into models
+  </script>
+  <p><code>db pull</code> (introspection) is how you adopt Prisma on a database that already exists, like the one you built by hand in Lesson 3.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>You wrap the client in an injectable service, export it from a global module, and inject it wherever you need the database:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma/prisma.service.ts">
+      import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+      import { PrismaClient } from '@prisma/client';
+
+      @Injectable()
+      export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+        constructor() {
+          super({ log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'] });
+        }
+
+        async onModuleInit() {
+          await this.$connect();      // fail fast at startup if the DB is unreachable
+        }
+
+        async onModuleDestroy() {
+          await this.$disconnect();   // close the connection pool on shutdown
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma/prisma.module.ts">
+      import { Global, Module } from '@nestjs/common';
+      import { PrismaService } from './prisma.service';
+
+      @Global()                        // available everywhere without importing PrismaModule
+      @Module({
+        providers: [PrismaService],
+        exports: [PrismaService],
+      })
+      export class PrismaModule {}
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="users/users.service.ts">
+      @Injectable()
+      export class UsersService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        findAll() {
+          return this.prisma.user.findMany({ orderBy: { id: 'asc' } });
+        }
+      }
+    </script>
+    <p>Import <code>PrismaModule</code> once in <code>AppModule</code>. There is exactly one <code>PrismaClient</code> (and so one connection pool) for the whole app.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Hard-coding the connection string in <code>schema.prisma</code>, or committing <code>.env</code> to git.</li>
+      <li>Creating <code>new PrismaClient()</code> in several services. Each one opens its own pool and you run out of connections. Use one injected <code>PrismaService</code>.</li>
+      <li>Forgetting <code>@@map</code>/<code>@map</code> and ending up with quoted PascalCase tables (<code>"OrderItem"</code>) that are painful to query by hand. Decide on naming before the first migration.</li>
+      <li>Editing the schema and forgetting to run <code>prisma generate</code> (or a migration), so your types are out of date.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a model <code>Category</code> with an auto-increment id, a unique <code>name</code>, an optional <code>description</code>, and a <code>createdAt</code> that defaults to now. Map it to the table <code>categories</code> and the column <code>created_at</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="prisma">
+        model Category {
+          id          Int      @id @default(autoincrement())
+          name        String   @unique
+          description String?
+          createdAt   DateTime @default(now()) @map("created_at")
+
+          @@map("categories")
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What are the three main blocks of a Prisma schema?</summary>
+      <p><code>datasource</code> (database provider and connection URL), <code>generator</code> (what to generate, usually the Prisma Client), and <code>model</code> (one per table, with fields, types and attributes). There are also <code>enum</code> blocks and, as a preview feature, <code>view</code> blocks.</p></details>
+    <details><summary>What's the difference between <code>@</code> and <code>@@</code> attributes?</summary>
+      <p><code>@</code> attributes apply to a single field (<code>@id</code>, <code>@unique</code>, <code>@default</code>, <code>@map</code>). <code>@@</code> attributes apply to the model as a whole and usually involve several fields (<code>@@id([a, b])</code>, <code>@@unique</code>, <code>@@index</code>, <code>@@map</code>).</p></details>
+    <details><summary>How do you integrate Prisma into NestJS?</summary>
+      <p>Create a <code>PrismaService</code> that extends <code>PrismaClient</code>, connects in <code>onModuleInit</code> and disconnects in <code>onModuleDestroy</code>; provide and export it from a (usually global) <code>PrismaModule</code>; inject it into services or repositories via the constructor.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>schema.prisma</code> is the single source of truth: datasource = where, generator = what to build, models = tables. Map names to snake_case early, and use one injected <code>PrismaService</code>.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="field-types">
+  <div class="topic-head"><span class="num">2</span><h2>Field types</h2></div>
+  <p class="tagline">scalars, optional fields, default values</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Each field in a model has a type that does double duty: it decides the <strong>PostgreSQL column type</strong> and the <strong>TypeScript type</strong> you get back. <code>String</code> becomes <code>text</code> in the database and <code>string</code> in your code. A question mark means "this may be empty" (<code>NULL</code> in SQL, <code>null</code> in TypeScript). A default value is what the database fills in when you don't provide one.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Scalar types and what they become:</strong></p>
+  <table>
+    <tr><th>Prisma type</th><th>PostgreSQL (default)</th><th>TypeScript</th><th>Use it for</th></tr>
+    <tr><td><code>String</code></td><td><code>text</code></td><td><code>string</code></td><td>names, emails, slugs</td></tr>
+    <tr><td><code>Int</code></td><td><code>integer</code></td><td><code>number</code></td><td>ids, quantities, counters</td></tr>
+    <tr><td><code>BigInt</code></td><td><code>bigint</code></td><td><code>bigint</code></td><td>huge counters, external ids (careful: not JSON-serializable)</td></tr>
+    <tr><td><code>Float</code></td><td><code>double precision</code></td><td><code>number</code></td><td>measurements, ratings (never money)</td></tr>
+    <tr><td><code>Decimal</code></td><td><code>decimal(65,30)</code></td><td><code>Prisma.Decimal</code></td><td>money (add <code>@db.Decimal(10, 2)</code>)</td></tr>
+    <tr><td><code>Boolean</code></td><td><code>boolean</code></td><td><code>boolean</code></td><td>flags</td></tr>
+    <tr><td><code>DateTime</code></td><td><code>timestamp(3)</code></td><td><code>Date</code></td><td>points in time (add <code>@db.Timestamptz(3)</code>)</td></tr>
+    <tr><td><code>Json</code></td><td><code>jsonb</code></td><td><code>Prisma.JsonValue</code></td><td>flexible metadata</td></tr>
+    <tr><td><code>Bytes</code></td><td><code>bytea</code></td><td><code>Uint8Array</code> (a <code>Buffer</code> in older versions)</td><td>small binary data</td></tr>
+    <tr><td><code>enum Role</code></td><td>a Postgres <code>ENUM</code> type</td><td><code>Role</code> (string union)</td><td>fixed sets of values</td></tr>
+  </table>
+
+  <p><strong>Native type attributes (<code>@db.*</code>)</strong> choose a more precise PostgreSQL type when the default isn't right:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model Product {
+      id          Int       @id @default(autoincrement())
+      sku         String    @unique @db.VarChar(32)       // varchar(32): length limit
+      name        String    @db.VarChar(200)
+      price       Decimal   @db.Decimal(10, 2)           // ✅ exact money, 2 decimals
+      // price    Float                                   // ❌ 0.1 + 0.2 = 0.30000000000000004
+      weightKg    Float?                                  // a measurement: Float is fine
+      tags        String[]                                // Postgres text[] array
+      attributes  Json?                                   // jsonb, e.g. { "color": "black" }
+      publicId    String    @default(uuid()) @db.Uuid    // uuid column
+      createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+      updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+    }
+  </script>
+
+  <p><strong>Optional fields (<code>?</code>)</strong> become nullable columns, and the TypeScript type includes <code>null</code>:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id    Int     @id @default(autoincrement())
+      email String  @unique          // required: NOT NULL, type string
+      phone String?                  // optional: NULL allowed, type string | null
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: 1 } });
+    user.phone.startsWith('+84');        // ❌ 'user.phone' is possibly 'null'
+    user.phone?.startsWith('+84');       // ✅
+    const display = user.phone ?? 'no phone';
+
+    await prisma.user.create({ data: { email: 'eve@shop.dev' } });   // ✅ phone may be left out
+    await prisma.user.update({ where: { id: 1 }, data: { phone: null } }); // ✅ clear it
+  </script>
+  <p>Note: in the database it's <code>NULL</code>; in Prisma results it's <code>null</code>, never <code>undefined</code>. In Prisma <em>inputs</em>, <code>undefined</code> means "don't touch this field" and <code>null</code> means "set it to NULL". That difference matters a lot (point 7).</p>
+
+  <p><strong>Default values</strong> (<code>@default</code>) and <code>@updatedAt</code>:</p>
+  <table>
+    <tr><th>Default</th><th>Who generates it</th><th>Result</th></tr>
+    <tr><td><code>@default(autoincrement())</code></td><td>database (sequence)</td><td>1, 2, 3…</td></tr>
+    <tr><td><code>@default(now())</code></td><td>database</td><td>current timestamp</td></tr>
+    <tr><td><code>@default(uuid())</code> / <code>cuid()</code></td><td>Prisma Client (in Node)</td><td>random id string</td></tr>
+    <tr><td><code>@default(dbgenerated("gen_random_uuid()"))</code></td><td>database</td><td>uuid, also for rows inserted by raw SQL</td></tr>
+    <tr><td><code>@default(0)</code>, <code>@default(false)</code>, <code>@default(USER)</code></td><td>database</td><td>a constant (or enum value)</td></tr>
+    <tr><td><code>@updatedAt</code></td><td>Prisma Client, on every update</td><td>timestamp of last Prisma write</td></tr>
+  </table>
+  <p>The "who generates it" column matters: values generated by Prisma Client (<code>uuid()</code>, <code>cuid()</code>, <code>@updatedAt</code>) are <em>not</em> applied when someone writes to the table with plain SQL.</p>
+
+  <p><strong>Enums:</strong></p>
+  <script type="text/x-code" data-lang="prisma">
+    enum OrderStatus {
+      PENDING
+      PAID
+      SHIPPED
+      CANCELLED
+    }
+
+    model Order {
+      id     Int         @id @default(autoincrement())
+      status OrderStatus @default(PENDING)
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    import { OrderStatus } from '@prisma/client';
+
+    await prisma.order.update({ where: { id: 101 }, data: { status: OrderStatus.PAID } }); // ✅
+    await prisma.order.update({ where: { id: 101 }, data: { status: 'PAID' } });           // ✅ also typed
+    // await prisma.order.update({ where: { id: 101 }, data: { status: 'LOST' } });       // ❌ compile error
+  </script>
+
+  <p><strong>Working with <code>Decimal</code>.</strong> Prices come back as <code>Prisma.Decimal</code> objects (from the decimal.js library), not numbers, so you don't lose precision. Do the math with its methods:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { Prisma } from '@prisma/client';
+
+    const product = await prisma.product.findUniqueOrThrow({ where: { id: 2 } });
+    const lineTotal = product.price.mul(3);          // Decimal('58.5')
+    // product.price * 3                              // ❌ type error (it's an object)
+    lineTotal.toFixed(2);                             // "58.50" — good for JSON responses
+    new Prisma.Decimal('19.99').plus('0.01').toString(); // "20"
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Field types drive DTO validation. A typical create-product DTO mirrors the model's required and optional fields:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products/dto/create-product.dto.ts">
+      import { IsArray, IsInt, IsNumberString, IsOptional, IsString, Length, Min } from 'class-validator';
+
+      export class CreateProductDto {
+        @IsString() @Length(1, 32)
+        sku: string;
+
+        @IsString() @Length(1, 200)
+        name: string;
+
+        @IsNumberString()            // accept "19.99" as a string → no float rounding
+        price: string;
+
+        @IsInt() @Min(0)
+        stock: number;
+
+        @IsOptional() @IsArray() @IsString({ each: true })
+        tags?: string[];             // optional in DTO ↔ has a default / is optional in the model
+      }
+    </script>
+    <p>And because <code>Decimal</code> and <code>BigInt</code> don't serialize nicely to JSON, convert them in a response mapper (or interceptor): <code>{ ...product, price: product.price.toFixed(2) }</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>Float</code> for money. Use <code>Decimal @db.Decimal(p, s)</code>.</li>
+      <li>Making every field optional "to be flexible". You then handle <code>null</code> everywhere. Required by default, optional on purpose.</li>
+      <li>Using <code>DateTime</code> without <code>@db.Timestamptz</code>: the column is <code>timestamp without time zone</code>, which is easy to misread across time zones (Prisma writes UTC).</li>
+      <li>Returning <code>BigInt</code> from an endpoint: <code>JSON.stringify</code> throws "Do not know how to serialize a BigInt".</li>
+      <li>Expecting <code>@default(uuid())</code> or <code>@updatedAt</code> to work for rows inserted with raw SQL.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Model a <code>Coupon</code>: unique <code>code</code> (max 20 chars), <code>discountPercent</code> (integer), optional <code>expiresAt</code> (with time zone), <code>isActive</code> default true, <code>createdAt</code> default now, <code>updatedAt</code> auto-updated. What TypeScript type does <code>coupon.expiresAt</code> have?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="prisma">
+        model Coupon {
+          id              Int       @id @default(autoincrement())
+          code            String    @unique @db.VarChar(20)
+          discountPercent Int       @map("discount_percent")
+          expiresAt       DateTime? @map("expires_at") @db.Timestamptz(3)
+          isActive        Boolean   @default(true) @map("is_active")
+          createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+          updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+          @@map("coupons")
+        }
+      </script>
+      <p><code>coupon.expiresAt</code> is <code>Date | null</code>. (The 1–90 range rule would be a CHECK constraint added in the migration SQL, plus <code>@Min(1) @Max(90)</code> in the DTO.)</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How should you store money with Prisma and PostgreSQL?</summary>
+      <p>As <code>Decimal</code> with a native type like <code>@db.Decimal(10, 2)</code>. In code it's a <code>Prisma.Decimal</code>; use its methods (<code>mul</code>, <code>plus</code>) for math and send it as a string in JSON. Alternatively, store integer cents in an <code>Int</code>/<code>BigInt</code>.</p></details>
+    <details><summary>What's the difference between <code>@default(uuid())</code> and <code>@default(dbgenerated("gen_random_uuid()"))</code>?</summary>
+      <p>The first is generated by Prisma Client in Node, so it only applies to inserts made through Prisma. The second is a database default, so it applies to every insert, including raw SQL and other tools.</p></details>
+    <details><summary>What does <code>@updatedAt</code> do?</summary>
+      <p>Prisma Client automatically sets the field to the current time on every update made through Prisma. It isn't a database trigger, so updates made outside Prisma don't change it.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> The Prisma type decides both the column and the TypeScript type. Use <code>Decimal</code> for money, <code>Timestamptz</code> for time, <code>?</code> only when "missing" is meaningful, and know who generates each default.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="migrations">
+  <div class="topic-head"><span class="num">3</span><h2>Migrations</h2></div>
+  <p class="tagline">prisma migrate dev and migrate deploy</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A migration is a numbered, saved SQL script that moves the database from one version of the schema to the next, like a git commit for your database structure. <code>migrate dev</code> is what <strong>you</strong> run while developing: it compares your schema to the database, writes the next SQL file, and applies it. <code>migrate deploy</code> is what your <strong>server/CI</strong> runs: it only applies the SQL files that were already written and reviewed, never inventing new ones.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Your first migration.</strong> With the <code>User</code> and <code>Product</code> models from point 1:</p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate dev --name init
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="output (shortened)">
+    Applying migration `20261005081500_init`
+
+    The following migration(s) have been created and applied from new schema changes:
+
+    migrations/
+      └─ 20261005081500_init/
+        └─ migration.sql
+
+    Your database is now in sync with your schema.
+    ✔ Generated Prisma Client to ./node_modules/@prisma/client
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="prisma/migrations/20261005081500_init/migration.sql">
+    -- CreateTable
+    CREATE TABLE "users" (
+        "id" SERIAL NOT NULL,
+        "email" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+        CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+    );
+
+    -- CreateIndex
+    CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+  </script>
+  <p>What <code>migrate dev</code> did, step by step:</p>
+  <ol>
+    <li>Replayed the existing migrations on a temporary <em>shadow database</em> to find the current state, and checked for <em>drift</em> (manual changes to your dev DB).</li>
+    <li>Compared that state to <code>schema.prisma</code> and wrote the difference as a new <code>migration.sql</code>.</li>
+    <li>Applied it to your dev database and recorded it in the <code>_prisma_migrations</code> table.</li>
+    <li>Ran <code>prisma generate</code> so your TypeScript types match (Prisma 5/6).</li>
+  </ol>
+  <p>Commit the <code>prisma/migrations</code> folder to git. It is the history of your database.</p>
+
+  <p><strong>The next change.</strong> Add a field and run it again:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      // ...
+      phone String?          // new
+    }
+  </script>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate dev --name add_user_phone
+    # → migrations/20261005090000_add_user_phone/migration.sql
+    #   ALTER TABLE "users" ADD COLUMN "phone" TEXT;
+  </script>
+
+  <p><strong>Editing the SQL before applying it (<code>--create-only</code>).</strong> Prisma generates good SQL, but sometimes you must adjust it: add a CHECK constraint or partial index (not expressible in the schema), or fix a rename. Prisma can't tell a rename from "drop one column, add another":</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      fullName String @map("full_name")   // was: name String
+    }
+  </script>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate dev --create-only --name rename_user_name
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="generated migration.sql">
+    -- ❌ What Prisma generates: drops the column → ALL NAMES ARE LOST
+    ALTER TABLE "users" DROP COLUMN "name",
+    ADD COLUMN "full_name" TEXT NOT NULL;
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="edited migration.sql">
+    -- ✅ Replace it by hand, then run `npx prisma migrate dev` to apply
+    ALTER TABLE "users" RENAME COLUMN "name" TO "full_name";
+  </script>
+  <p>Always <strong>read</strong> every generated migration before committing it. Prisma also warns you in the terminal when a migration may lose data.</p>
+
+  <p><strong>Production: <code>migrate deploy</code>.</strong></p>
+  <table>
+    <tr><th></th><th><code>migrate dev</code></th><th><code>migrate deploy</code></th></tr>
+    <tr><td>Where</td><td>your laptop only</td><td>staging, production, CI</td></tr>
+    <tr><td>Creates new migration files?</td><td>yes</td><td>no, only applies existing ones</td></tr>
+    <tr><td>Needs a shadow database?</td><td>yes</td><td>no</td></tr>
+    <tr><td>May reset the database?</td><td>yes, it offers to when it finds drift</td><td>never</td></tr>
+    <tr><td>Runs <code>generate</code> / seed?</td><td>yes (Prisma 5/6)</td><td>no</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
+    {
+      "scripts": {
+        "db:migrate": "prisma migrate dev",
+        "db:deploy": "prisma migrate deploy",
+        "db:status": "prisma migrate status",
+        "postinstall": "prisma generate",
+        "start:prod": "prisma migrate deploy && node dist/main"
+      }
+    }
+  </script>
+
+  <p><strong>Other commands you'll meet:</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate status     # which migrations are applied / pending / failed
+    npx prisma migrate reset      # DEV ONLY: drop the DB, re-apply all migrations, run the seed
+    npx prisma db push            # sync schema → DB WITHOUT creating migration files (quick prototypes)
+    npx prisma migrate resolve --rolled-back 20261005090000_add_user_phone   # after fixing a failed prod migration
+  </script>
+
+  <p><strong>Adding a required column to a table that has data.</strong> <code>ALTER TABLE users ADD COLUMN country text NOT NULL</code> fails if rows exist (they'd have NULL). Options: give it a <code>@default("VN")</code>; or do it in steps: add it as optional, backfill with an UPDATE, then make it required in a second migration. This "expand, migrate, contract" approach is also how you change columns without downtime.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The usual workflow: change <code>schema.prisma</code> → <code>npm run db:migrate -- --name xyz</code> → review the SQL → commit schema and migration together in the same PR. In deployment, run <code>migrate deploy</code> once, <em>before</em> the new app version starts:</p>
+    <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/deploy.yml (excerpt)">
+      - name: Install
+        run: npm ci                       # postinstall → prisma generate
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Build and deploy the app
+        run: npm run build && ./deploy.sh
+    </script>
+    <p>If you run several app instances, don't let each one run migrations at boot at the same time. Use one CI step or one release job.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Running <code>migrate dev</code> against production. It can propose a <strong>reset</strong>, which deletes all data. Production uses <code>migrate deploy</code> only.</li>
+      <li>Editing a migration that has already been applied somewhere. Its checksum changes and Prisma reports it as modified. Create a new migration instead.</li>
+      <li>Committing <code>schema.prisma</code> without the migration folder (or the other way round).</li>
+      <li>Accepting a generated "DROP + ADD" for what was meant to be a rename.</li>
+      <li>Using <code>db push</code> in a team project, so there is no migration history for others or for production.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You need to add <code>stock Int</code> (required, no default) to <code>Product</code>, and the table already has 5,000 products. Products should start with stock 0, except the ones listed in an old <code>inventory</code> table. Describe the migration(s).</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>One migration created with <code>--create-only</code> and edited by hand works well:</p>
+      <script type="text/x-code" data-lang="sql" data-title="migration.sql">
+        -- 1. Add with a temporary default so existing rows get a value
+        ALTER TABLE "products" ADD COLUMN "stock" INTEGER NOT NULL DEFAULT 0;
+
+        -- 2. Backfill from the old table
+        UPDATE "products" p SET "stock" = i.quantity
+        FROM "inventory" i WHERE i.product_id = p.id;
+
+        -- 3. Remove the default if the schema says there is none
+        ALTER TABLE "products" ALTER COLUMN "stock" DROP DEFAULT;
+      </script>
+      <p>Then <code>npx prisma migrate dev</code> applies it. Check that <code>migrate dev</code> reports no further changes, which proves the SQL matches the schema.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between <code>prisma migrate dev</code> and <code>prisma migrate deploy</code>?</summary>
+      <p><code>migrate dev</code> is for development: it uses a shadow database to detect changes and drift, generates new migration files, applies them, regenerates the client, and may reset the DB. <code>migrate deploy</code> is for production/CI: it only applies pending, committed migrations, and never generates or resets anything.</p></details>
+    <details><summary>How do you rename a column without losing data in Prisma?</summary>
+      <p>Change the schema, create the migration with <code>--create-only</code>, replace the generated DROP/ADD with <code>ALTER TABLE … RENAME COLUMN …</code>, then apply it. Alternatively keep the column name and only change the Prisma field name using <code>@map</code>.</p></details>
+    <details><summary>When would you use <code>prisma db push</code>?</summary>
+      <p>For quick prototyping or throwaway databases, when you don't need migration history. For any shared or production database, use migrations.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>migrate dev</code> writes and applies migrations on your machine; <code>migrate deploy</code> only applies committed ones in production. Read every generated SQL file, and never edit one that's already applied.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="relations">
+  <div class="topic-head"><span class="num">4</span><h2>Relations</h2></div>
+  <p class="tagline">one-to-one, one-to-many, many-to-many</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>In SQL (Lesson 3), relationships are foreign key columns. In Prisma you describe them from <em>both</em> ends, so that you can walk them in code: <code>user.orders</code> and <code>order.user</code>. Only one end really stores something in the database (the foreign key). The other end is a "virtual" field that tells Prisma "you can follow this link backwards". A simple way to remember it: the model with <code>@relation(fields: […])</code> is the one carrying the label with the other's id.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>One-to-many: a user has many orders.</strong></p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id     Int     @id @default(autoincrement())
+      email  String  @unique
+      orders Order[]                    // ① relation field (virtual, list) — no column
+    }
+
+    model Order {
+      id     Int  @id @default(autoincrement())
+      userId Int  @map("user_id")       // ② relation SCALAR field — the real FK column
+      user   User @relation(fields: [userId], references: [id])  // ③ relation field + FK definition
+
+      @@index([userId])                 // ④ index the FK (Postgres doesn't do it for you)
+    }
+  </script>
+  <p>Read ③ as: "the <code>user</code> of this order is found by matching my <code>userId</code> to <code>User.id</code>". Field ① has no column; it exists so you can write <code>include: { orders: true }</code>. If you forget one side, <code>npx prisma format</code> adds it for you.</p>
+
+  <p><strong>One-to-one: a user has at most one profile.</strong> It looks like one-to-many, but the FK is <code>@unique</code> and the back-relation is optional (<code>Profile?</code>), not a list:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id      Int      @id @default(autoincrement())
+      profile Profile?                  // 0 or 1 profile
+    }
+
+    model Profile {
+      id        Int     @id @default(autoincrement())
+      bio       String?
+      avatarUrl String? @map("avatar_url")
+      userId    Int     @unique @map("user_id")   // @unique makes it ONE-to-one
+      user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+      @@map("profiles")
+    }
+  </script>
+  <p>Put the FK on the side that is "less important" or created later: a profile can't exist without a user, but a user can exist without a profile.</p>
+
+  <p><strong>Many-to-many, implicit: products and categories.</strong> When the link has no extra data, just put a list on both sides. Prisma creates and manages a hidden join table (<code>_CategoryToProduct</code> with columns <code>A</code> and <code>B</code>):</p>
+  <script type="text/x-code" data-lang="prisma">
+    model Product {
+      id         Int        @id @default(autoincrement())
+      name       String
+      categories Category[]
+    }
+
+    model Category {
+      id       Int       @id @default(autoincrement())
+      name     String    @unique
+      products Product[]
+    }
+  </script>
+
+  <p><strong>Many-to-many, explicit: orders and products.</strong> The link carries data (quantity, unit price), so you model the join table yourself, exactly like <code>order_items</code> in Lesson 3. It's two one-to-many relations meeting in the middle:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model Order {
+      id    Int         @id @default(autoincrement())
+      items OrderItem[]
+    }
+
+    model Product {
+      id         Int         @id @default(autoincrement())
+      orderItems OrderItem[]
+    }
+
+    model OrderItem {
+      orderId   Int     @map("order_id")
+      productId Int     @map("product_id")
+      quantity  Int
+      unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+
+      order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+      product Product @relation(fields: [productId], references: [id])
+
+      @@id([orderId, productId])
+      @@index([productId])
+      @@map("order_items")
+    }
+  </script>
+  <table>
+    <tr><th></th><th>Implicit m-n</th><th>Explicit m-n</th></tr>
+    <tr><td>Join table</td><td>hidden, managed by Prisma</td><td>a normal model you write</td></tr>
+    <tr><td>Extra columns (quantity, role, addedAt)</td><td>not possible</td><td>yes</td></tr>
+    <tr><td>Query style</td><td><code>product.categories</code> directly</td><td><code>order.items[i].product</code> (one extra level)</td></tr>
+    <tr><td>Use when</td><td>a pure tag-like link</td><td>the link itself has data, or may get some later</td></tr>
+  </table>
+  <p>Many teams always use explicit join tables, because "the link never needs data" often turns out to be wrong later, and converting an implicit relation needs a data migration.</p>
+
+  <p><strong>Referential actions</strong> (<code>onDelete</code>, <code>onUpdate</code>) map directly to the SQL <code>ON DELETE</code> options from Lesson 3: <code>Cascade</code>, <code>Restrict</code>, <code>NoAction</code>, <code>SetNull</code>, <code>SetDefault</code>. If you don't set one, Prisma uses <code>Restrict</code> for required relations and <code>SetNull</code> for optional ones. Choose on purpose: deleting an order should cascade to its items; deleting a user who has orders should be refused.</p>
+
+  <p><strong>Using relations in code:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // Create a user and their profile in one call (nested write)
+    const user = await prisma.user.create({
+      data: {
+        email: 'eve@shop.dev',
+        name: 'Eve',
+        passwordHash: '...',
+        profile: { create: { bio: 'Loves keyboards' } },
+      },
+      include: { profile: true },
+    });
+
+    // Link a product to existing categories (implicit m-n)
+    await prisma.product.update({
+      where: { id: 1 },
+      data: { categories: { connect: [{ id: 1 }, { id: 2 }] } },   // disconnect / set also exist
+    });
+
+    // Walk relations when reading
+    const orders = await prisma.order.findMany({
+      where: { userId: 1 },
+      include: { items: { include: { product: { select: { name: true } } } } },
+    });
+    // orders[0].items[0].product.name → 'Keyboard'
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Relations decide how you design endpoints. A typical "my orders" endpoint uses the one-to-many relation from the authenticated user, and a nested route uses the parent's id in the filter:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/orders.controller.ts">
+      @Controller('me/orders')
+      @UseGuards(JwtAuthGuard)
+      export class MyOrdersController {
+        constructor(private readonly prisma: PrismaService) {}
+
+        @Get()
+        findMine(@CurrentUser() user: JwtPayload) {
+          return this.prisma.order.findMany({
+            where: { userId: user.sub },        // ✅ only this user's orders
+            include: { items: { include: { product: { select: { id: true, name: true } } } } },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
+      }
+    </script>
+    <p>(In Lesson 5 you'll move these Prisma calls out of the controller into a service/repository; here they're inline to keep the example short.)</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting <code>@unique</code> on the FK of a one-to-one, which silently makes it one-to-many.</li>
+      <li>Not adding <code>@@index</code> on FK scalar fields. Prisma doesn't add them for PostgreSQL.</li>
+      <li>Using an implicit many-to-many and later needing a "quantity" or "createdAt" on the link.</li>
+      <li>Leaving the default <code>onDelete</code> without thinking, then hitting "Foreign key constraint failed" (P2003) when deleting, or the opposite: an unexpected cascade.</li>
+      <li>Two relations between the same models (e.g. <code>author</code> and <code>reviewer</code>) without naming them: Prisma requires <code>@relation("AuthoredPosts")</code> names to tell them apart.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add product reviews: a user can write many reviews, a product has many reviews, each review has a <code>rating</code> (Int) and optional <code>comment</code>, and a user can review a product only once. Deleting a product deletes its reviews.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="prisma">
+        model Review {
+          id        Int      @id @default(autoincrement())
+          rating    Int
+          comment   String?
+          createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+          userId    Int      @map("user_id")
+          user      User     @relation(fields: [userId], references: [id])
+          productId Int      @map("product_id")
+          product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+          @@unique([userId, productId])   // one review per user per product
+          @@index([productId])
+          @@map("reviews")
+        }
+
+        // and add the back-relations:
+        // model User    { ... reviews Review[] }
+        // model Product { ... reviews Review[] }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between a relation field and a relation scalar field?</summary>
+      <p>The relation scalar field (<code>userId</code>) is a real column holding the foreign key. The relation field (<code>user</code> or <code>orders</code>) has no column; it lets Prisma Client navigate the relation in queries and nested writes.</p></details>
+    <details><summary>Implicit vs explicit many-to-many in Prisma?</summary>
+      <p>Implicit: lists on both models, Prisma manages a hidden join table, no extra fields. Explicit: you write the join model with two relations and can add fields like quantity or timestamps. Use explicit whenever the link carries data.</p></details>
+    <details><summary>How do you model a one-to-one relation?</summary>
+      <p>Put the foreign key on one side and mark it <code>@unique</code>; the other side has an optional relation field (<code>Profile?</code>).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> The side with <code>@relation(fields, references)</code> stores the FK. 1:1 = FK + <code>@unique</code>, 1:N = FK + list on the other side, M:N = join model (explicit when the link has data). Index FKs and choose <code>onDelete</code> on purpose.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="prisma-client">
+  <div class="topic-head"><span class="num">5</span><h2>Prisma Client</h2></div>
+  <p class="tagline">generated types and end-to-end type safety</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Prisma Client is code that Prisma <em>writes for you</em> by reading your schema. For every model you get a set of methods (<code>prisma.user.findMany</code>, <code>prisma.order.create</code>…) and a set of TypeScript types that match your tables exactly. It's like a custom-made remote control for your database: it only has buttons for things that really exist, so pressing a button that doesn't exist (a misspelled field) is impossible. "End-to-end type safety" means a change in the database schema shows up as red lines in every piece of code it affects.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Generating.</strong> <code>npx prisma generate</code> reads <code>schema.prisma</code> and writes the client (with the classic generator, into <code>node_modules/.prisma/client</code>, re-exported by <code>@prisma/client</code>). <code>migrate dev</code> runs it for you; in CI, add <code>"postinstall": "prisma generate"</code> so a fresh <code>npm ci</code> always has up-to-date types.</p>
+
+  <p><strong>What gets generated</strong> for the <code>User</code> model:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { PrismaClient, Prisma, User, Role } from '@prisma/client';
+
+    // 1. The model type: exactly one row of the table
+    //    type User = { id: number; email: string; name: string; passwordHash: string; role: Role; createdAt: Date }
+
+    // 2. Input types for every operation
+    const data: Prisma.UserCreateInput = { email: 'eve@shop.dev', name: 'Eve', passwordHash: 'x' };
+    const where: Prisma.UserWhereInput = { role: 'ADMIN', email: { endsWith: '@shop.dev' } };
+    const order: Prisma.UserOrderByWithRelationInput = { createdAt: 'desc' };
+
+    // 3. A model delegate with typed methods
+    const prisma = new PrismaClient();
+    prisma.user.findMany({ where, orderBy: order });
+  </script>
+
+  <p><strong>Return types follow your query.</strong> This is the most impressive part. The type of the result changes depending on <code>select</code> and <code>include</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const a = await prisma.user.findUnique({ where: { id: 1 } });
+    // a: User | null
+
+    const b = await prisma.user.findUnique({
+      where: { id: 1 },
+      select: { id: true, email: true },
+    });
+    // b: { id: number; email: string } | null
+    b?.name;      // ❌ Property 'name' does not exist — you didn't select it
+
+    const c = await prisma.user.findUnique({
+      where: { id: 1 },
+      include: { orders: { include: { items: true } } },
+    });
+    // c: (User & { orders: (Order & { items: OrderItem[] })[] }) | null
+    c?.orders[0]?.items[0]?.quantity;   // ✅ fully typed, all the way down
+  </script>
+
+  <p><strong>Catching mistakes at compile time.</strong> All of these fail before your code ever runs:</p>
+  <script type="text/x-code" data-lang="typescript">
+    prisma.user.findMany({ where: { emial: 'x' } });          // ❌ 'emial' does not exist. Did you mean 'email'?
+    prisma.order.create({ data: { userId: '1' } });           // ❌ string is not assignable to number
+    prisma.order.update({ where: { id: 1 }, data: { status: 'DONE' } }); // ❌ not an OrderStatus
+    prisma.user.findUnique({ where: { name: 'An' } });        // ❌ name is not @unique
+  </script>
+  <p>Now imagine renaming <code>name</code> to <code>fullName</code> in the schema. After <code>prisma migrate dev</code>, <code>npm run build</code> lists every service, DTO mapper and test that still uses <code>name</code>. That's the "end-to-end" part: database → generated types → your code.</p>
+
+  <p><strong>Reusable result types</strong> with <code>Prisma.validator</code>/<code>satisfies</code> and <code>GetPayload</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/order.types.ts">
+    import { Prisma } from '@prisma/client';
+
+    // Define the shape once…
+    export const orderWithItems = {
+      include: { items: { include: { product: { select: { id: true, name: true } } } } },
+    } satisfies Prisma.OrderDefaultArgs;
+
+    // …derive its TypeScript type…
+    export type OrderWithItems = Prisma.OrderGetPayload<typeof orderWithItems>;
+
+    // …and reuse both
+    // const order = await prisma.order.findUnique({ where: { id }, ...orderWithItems });
+    // function toResponse(order: OrderWithItems) { ... }
+  </script>
+
+  <p><strong>Hiding sensitive fields.</strong> Since Prisma 6.2, <code>omit</code> is stable: per query, or globally when creating the client. A global omit means <code>passwordHash</code> can never leak by accident:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const prisma = new PrismaClient({
+      omit: { user: { passwordHash: true } },        // never returned by default
+    });
+
+    const u = await prisma.user.findUnique({ where: { id: 1 } });
+    // u: { id, email, name, role, createdAt } — no passwordHash
+
+    // Opt back in where you really need it (login):
+    const withHash = await prisma.user.findUnique({
+      where: { email: 'an@shop.dev' },
+      omit: { passwordHash: false },
+    });
+  </script>
+
+  <p><strong>One client, one connection pool.</strong> <code>PrismaClient</code> manages a pool of database connections (by default <code>num_cpus * 2 + 1</code>, configurable with <code>?connection_limit=</code> in the URL). Create it once per process. That's exactly what the singleton <code>PrismaService</code> from point 1 gives you.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Use generated types inside services and repositories, but keep <strong>DTOs</strong> (validated API input) and <strong>response shapes</strong> as your own classes. The database shape and the API shape often differ (hashes, internal flags, Decimal formatting):</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users/users.service.ts">
+      import { Injectable, NotFoundException } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import { PrismaService } from '../prisma/prisma.service';
+
+      const publicUser = {
+        select: { id: true, email: true, name: true, role: true, createdAt: true },
+      } satisfies Prisma.UserDefaultArgs;
+      export type PublicUser = Prisma.UserGetPayload<typeof publicUser>;
+
+      @Injectable()
+      export class UsersService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        async findOne(id: number): Promise<PublicUser> {
+          const user = await this.prisma.user.findUnique({ where: { id }, ...publicUser });
+          if (!user) throw new NotFoundException(`User ${id} not found`);
+          return user;   // type-checked: can't accidentally include passwordHash
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting to run <code>prisma generate</code> after pulling a schema change, then seeing confusing "property does not exist" errors (or none, with stale types).</li>
+      <li>Using <code>any</code> or hand-written interfaces for query results instead of the generated/derived types.</li>
+      <li>Using <code>Prisma.UserCreateInput</code> directly as the request body type. It has no runtime validation and exposes fields clients must not set (like <code>role</code>).</li>
+      <li>Returning full <code>User</code> objects from endpoints and leaking <code>passwordHash</code>.</li>
+      <li>Creating a <code>PrismaClient</code> per request, which exhausts connections.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a reusable type <code>ProductCard</code> that has a product's <code>id</code>, <code>name</code>, <code>price</code> and the <code>name</code> of each of its categories, plus a function <code>findProductCards()</code> that returns <code>Promise&lt;ProductCard[]&gt;</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { Prisma, PrismaClient } from '@prisma/client';
+
+        const productCard = {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            categories: { select: { name: true } },
+          },
+        } satisfies Prisma.ProductDefaultArgs;
+
+        export type ProductCard = Prisma.ProductGetPayload<typeof productCard>;
+        // { id: number; name: string; price: Prisma.Decimal; categories: { name: string }[] }
+
+        export function findProductCards(prisma: PrismaClient): Promise<ProductCard[]> {
+          return prisma.product.findMany({ ...productCard, orderBy: { name: 'asc' } });
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does "end-to-end type safety" mean with Prisma?</summary>
+      <p>The schema is the source of truth; Prisma generates TypeScript types from it, and query results are typed according to <code>select</code>/<code>include</code>. Any schema change that breaks code shows up as compile errors, from the database layer through services to anything that consumes those types.</p></details>
+    <details><summary>When does the Prisma Client need to be regenerated?</summary>
+      <p>Whenever <code>schema.prisma</code> changes: <code>migrate dev</code> does it automatically (Prisma 5/6), otherwise run <code>prisma generate</code>. In CI and Docker builds, run it after installing dependencies (e.g. with a <code>postinstall</code> script).</p></details>
+    <details><summary>Should you use Prisma's generated types as your API DTOs?</summary>
+      <p>Generally no. Generated types disappear at runtime, so they can't be validated by <code>ValidationPipe</code>, and they mirror the database rather than the API contract. Use class-based DTOs for input and explicit select/response types for output.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Prisma Client is generated from your schema, and its return types follow your <code>select</code>/<code>include</code>. Regenerate after every schema change, derive reusable types with <code>GetPayload</code>, and keep API DTOs separate.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="queries">
+  <div class="topic-head"><span class="num">6</span><h2>Queries</h2></div>
+  <p class="tagline">findMany, findUnique, include, select</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Reading data with Prisma is like ordering from a menu with three questions. <strong>How many?</strong> One specific item (<code>findUnique</code>), the first that matches (<code>findFirst</code>), or a list (<code>findMany</code>). <strong>Which columns?</strong> Only some (<code>select</code>) or all of them. <strong>Anything on the side?</strong> Related data such as the user's orders (<code>include</code>). You describe the answer you want as a plain object, and Prisma writes the SQL.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The find methods:</strong></p>
+  <table>
+    <tr><th>Method</th><th><code>where</code> accepts</th><th>Returns</th><th>Not found</th></tr>
+    <tr><td><code>findUnique</code></td><td>a unique field (<code>id</code>, <code>email</code>) or compound unique</td><td><code>T | null</code></td><td><code>null</code></td></tr>
+    <tr><td><code>findUniqueOrThrow</code></td><td>same</td><td><code>T</code></td><td>throws (code <code>P2025</code>)</td></tr>
+    <tr><td><code>findFirst</code></td><td>any filter (+ <code>orderBy</code>)</td><td><code>T | null</code></td><td><code>null</code></td></tr>
+    <tr><td><code>findFirstOrThrow</code></td><td>any filter</td><td><code>T</code></td><td>throws</td></tr>
+    <tr><td><code>findMany</code></td><td>any filter</td><td><code>T[]</code></td><td><code>[]</code></td></tr>
+    <tr><td><code>count</code></td><td>any filter</td><td><code>number</code></td><td><code>0</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    // By primary key or any @unique field
+    const an = await prisma.user.findUnique({ where: { email: 'an@shop.dev' } });
+
+    // Compound unique key (@@id([orderId, productId])) → generated name "orderId_productId"
+    const line = await prisma.orderItem.findUnique({
+      where: { orderId_productId: { orderId: 101, productId: 1 } },
+    });
+
+    // ❌ findUnique on a non-unique field is a compile error:
+    // prisma.user.findUnique({ where: { name: 'An' } });
+    // ✅ use findFirst — and give it an orderBy, or "first" is random
+    const latestPending = await prisma.order.findFirst({
+      where: { userId: 1, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const all = await prisma.product.findMany();          // SELECT * FROM products
+    const howMany = await prisma.order.count({ where: { status: 'PAID' } });
+  </script>
+
+  <p><strong><code>select</code>: pick columns.</strong> Return only what you need. It's faster, smaller over the network, and safer:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true },
+      orderBy: { id: 'asc' },
+    });
+    // SQL: SELECT "id", "name" FROM "users" ORDER BY "id" ASC
+    // [{ id: 1, name: 'An' }, { id: 2, name: 'Binh' }, { id: 3, name: 'Chi' }, { id: 4, name: 'Dung' }]
+  </script>
+
+  <p><strong><code>include</code>: add related records</strong> to the full model:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const order = await prisma.order.findUnique({
+      where: { id: 101 },
+      include: {
+        user: true,
+        items: { include: { product: true } },
+      },
+    });
+  </script>
+  <script type="text/x-code" data-lang="json" data-title="result (shortened)">
+    {
+      "id": 101, "userId": 1, "status": "PAID", "total": "68.5",
+      "user": { "id": 1, "email": "an@shop.dev", "name": "An", "...": "..." },
+      "items": [
+        { "orderId": 101, "productId": 1, "quantity": 1, "unitPrice": "49", "product": { "id": 1, "name": "Keyboard", "...": "..." } },
+        { "orderId": 101, "productId": 2, "quantity": 1, "unitPrice": "19.5", "product": { "id": 2, "name": "Mouse", "...": "..." } }
+      ]
+    }
+  </script>
+
+  <p><strong>Combining them.</strong> You can't use <code>select</code> and <code>include</code> at the same level, but you can nest: <code>select</code> a relation and choose its fields, or <code>include</code> a relation that itself uses <code>select</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Error: Please either use `include` or `select`, but not both at the same time.
+    // prisma.order.findMany({ select: { id: true }, include: { user: true } });
+
+    // ✅ Everything through select — precise, ideal for API responses
+    const rows = await prisma.order.findMany({
+      select: {
+        id: true,
+        status: true,
+        total: true,
+        user: { select: { name: true } },                      // relation inside select
+        items: {
+          select: { quantity: true, product: { select: { name: true } } },
+          orderBy: { productId: 'asc' },                       // relations can be sorted/filtered
+        },
+        _count: { select: { items: true } },                   // count related rows
+      },
+      where: { userId: 1 },
+      orderBy: { id: 'asc' },
+    });
+    // [{ id: 101, status: 'PAID', total: Decimal(68.5), user: { name: 'An' },
+    //    items: [{ quantity: 1, product: { name: 'Keyboard' } }, { quantity: 1, product: { name: 'Mouse' } }],
+    //    _count: { items: 2 } }, ...]
+  </script>
+
+  <p><strong>Sorting and distinct:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    prisma.product.findMany({ orderBy: [{ price: 'desc' }, { id: 'asc' }] }); // multi-column
+    prisma.user.findMany({ orderBy: { orders: { _count: 'desc' } } });     // by number of orders
+    prisma.order.findMany({ distinct: ['userId'], select: { userId: true } }); // one row per user
+  </script>
+
+  <p><strong>The N+1 problem.</strong> Loading a list and then querying inside a loop sends 1 + N queries. With 100 orders, that's 101 round-trips:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ N+1
+    const orders = await prisma.order.findMany();
+    for (const o of orders) {
+      const user = await prisma.user.findUnique({ where: { id: o.userId } });  // one query per order
+    }
+
+    // ✅ Let Prisma load the relation in bulk (a couple of queries in total)
+    const ordersWithUser = await prisma.order.findMany({
+      include: { user: { select: { id: true, name: true } } },
+    });
+
+    // ✅ Or fetch the related rows with one IN query yourself
+    const userIds = [...new Set(orders.map((o) => o.userId))];
+    const users = await prisma.user.findMany({ where: { id: { in: userIds } } });
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A typical service offers a "detail" query with <code>include</code> and a "list" query with a slim <code>select</code>, and turns <code>null</code> into a 404:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products/products.service.ts">
+      @Injectable()
+      export class ProductsService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        // List: only what a product card needs
+        findAll() {
+          return this.prisma.product.findMany({
+            select: { id: true, name: true, price: true, stock: true },
+            orderBy: { name: 'asc' },
+          });
+        }
+
+        // Detail: full product + categories + review count
+        async findOne(id: number) {
+          const product = await this.prisma.product.findUnique({
+            where: { id },
+            include: {
+              categories: { select: { id: true, name: true } },
+              _count: { select: { reviews: true } },
+            },
+          });
+          if (!product) throw new NotFoundException(`Product ${id} not found`);
+          return product;
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="products/products.controller.ts">
+      @Get(':id')
+      findOne(@Param('id', ParseIntPipe) id: number) {   // '7' → 7, else 400
+        return this.productsService.findOne(id);
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>findFirst</code> without <code>orderBy</code> and expecting "the latest".</li>
+      <li>Over-including: <code>include: { orders: { include: { items: { include: { product: true } } } } }</code> on a list endpoint loads megabytes. Select what the screen shows.</li>
+      <li>Querying inside loops (N+1). Use <code>include</code> or a single <code>in</code> query.</li>
+      <li>Forgetting that <code>findUnique</code> returns <code>null</code> and returning <code>null</code> with a 200 status instead of a 404.</li>
+      <li>Passing the route param string (<code>'7'</code>) to <code>where: { id }</code>. Use <code>ParseIntPipe</code> or DTO transformation.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a query for the "customer overview" page: every user (sorted by name) with their <code>id</code>, <code>name</code>, <code>email</code>, the number of orders they have, and their 2 most recent orders (only <code>id</code>, <code>status</code>, <code>total</code>).</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        const overview = await prisma.user.findMany({
+          orderBy: { name: 'asc' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            _count: { select: { orders: true } },
+            orders: {
+              select: { id: true, status: true, total: true },
+              orderBy: { createdAt: 'desc' },
+              take: 2,
+            },
+          },
+        });
+        // [{ id: 1, name: 'An', email: 'an@shop.dev', _count: { orders: 2 },
+        //    orders: [{ id: 102, status: 'SHIPPED', total: 189 }, { id: 101, status: 'PAID', total: 68.5 }] },
+        //  ...,
+        //  { id: 4, name: 'Dung', ..., _count: { orders: 0 }, orders: [] }]
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between <code>findUnique</code> and <code>findFirst</code>?</summary>
+      <p><code>findUnique</code> only accepts unique identifiers (id, <code>@unique</code> fields, compound uniques) and is guaranteed to match at most one row. <code>findFirst</code> accepts any filter and returns the first match according to <code>orderBy</code>.</p></details>
+    <details><summary>What's the difference between <code>select</code> and <code>include</code>?</summary>
+      <p><code>include</code> returns all scalar fields of the model plus the listed relations. <code>select</code> returns only the listed fields (scalars or relations). They can't be used at the same level, but can be nested inside each other.</p></details>
+    <details><summary>What is the N+1 query problem and how do you avoid it with Prisma?</summary>
+      <p>Loading N parent rows and then running one extra query per row for related data, giving N+1 round-trips. Avoid it with <code>include</code>/nested <code>select</code> (Prisma loads relations in bulk) or by collecting ids and using one <code>where: { id: { in: ids } }</code> query.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>findUnique</code> for unique keys (handle <code>null</code>), <code>findFirst</code> with <code>orderBy</code>, <code>findMany</code> for lists. <code>select</code> what you need, <code>include</code> relations deliberately, and never query in a loop.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="filtering-pagination">
+  <div class="topic-head"><span class="num">7</span><h2>Filtering &amp; pagination</h2></div>
+  <p class="tagline">where, skip, take, cursor</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p><strong>Filtering</strong> (<code>where</code>) is the search form: "status is PAID, total above 50, customer's email ends with @shop.dev". <strong>Pagination</strong> is splitting a long result into pages so you don't send 100,000 rows at once. There are two styles. <em>Offset</em> pagination is like a book's page numbers: "skip 40, take 20". <em>Cursor</em> pagination is like a bookmark: "give me the 20 items after this one", which stays fast and correct even when the list is huge or changing.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Filter operators.</strong> A plain value means "equals"; an object lets you choose an operator:</p>
+  <script type="text/x-code" data-lang="typescript">
+    prisma.product.findMany({
+      where: {
+        price: { gte: 10, lt: 100 },            // 10 <= price < 100
+        stock: { gt: 0 },                        // in stock
+        name: { contains: 'key', mode: 'insensitive' },  // ILIKE '%key%'
+        id: { notIn: [4, 5] },
+      },
+    });
+
+    prisma.order.findMany({
+      where: {
+        status: { in: ['PAID', 'SHIPPED'] },
+        createdAt: { gte: new Date('2026-09-01'), lt: new Date('2026-10-01') },
+      },
+    });
+  </script>
+  <table>
+    <tr><th>Operator</th><th>SQL</th><th>Example</th></tr>
+    <tr><td><code>equals</code> / plain value</td><td><code>=</code></td><td><code>{ status: 'PAID' }</code></td></tr>
+    <tr><td><code>not</code></td><td><code>&lt;&gt;</code> (or <code>IS NOT</code>)</td><td><code>{ status: { not: 'CANCELLED' } }</code></td></tr>
+    <tr><td><code>in</code> / <code>notIn</code></td><td><code>IN (…)</code></td><td><code>{ id: { in: [1, 2] } }</code></td></tr>
+    <tr><td><code>lt</code>, <code>lte</code>, <code>gt</code>, <code>gte</code></td><td><code>&lt; &lt;= &gt; &gt;=</code></td><td><code>{ total: { gt: 50 } }</code></td></tr>
+    <tr><td><code>contains</code>, <code>startsWith</code>, <code>endsWith</code></td><td><code>LIKE</code> (<code>ILIKE</code> with <code>mode: 'insensitive'</code>)</td><td><code>{ email: { endsWith: '@shop.dev' } }</code></td></tr>
+    <tr><td><code>has</code>, <code>hasSome</code>, <code>hasEvery</code></td><td>array operators</td><td><code>{ tags: { has: 'gaming' } }</code></td></tr>
+  </table>
+
+  <p><strong>Combining conditions.</strong> Keys in one object are joined with AND. Use <code>OR</code>, <code>AND</code>, <code>NOT</code> for anything else:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Search box: match name OR email, but exclude admins
+    prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: 'an', mode: 'insensitive' } },
+          { email: { contains: 'an', mode: 'insensitive' } },
+        ],
+        NOT: { role: 'ADMIN' },
+      },
+    });
+  </script>
+
+  <p><strong>Relation filters</strong> filter by related records. For lists: <code>some</code>, <code>every</code>, <code>none</code>. For single relations: <code>is</code>, <code>isNot</code>.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Users who have at least one PAID order
+    prisma.user.findMany({ where: { orders: { some: { status: 'PAID' } } } });      // → An
+
+    // Users who never ordered (the anti-join from Lesson 3!)
+    prisma.user.findMany({ where: { orders: { none: {} } } });                     // → Dung
+
+    // Products that were never ordered
+    prisma.product.findMany({ where: { orderItems: { none: {} } } });              // → USB-C Cable
+
+    // Orders whose customer has an email at shop.dev
+    prisma.order.findMany({ where: { user: { is: { email: { endsWith: '@shop.dev' } } } } });
+  </script>
+
+  <p><strong>⚠️ <code>undefined</code> vs <code>null</code> — the most important filtering rule.</strong> In a Prisma filter, <code>undefined</code> means "ignore this condition" and <code>null</code> means "IS NULL". This makes optional filters easy, but is dangerous by accident:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ✅ Optional filters from a query string: undefined values are simply skipped
+    function search(status?: OrderStatus, userId?: number) {
+      return prisma.order.findMany({ where: { status, userId } });
+      // search()            → all orders
+      // search('PAID')      → WHERE status = 'PAID'
+    }
+
+    // ❌ Dangerous: if `id` is undefined because of a bug, the filter disappears
+    await prisma.order.deleteMany({ where: { userId: undefined } });  // deletes EVERY order!
+
+    // null means IS NULL
+    prisma.user.findMany({ where: { phone: null } });            // users without phone
+    prisma.user.findMany({ where: { phone: { not: null } } });   // users with phone
+  </script>
+
+  <p><strong>Offset pagination (<code>skip</code> + <code>take</code>).</strong> Simple and supports "jump to page 7". Return the total so the UI can show page numbers:</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function listOrders(page: number, pageSize: number) {
+      const where = { status: { not: 'CANCELLED' as const } };
+      const [items, total] = await prisma.$transaction([
+        prisma.order.findMany({
+          where,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],   // unique tie-breaker!
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.order.count({ where }),
+      ]);
+      return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    }
+  </script>
+  <p>Downside (from Lesson 3): <code>skip: 100000</code> still makes Postgres read and discard 100,000 rows, and inserts between requests shift items so users see duplicates or miss rows.</p>
+
+  <p><strong>Cursor pagination (<code>cursor</code> + <code>skip: 1</code> + <code>take</code>).</strong> The client sends back the id of the last item it received; you continue from there. It uses the index directly, so page 5,000 is as fast as page 1:</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function listOrdersAfter(cursor: number | undefined, take = 20) {
+      const items = await prisma.order.findMany({
+        take: take + 1,                                // fetch one extra to know if there's more
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),  // skip the cursor row itself
+        orderBy: { id: 'desc' },                       // must be unique & sequential
+      });
+
+      const hasMore = items.length > take;
+      if (hasMore) items.pop();
+      return { items, nextCursor: hasMore ? items[items.length - 1].id : null };
+    }
+
+    // GET /orders            → items 104, 103 …  nextCursor: 85
+    // GET /orders?cursor=85  → items 84, 83 …
+  </script>
+  <table>
+    <tr><th></th><th>Offset (<code>skip/take</code>)</th><th>Cursor (<code>cursor/take</code>)</th></tr>
+    <tr><td>Jump to page N</td><td>✅ yes</td><td>❌ only next/previous</td></tr>
+    <tr><td>Speed on deep pages</td><td>❌ gets slower</td><td>✅ constant</td></tr>
+    <tr><td>Stable when rows are added</td><td>❌ items shift</td><td>✅ yes</td></tr>
+    <tr><td>Typical UI</td><td>admin tables with page numbers</td><td>infinite scroll, feeds, APIs, exports</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Query strings arrive as <strong>strings</strong>, so a DTO with <code>class-transformer</code> converts and validates them (with <code>ValidationPipe({ transform: true })</code> enabled globally):</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
+      import { Type } from 'class-transformer';
+      import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+      import { OrderStatus } from '@prisma/client';
+
+      export class ListOrdersQuery {
+        @IsOptional() @IsEnum(OrderStatus)
+        status?: OrderStatus;
+
+        @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+        cursor?: number;
+
+        @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)   // never let clients ask for 1,000,000
+        take: number = 20;
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts">
+      async list(userId: number, q: ListOrdersQuery) {
+        const items = await this.prisma.order.findMany({
+          where: { userId, status: q.status },            // status undefined → no filter
+          take: q.take + 1,
+          ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
+          orderBy: { id: 'desc' },
+          select: { id: true, status: true, total: true, createdAt: true },
+        });
+        const hasMore = items.length > q.take;
+        if (hasMore) items.pop();
+        return { items, nextCursor: hasMore ? items[items.length - 1].id : null };
+      }
+    </script>
+    <p>Note that <code>userId</code> comes from the authenticated user, never from the query string, so the filter itself enforces "users only see their own orders".</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Passing an accidentally <code>undefined</code> value into <code>where</code> of an <code>updateMany</code>/<code>deleteMany</code>. The condition vanishes and every row is affected.</li>
+      <li>Paginating without a deterministic <code>orderBy</code> (include a unique column like <code>id</code>).</li>
+      <li>No upper limit on <code>take</code>, so a client can request the whole table.</li>
+      <li>Forgetting <code>skip: 1</code> with a cursor, which repeats the last item of the previous page.</li>
+      <li>Using <code>contains</code> on a big table and expecting it to be fast. <code>LIKE '%x%'</code> can't use a B-tree index (consider full-text search or <code>pg_trgm</code>).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a product search: optional text <code>q</code> (matches name, case-insensitive), optional <code>minPrice</code>/<code>maxPrice</code>, optional <code>inStock</code> boolean, offset pagination, sorted by price then id. Return <code>{ items, total }</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { Prisma } from '@prisma/client';
+
+        async function searchProducts(opts: {
+          q?: string; minPrice?: number; maxPrice?: number; inStock?: boolean; page: number; pageSize: number;
+        }) {
+          const where: Prisma.ProductWhereInput = {
+            name: opts.q ? { contains: opts.q, mode: 'insensitive' } : undefined,
+            price: { gte: opts.minPrice, lte: opts.maxPrice },   // undefined bounds are ignored
+            stock: opts.inStock ? { gt: 0 } : undefined,
+          };
+
+          const [items, total] = await prisma.$transaction([
+            prisma.product.findMany({
+              where,
+              orderBy: [{ price: 'asc' }, { id: 'asc' }],
+              skip: (opts.page - 1) * opts.pageSize,
+              take: opts.pageSize,
+            }),
+            prisma.product.count({ where }),
+          ]);
+          return { items, total };
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Offset vs cursor pagination: when do you use each?</summary>
+      <p>Offset (<code>skip/take</code>) when users need page numbers and the data set is moderate, like admin tables. Cursor when the data is large or changes often (feeds, infinite scroll, public APIs): it's constant-time and doesn't skip or duplicate rows when data changes.</p></details>
+    <details><summary>What's the difference between <code>undefined</code> and <code>null</code> in a Prisma <code>where</code>?</summary>
+      <p><code>undefined</code> removes the condition (as if not written); <code>null</code> filters for <code>IS NULL</code>. That's convenient for optional filters but dangerous for bulk updates/deletes if a value is unexpectedly undefined.</p></details>
+    <details><summary>How do you find users who have no orders with Prisma?</summary>
+      <p>With a relation filter: <code>prisma.user.findMany({ where: { orders: { none: {} } } })</code>.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Build filters as objects (<code>undefined</code> = skip, <code>null</code> = IS NULL), always sort with a unique tie-breaker, cap <code>take</code>, and prefer cursor pagination for large or fast-changing lists.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="mutations">
+  <div class="topic-head"><span class="num">8</span><h2>Mutations</h2></div>
+  <p class="tagline">create, update, upsert, delete</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Mutations are the methods that change data. <code>create</code> adds a row, <code>update</code> changes one, <code>upsert</code> means "update it if it exists, otherwise create it", and <code>delete</code> removes one. Each has a "many" version for bulk work. They also understand relations, so you can create an order <em>together with</em> its items in one call, and Prisma makes sure it's all-or-nothing.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>create</strong> returns the new row (including generated id and defaults):</p>
+  <script type="text/x-code" data-lang="typescript">
+    const user = await prisma.user.create({
+      data: { email: 'eve@shop.dev', name: 'Eve', passwordHash: hash },
+      select: { id: true, email: true, name: true, createdAt: true },   // ✅ don't return the hash
+    });
+    // { id: 5, email: 'eve@shop.dev', name: 'Eve', createdAt: 2026-10-05T... }
+  </script>
+
+  <p><strong>Nested writes: <code>create</code> and <code>connect</code>.</strong> Create a record and its related records, or link to existing ones, in one atomic operation:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const order = await prisma.order.create({
+      data: {
+        user: { connect: { id: 2 } },                  // link to an EXISTING user
+        total: new Prisma.Decimal('68.50'),
+        items: {
+          create: [                                    // create NEW item rows
+            { product: { connect: { id: 1 } }, quantity: 1, unitPrice: new Prisma.Decimal('49.00') },
+            { product: { connect: { id: 2 } }, quantity: 1, unitPrice: new Prisma.Decimal('19.50') },
+          ],
+        },
+      },
+      include: { items: true },
+    });
+  </script>
+  <p>There are two equivalent styles for setting a relation: the <em>checked</em> style (<code>user: { connect: { id: 2 } }</code>) and the <em>unchecked</em> style (just the FK: <code>userId: 2</code>). You can't mix both for the same relation in one call. The unchecked style is shorter; the checked style lets you use <code>connectOrCreate</code> and nested <code>create</code> on that relation.</p>
+
+  <p><strong>createMany</strong> inserts many rows in one SQL statement, but doesn't support nested relations:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const { count } = await prisma.category.createMany({
+      data: [{ name: 'Peripherals' }, { name: 'Displays' }, { name: 'Gaming' }],
+      skipDuplicates: true,          // ON CONFLICT DO NOTHING (rows violating @unique are skipped)
+    });
+    // { count: 3 } — createManyAndReturn (Prisma 5.14+) returns the rows instead
+  </script>
+
+  <p><strong>update</strong> changes one record identified by a unique field. If it doesn't exist, it <strong>throws</strong> <code>P2025</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    await prisma.order.update({
+      where: { id: 103 },
+      data: { status: 'PAID' },        // only listed fields change; undefined fields are left alone
+    });
+
+    // Atomic number operations — computed by the DATABASE, safe under concurrency
+    await prisma.product.update({
+      where: { id: 3 },
+      data: { stock: { decrement: 1 } },     // SET stock = stock - 1
+    });
+    // also: increment, multiply, divide, set
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Read-modify-write: two concurrent requests can both read 15 and both write 14
+    const p = await prisma.product.findUniqueOrThrow({ where: { id: 3 } });
+    await prisma.product.update({ where: { id: 3 }, data: { stock: p.stock - 1 } });
+
+    // ✅ atomic
+    await prisma.product.update({ where: { id: 3 }, data: { stock: { decrement: 1 } } });
+  </script>
+
+  <p><strong>updateMany</strong> changes all matching rows and returns <code>{ count }</code>. It never throws when nothing matches, which makes it perfect for conditional updates:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Cancel pending orders older than 24h
+    const { count } = await prisma.order.updateMany({
+      where: { status: 'PENDING', createdAt: { lt: new Date(Date.now() - 24 * 3600 * 1000) } },
+      data: { status: 'CANCELLED' },
+    });
+
+    // "Sell only if still in stock": the check and the write are ONE statement
+    const res = await prisma.product.updateMany({
+      where: { id: 3, stock: { gte: 1 } },
+      data: { stock: { decrement: 1 } },
+    });
+    if (res.count === 0) throw new ConflictException('Out of stock');
+  </script>
+
+  <p><strong>upsert</strong> = update if found by a unique field, else create. Great for syncing data and idempotent seeds:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const cart = await prisma.orderItem.upsert({
+      where: { orderId_productId: { orderId: 103, productId: 1 } },
+      update: { quantity: { increment: 1 } },                                   // already in cart → +1
+      create: { orderId: 103, productId: 1, quantity: 1, unitPrice: new Prisma.Decimal('49.00') },
+    });
+  </script>
+  <p>On PostgreSQL, Prisma runs simple upserts as a native <code>INSERT … ON CONFLICT … DO UPDATE</code>, which is safe under concurrency. For more complex upserts it may fall back to a read then a write, so a <code>P2002</code> is still possible under heavy races; retry once if that matters.</p>
+
+  <p><strong>delete / deleteMany:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    await prisma.order.delete({ where: { id: 104 } });       // throws P2025 if not found; items cascade
+    await prisma.category.deleteMany({ where: { products: { none: {} } } }); // { count }
+    // ⚠️ prisma.order.deleteMany({}) deletes EVERYTHING in the table
+  </script>
+  <p>Many apps never hard-delete business data. A <em>soft delete</em> sets <code>deletedAt</code> instead (<code>update({ data: { deletedAt: new Date() } })</code>) and every query filters <code>deletedAt: null</code>.</p>
+
+  <table>
+    <tr><th>Method</th><th>Target</th><th>Returns</th><th>Not found</th></tr>
+    <tr><td><code>create</code></td><td>new row</td><td>the row</td><td>n/a (P2002 on duplicate unique)</td></tr>
+    <tr><td><code>createMany</code></td><td>many new rows</td><td><code>{ count }</code></td><td>n/a</td></tr>
+    <tr><td><code>update</code></td><td>one row by unique</td><td>the row</td><td>throws P2025</td></tr>
+    <tr><td><code>updateMany</code></td><td>rows by any filter</td><td><code>{ count }</code></td><td><code>{ count: 0 }</code></td></tr>
+    <tr><td><code>upsert</code></td><td>one row by unique</td><td>the row</td><td>creates it</td></tr>
+    <tr><td><code>delete</code></td><td>one row by unique</td><td>the deleted row</td><td>throws P2025</td></tr>
+    <tr><td><code>deleteMany</code></td><td>rows by any filter</td><td><code>{ count }</code></td><td><code>{ count: 0 }</code></td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A service turns a validated DTO into a mutation and maps Prisma errors to HTTP errors:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products/products.service.ts">
+      import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+
+      @Injectable()
+      export class ProductsService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        async create(dto: CreateProductDto) {
+          try {
+            return await this.prisma.product.create({
+              data: { ...dto, price: new Prisma.Decimal(dto.price) },
+            });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+              throw new ConflictException(`SKU ${dto.sku} already exists`);
+            }
+            throw e;
+          }
+        }
+
+        async update(id: number, dto: UpdateProductDto) {   // UpdateProductDto = PartialType(CreateProductDto)
+          try {
+            return await this.prisma.product.update({
+              where: { id },
+              data: { ...dto, price: dto.price !== undefined ? new Prisma.Decimal(dto.price) : undefined },
+            });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+              throw new NotFoundException(`Product ${id} not found`);
+            }
+            throw e;
+          }
+        }
+      }
+    </script>
+    <p>Because <code>PartialType</code> makes every DTO field optional, missing fields are <code>undefined</code>, and Prisma leaves those columns untouched. That's exactly the PATCH behaviour you want.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Read-modify-write for counters and stock instead of <code>increment</code>/<code>decrement</code> or a conditional <code>updateMany</code>.</li>
+      <li>Passing the raw request body as <code>data</code> (<code>data: req.body</code>). A client could set <code>role: 'ADMIN'</code>. Use whitelisted DTOs (<code>ValidationPipe({ whitelist: true })</code>).</li>
+      <li>Not handling <code>P2025</code> on <code>update</code>/<code>delete</code>, so "not found" becomes a 500.</li>
+      <li>Calling <code>deleteMany</code>/<code>updateMany</code> with a filter built from possibly-undefined values.</li>
+      <li>Looping <code>create</code> 10,000 times instead of using <code>createMany</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write <code>addToCart(orderId, productId)</code>: if the product is already in the (PENDING) order, increase its quantity by 1; otherwise add it with quantity 1 and the product's current price. Then increase the order total by the product price.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        async function addToCart(orderId: number, productId: number) {
+          const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
+
+          return prisma.$transaction([
+            prisma.orderItem.upsert({
+              where: { orderId_productId: { orderId, productId } },
+              update: { quantity: { increment: 1 } },
+              create: { orderId, productId, quantity: 1, unitPrice: product.price },
+            }),
+            prisma.order.update({
+              where: { id: orderId, status: 'PENDING' },  // extra non-unique filter is allowed (Prisma 5+)
+              data: { total: { increment: product.price } },
+            }),
+          ]);
+        }
+      </script>
+      <p>The two writes are wrapped in <code>$transaction</code> (point 9) so the item and the total can't get out of sync. If the order isn't PENDING, <code>update</code> throws P2025 and the upsert is rolled back too. (For a strict version, the price should come from the existing line on increment; that's a nice extension.)</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between <code>update</code> and <code>updateMany</code>?</summary>
+      <p><code>update</code> targets one record by a unique field, returns it, and throws P2025 if not found. <code>updateMany</code> takes any filter, returns <code>{ count }</code>, never throws for zero matches, and can't return the rows or do nested writes.</p></details>
+    <details><summary>How do you safely decrement stock with Prisma under concurrency?</summary>
+      <p>Use an atomic operation in a conditional update: <code>updateMany({ where: { id, stock: { gte: qty } }, data: { stock: { decrement: qty } } })</code>, then check <code>count</code>. The check and the write happen in one SQL statement.</p></details>
+    <details><summary>What is <code>connect</code> in a nested write?</summary>
+      <p>It links the new or updated record to an <em>existing</em> related record by its unique field, setting the foreign key. <code>create</code> makes a new related record; <code>connectOrCreate</code> does whichever is needed; <code>disconnect</code>/<code>set</code> remove or replace links.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>create</code>/<code>update</code>/<code>delete</code> work on one row (and throw when it's missing), the <code>*Many</code> versions return a count. Use nested writes for related data, atomic operators for counters, and never pass raw input as <code>data</code>.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="transactions">
+  <div class="topic-head"><span class="num">9</span><h2>Transactions</h2></div>
+  <p class="tagline">$transaction and interactive transactions</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>You learned in Lesson 3 that a transaction is an "all or nothing" package of database changes. Prisma gives you three ways to make one. <strong>Nested writes</strong> are automatically one package. <strong>Batch transactions</strong> (<code>$transaction([a, b, c])</code>) are a shopping list handed over at once: all succeed or none. <strong>Interactive transactions</strong> (<code>$transaction(async (tx) =&gt; …)</code>) are a conversation: you can read, decide with normal code, then write, and any thrown error cancels everything.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>1. Nested writes are already transactional.</strong> Creating an order with <code>items: { create: […] }</code> (point 8) is one transaction. If any item fails (e.g. a bad product id), the order isn't created either. Prefer this when it fits.</p>
+
+  <p><strong>2. Batch (sequential) transactions</strong>: pass an array of Prisma queries. They run in order inside one transaction:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const [cancelled, restocked] = await prisma.$transaction([
+      prisma.order.update({ where: { id: 103 }, data: { status: 'CANCELLED' } }),
+      prisma.product.update({ where: { id: 2 }, data: { stock: { increment: 1 } } }),
+    ]);
+    // If the second query fails, the first is rolled back.
+  </script>
+  <p>Limitation: the queries are built <em>before</em> any of them runs, so a later query can't use the result of an earlier one, and you can't put <code>if</code> logic in between. Note: don't <code>await</code> the queries inside the array; pass the unexecuted query objects.</p>
+
+  <p><strong>3. Interactive transactions</strong>: a callback that receives <code>tx</code>, a transaction-bound client. All queries through <code>tx</code> share one connection and one transaction. Returning commits; throwing rolls back.</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function placeOrder(userId: number, lines: { productId: number; quantity: number }[]) {
+      return prisma.$transaction(async (tx) => {
+        let total = new Prisma.Decimal(0);
+        const items: { productId: number; quantity: number; unitPrice: Prisma.Decimal }[] = [];
+
+        for (const line of lines) {
+          // atomic stock check + decrement
+          const { count } = await tx.product.updateMany({
+            where: { id: line.productId, stock: { gte: line.quantity } },
+            data: { stock: { decrement: line.quantity } },
+          });
+          if (count === 0) {
+            throw new Error(`Product ${line.productId} is out of stock`);   // → ROLLBACK everything
+          }
+
+          const product = await tx.product.findUniqueOrThrow({ where: { id: line.productId } });
+          total = total.plus(product.price.mul(line.quantity));
+          items.push({ ...line, unitPrice: product.price });
+        }
+
+        return tx.order.create({                         // ✅ uses tx, not prisma
+          data: { userId, total, items: { create: items } },
+          include: { items: true },
+        });
+      });                                                // → COMMIT
+    }
+  </script>
+
+  <p><strong>Options</strong> (second argument):</p>
+  <script type="text/x-code" data-lang="typescript">
+    await prisma.$transaction(async (tx) => { /* ... */ }, {
+      maxWait: 2000,      // ms to wait for a free connection from the pool (default 2000)
+      timeout: 5000,      // ms the whole callback may take before Prisma rolls it back (default 5000)
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,   // default: the DB's (Read Committed)
+    });
+  </script>
+
+  <p><strong>Retrying conflicts.</strong> With <code>Serializable</code> (or under deadlocks), Postgres may abort a transaction; Prisma reports <code>P2034</code> ("Transaction failed due to a write conflict or a deadlock. Please retry"). The right response is to run the whole transaction again:</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+      for (let i = 1; ; i++) {
+        try {
+          return await fn();
+        } catch (e) {
+          const retryable = e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2034';
+          if (!retryable || i >= attempts) throw e;
+        }
+      }
+    }
+
+    await withRetry(() =>
+      prisma.$transaction(async (tx) => { /* ... */ }, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }),
+    );
+  </script>
+
+  <p><strong>Optimistic concurrency control</strong> is an alternative to locks for "edit forms": add a <code>version Int @default(0)</code> field, and only update if nobody else changed the row since you read it:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const { count } = await prisma.product.updateMany({
+      where: { id: 1, version: dto.version },               // the version the client loaded
+      data: { price: dto.price, version: { increment: 1 } },
+    });
+    if (count === 0) throw new ConflictException('Product was changed by someone else. Reload and try again.');
+  </script>
+
+  <table>
+    <tr><th>Need</th><th>Use</th></tr>
+    <tr><td>Create/update a record with its children</td><td>nested write</td></tr>
+    <tr><td>Several independent writes, all-or-nothing</td><td><code>$transaction([...])</code></td></tr>
+    <tr><td>Read → decide → write, all-or-nothing</td><td><code>$transaction(async (tx) =&gt; ...)</code></td></tr>
+    <tr><td>Prevent lost updates in edit forms</td><td>optimistic locking (<code>version</code>)</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>When a use case spans several services, pass the transaction client down. Its type is <code>Prisma.TransactionClient</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="inventory/inventory.service.ts">
+      @Injectable()
+      export class InventoryService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        // Works inside or outside a transaction
+        async reserve(productId: number, qty: number, db: Prisma.TransactionClient = this.prisma) {
+          const { count } = await db.product.updateMany({
+            where: { id: productId, stock: { gte: qty } },
+            data: { stock: { decrement: qty } },
+          });
+          if (count === 0) throw new ConflictException(`Product ${productId} is out of stock`);
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts">
+      @Injectable()
+      export class OrdersService {
+        constructor(
+          private readonly prisma: PrismaService,
+          private readonly inventory: InventoryService,
+          private readonly mailer: MailerService,
+        ) {}
+
+        async checkout(userId: number, dto: CheckoutDto) {
+          const order = await this.prisma.$transaction(async (tx) => {
+            for (const line of dto.lines) {
+              await this.inventory.reserve(line.productId, line.quantity, tx);  // same transaction
+            }
+            return tx.order.create({ data: { userId /* , items… */ } });
+          });
+
+          await this.mailer.sendOrderConfirmation(order.id);  // ✅ AFTER commit, outside the transaction
+          return order;
+        }
+      }
+    </script>
+    <p>NestJS exceptions like <code>ConflictException</code> thrown inside the callback both roll back the transaction and become the HTTP response. Some teams use a library such as <code>@nestjs-cls/transactional</code> to avoid passing <code>tx</code> around manually.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>this.prisma</code> instead of <code>tx</code> inside the callback. That query runs outside the transaction and won't be rolled back.</li>
+      <li>Doing slow work inside the callback (HTTP calls, emails, file uploads). It holds a connection and locks, and hits the 5-second timeout.</li>
+      <li>Catching errors inside the callback and not re-throwing them, so Prisma commits a half-done operation.</li>
+      <li>Awaiting queries inside the array of a batch transaction (<code>$transaction([await a, await b])</code>), which runs them outside the transaction.</li>
+      <li>Using <code>Serializable</code> without retry logic for <code>P2034</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write <code>transferStock(fromProductId, toProductId, qty)</code> that moves stock from one product to another (e.g. merging duplicate products). It must fail without changing anything if the source doesn't have enough stock.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        async function transferStock(fromId: number, toId: number, qty: number) {
+          return prisma.$transaction(async (tx) => {
+            const { count } = await tx.product.updateMany({
+              where: { id: fromId, stock: { gte: qty } },
+              data: { stock: { decrement: qty } },
+            });
+            if (count === 0) throw new Error('Not enough stock in source product');
+
+            return tx.product.update({                 // throws P2025 if toId doesn't exist → rollback
+              where: { id: toId },
+              data: { stock: { increment: qty } },
+            });
+          });
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Batch <code>$transaction([...])</code> vs interactive <code>$transaction(async tx =&gt; ...)</code>?</summary>
+      <p>Batch runs a fixed list of independent queries atomically; it's simple and fast, but later queries can't depend on earlier results. Interactive lets you run arbitrary logic between queries using <code>tx</code>; it's more flexible but holds a connection for the duration, so it must be short.</p></details>
+    <details><summary>How does a Prisma interactive transaction roll back?</summary>
+      <p>By throwing any error from the callback (or exceeding the timeout). Prisma catches it, sends ROLLBACK, and re-throws the error to the caller. Returning normally commits.</p></details>
+    <details><summary>How do you share one transaction across several NestJS services?</summary>
+      <p>Pass the <code>tx</code> (<code>Prisma.TransactionClient</code>) as a parameter to the methods that must participate, or use a CLS-based transactional library that stores the active transaction client in async context.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Nested writes and <code>$transaction([...])</code> for simple atomic groups, <code>$transaction(async (tx) =&gt; …)</code> for read-decide-write. Always use <code>tx</code> inside, keep it short, throw to roll back, and do side effects after commit.</div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="topic" id="seeding">
+  <div class="topic-head"><span class="num">10</span><h2>Seeding</h2></div>
+  <p class="tagline">seed scripts for local and test data</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A fresh database after migrations has the right tables but no rows, like a new shop with empty shelves. A <strong>seed script</strong> stocks the shelves: an admin account, a few products, some orders, so you can open the app and click around immediately. It's a normal TypeScript file that uses Prisma Client, and you can run it again any time (for example after resetting the database), so every developer and every test run starts from the same known data.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>1. Write the script.</strong> It uses <code>PrismaClient</code> directly. It is not part of the Nest app, so there's no dependency injection here.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma/seed.ts">
+    import { PrismaClient, Prisma, Role } from '@prisma/client';
+    import * as bcrypt from 'bcrypt';
+
+    const prisma = new PrismaClient();
+
+    async function main() {
+      const passwordHash = await bcrypt.hash('Password123!', 10);
+
+      // ✅ upsert = idempotent: running the seed twice doesn't create duplicates or fail
+      const admin = await prisma.user.upsert({
+        where: { email: 'admin@shop.dev' },
+        update: {},
+        create: { email: 'admin@shop.dev', name: 'Admin', passwordHash, role: Role.ADMIN },
+      });
+
+      const an = await prisma.user.upsert({
+        where: { email: 'an@shop.dev' },
+        update: {},
+        create: { email: 'an@shop.dev', name: 'An', passwordHash },
+      });
+
+      const products = [
+        { sku: 'KB-001', name: 'Keyboard', price: '49.00', stock: 120 },
+        { sku: 'MS-001', name: 'Mouse', price: '19.50', stock: 300 },
+        { sku: 'MN-001', name: 'Monitor', price: '189.00', stock: 15 },
+        { sku: 'CB-001', name: 'USB-C Cable', price: '9.99', stock: 0 },
+      ];
+      for (const p of products) {
+        await prisma.product.upsert({
+          where: { sku: p.sku },
+          update: { price: new Prisma.Decimal(p.price) },   // keep prices in sync with the seed
+          create: { ...p, price: new Prisma.Decimal(p.price) },
+        });
+      }
+
+      // Demo order only if An has none yet
+      const hasOrders = await prisma.order.count({ where: { userId: an.id } });
+      if (hasOrders === 0) {
+        const keyboard = await prisma.product.findUniqueOrThrow({ where: { sku: 'KB-001' } });
+        await prisma.order.create({
+          data: {
+            userId: an.id,
+            status: 'PAID',
+            total: keyboard.price,
+            items: { create: { productId: keyboard.id, quantity: 1, unitPrice: keyboard.price } },
+          },
+        });
+      }
+
+      console.log(`Seeded: admin #${admin.id}, user #${an.id}, ${products.length} products`);
+    }
+
+    main()
+      .catch((e) => {
+        console.error(e);
+        process.exit(1);          // make CI fail if seeding fails
+      })
+      .finally(() => prisma.$disconnect());
+  </script>
+
+  <p><strong>2. Tell Prisma how to run it</strong> (Prisma 5/6 read this from <code>package.json</code>; newer setups can put the same command in <code>prisma.config.ts</code>):</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json">
+    {
+      "prisma": {
+        "seed": "ts-node prisma/seed.ts"
+      }
+    }
+  </script>
+  <p>(<code>tsx prisma/seed.ts</code> also works and is faster. Since a Nest project already has <code>ts-node</code>, it's the common default.)</p>
+
+  <p><strong>3. Run it.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma db seed            # run the seed explicitly
+    npx prisma migrate reset      # drop DB → apply all migrations → run the seed (DEV ONLY)
+  </script>
+  <p>In Prisma 5/6, <code>migrate dev</code> also runs the seed automatically when it had to reset the database. <code>migrate deploy</code> never seeds.</p>
+
+  <p><strong>Idempotency is the key design rule.</strong> A seed should be safe to run many times. Compare:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Second run → P2002 Unique constraint failed on the fields: (`email`)
+    await prisma.user.create({ data: { email: 'admin@shop.dev', name: 'Admin', passwordHash } });
+
+    // ✅ Second run → no change
+    await prisma.user.upsert({ where: { email: 'admin@shop.dev' }, update: {}, create: { /* ... */ } });
+
+    // ✅ For lookup tables: createMany + skipDuplicates
+    await prisma.category.createMany({
+      data: [{ name: 'Peripherals' }, { name: 'Displays' }],
+      skipDuplicates: true,
+    });
+  </script>
+
+  <p><strong>Lots of realistic data with Faker.</strong> For testing pagination or performance, generate hundreds of rows. Fix the random seed so everyone gets the same data:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { faker } from '@faker-js/faker';
+
+    faker.seed(42);                        // deterministic: same "random" data every run
+
+    await prisma.user.createMany({
+      data: Array.from({ length: 500 }, () => ({
+        email: faker.internet.email().toLowerCase(),
+        name: faker.person.fullName(),
+        passwordHash,
+      })),
+      skipDuplicates: true,
+    });
+  </script>
+
+  <p><strong>Kinds of seed data:</strong></p>
+  <table>
+    <tr><th>Kind</th><th>Example</th><th>Where it runs</th></tr>
+    <tr><td>Reference data</td><td>roles, countries, default categories</td><td>everywhere, even production; better as a migration if the app depends on it</td></tr>
+    <tr><td>Demo/dev data</td><td>admin user, sample products and orders</td><td>local and staging</td></tr>
+    <tr><td>Test fixtures</td><td>exactly the rows one test needs</td><td>test database, created per test or per suite</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>For e2e tests, use a separate database (<code>.env.test</code>), apply migrations once, and clean tables between tests. A small helper keeps tests independent:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/utils/reset-db.ts">
+      import { PrismaClient } from '@prisma/client';
+
+      export async function resetDb(prisma: PrismaClient) {
+        // One statement, fast, resets id sequences, follows FKs
+        await prisma.$executeRawUnsafe(
+          'TRUNCATE TABLE "order_items", "orders", "products", "users" RESTART IDENTITY CASCADE',
+        );
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="test/orders.e2e-spec.ts">
+      beforeEach(async () => {
+        await resetDb(prisma);
+        // minimal fixtures for THIS test file
+        await prisma.user.create({ data: { email: 'buyer@test.dev', name: 'Buyer', passwordHash: 'x' } });
+        await prisma.product.create({ data: { sku: 'T-1', name: 'Test product', price: '10.00', stock: 1 } });
+      });
+
+      it('POST /orders fails when stock runs out', async () => {
+        // ...
+      });
+    </script>
+    <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
+      {
+        "scripts": {
+          "db:seed": "prisma db seed",
+          "db:reset": "prisma migrate reset --force",
+          "test:e2e": "dotenv -e .env.test -- prisma migrate deploy && dotenv -e .env.test -- jest --config ./test/jest-e2e.json --runInBand"
+        }
+      }
+    </script>
+    <p>(<code>dotenv</code> here is the <code>dotenv-cli</code> package; it loads a different env file for one command. <code>--runInBand</code> runs test files one at a time so they don't wipe each other's data.)</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>create</code> instead of <code>upsert</code>, so the seed crashes on the second run.</li>
+      <li>Hard-coding ids (<code>userId: 1</code>). After a reset or in another environment, the id may differ. Use the returned objects or look up by a unique field.</li>
+      <li>Committing real customer data or real passwords in seed files.</li>
+      <li>Running <code>migrate reset</code> or a demo seed against staging/production by accident. Check <code>DATABASE_URL</code> first.</li>
+      <li>Forgetting <code>process.exit(1)</code> on error, so CI shows green even though seeding failed.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Extend the seed: create the categories "Peripherals" and "Displays" idempotently, and connect Keyboard and Mouse to "Peripherals" and Monitor to "Displays" (implicit many-to-many). Running the seed twice must not fail.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        const peripherals = await prisma.category.upsert({
+          where: { name: 'Peripherals' }, update: {}, create: { name: 'Peripherals' },
+        });
+        const displays = await prisma.category.upsert({
+          where: { name: 'Displays' }, update: {}, create: { name: 'Displays' },
+        });
+
+        // connect is idempotent for implicit m-n: connecting an existing link does nothing
+        for (const sku of ['KB-001', 'MS-001']) {
+          await prisma.product.update({
+            where: { sku },
+            data: { categories: { connect: { id: peripherals.id } } },
+          });
+        }
+        await prisma.product.update({
+          where: { sku: 'MN-001' },
+          data: { categories: { connect: { id: displays.id } } },
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you configure and run a seed with Prisma?</summary>
+      <p>Write <code>prisma/seed.ts</code> using PrismaClient, register the command (e.g. <code>"prisma": { "seed": "ts-node prisma/seed.ts" }</code> in package.json), then run <code>prisma db seed</code>. It also runs after <code>prisma migrate reset</code>.</p></details>
+    <details><summary>What makes a good seed script?</summary>
+      <p>It's idempotent (upsert, skipDuplicates), deterministic (fixed Faker seed, no hard-coded ids), fast (createMany for bulk), contains no real personal data, and exits non-zero on failure.</p></details>
+    <details><summary>How do you isolate database state between e2e tests?</summary>
+      <p>Use a dedicated test database, apply migrations, and reset data before each test or suite (TRUNCATE … RESTART IDENTITY CASCADE, or a transaction rolled back after each test), creating only the fixtures that test needs. Run test files serially if they share the database.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A seed is a re-runnable script that stocks an empty database. Make it idempotent with <code>upsert</code>, deterministic with fixed data, and keep demo data out of production.</div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="topic" id="prisma-studio">
+  <div class="topic-head"><span class="num">11</span><h2>Prisma Studio</h2></div>
+  <p class="tagline">inspecting and editing data visually</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Prisma Studio is a spreadsheet-like window onto your database, opened in the browser. It reads your Prisma schema, so it shows your <em>models</em> (with their Prisma field names and relations), not raw tables. You can look at rows, filter them, click from an order to its user, and edit values, all without writing a query. Think of it as the "inspect element" of your database while you develop.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Starting it.</strong> It uses the same <code>DATABASE_URL</code> as the rest of the Prisma CLI:</p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma studio
+    # Prisma Studio is up on http://localhost:5555
+
+    npx prisma studio --port 5556 --browser none     # another port, don't auto-open a browser
+
+    # Point it at a different database (e.g. the e2e test DB) using dotenv-cli
+    npx dotenv -e .env.test -- prisma studio
+  </script>
+
+  <p><strong>What you can do:</strong></p>
+  <table>
+    <tr><th>Task</th><th>How in Studio</th><th>Equivalent code/SQL</th></tr>
+    <tr><td>Browse a model</td><td>pick <code>Order</code> in the model list</td><td><code>prisma.order.findMany()</code></td></tr>
+    <tr><td>Filter</td><td>"Filters" → <code>status</code> equals <code>PENDING</code></td><td><code>where: { status: 'PENDING' }</code></td></tr>
+    <tr><td>Show/hide columns, sort</td><td>"Fields" menu, click a column header</td><td><code>select</code>, <code>orderBy</code></td></tr>
+    <tr><td>Follow relations</td><td>click the <code>user</code> or <code>items</code> cell of an order</td><td><code>include: { user: true }</code></td></tr>
+    <tr><td>Edit a value</td><td>double-click a cell, change it, "Save 1 change"</td><td><code>prisma.order.update(...)</code></td></tr>
+    <tr><td>Add a row</td><td>"Add record", fill fields, save</td><td><code>prisma.order.create(...)</code></td></tr>
+    <tr><td>Delete rows</td><td>select rows → "Delete records"</td><td><code>prisma.order.deleteMany(...)</code></td></tr>
+  </table>
+  <p>Edits are collected and only written when you click <strong>Save</strong>, and you can discard them before that. Database rules still apply: if you set a duplicate email or a non-existent <code>userId</code>, the save fails with the same unique/foreign key error your app would get.</p>
+
+  <p><strong>Typical moments to open Studio:</strong></p>
+  <ul>
+    <li><strong>After seeding or a migration</strong>: did the rows and new columns appear as expected?</li>
+    <li><strong>Debugging an endpoint</strong>: the API returns an empty list. Is the data really there, and does the <code>userId</code> match the logged-in user?</li>
+    <li><strong>Preparing a manual test</strong>: set an order to <code>SHIPPED</code>, set a product's stock to 0 to test the "out of stock" path, or make your user an <code>ADMIN</code>.</li>
+    <li><strong>Learning relations</strong>: clicking through user → orders → items → product makes the relational model from Lesson 3 very concrete.</li>
+  </ul>
+
+  <p><strong>What Studio is not.</strong> It's a developer tool, not an admin panel or a SQL client:</p>
+  <ul>
+    <li>Edits go <strong>straight to the database</strong>, skipping your NestJS validation, business rules, audit logs and events. Setting <code>status = 'PAID'</code> in Studio won't decrement stock or send an email.</li>
+    <li>It doesn't run arbitrary SQL, show query plans or manage indexes. Use <code>psql</code>, pgAdmin, DBeaver or TablePlus for that (and for <code>EXPLAIN ANALYZE</code> from Lesson 3).</li>
+    <li>It's not meant for production data: whoever can reach it has full read/write access, and there's no per-user permission system.</li>
+  </ul>
+  <script type="text/x-code" data-lang="plaintext">
+    ✅ Local dev DB, local test DB, a disposable preview DB
+    ❌ Production (use a read-only replica + a proper SQL client, or a real admin panel with auth & audit)
+  </script>
+
+  <p><strong>Pairing it with query logging.</strong> A nice learning loop: run a request against your API with Prisma's <code>log: ['query']</code> enabled, read the SQL in the terminal, and check the affected rows in Studio. You'll see exactly what each Prisma call did to the data.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Add scripts so nobody has to remember flags, and run Studio next to the dev server and the database container:</p>
+    <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
+      {
+        "scripts": {
+          "start:dev": "nest start --watch",
+          "db:up": "docker compose up -d db",
+          "db:studio": "prisma studio",
+          "db:studio:test": "dotenv -e .env.test -- prisma studio --port 5556"
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml">
+      services:
+        db:
+          image: postgres:16
+          environment:
+            POSTGRES_USER: shop
+            POSTGRES_PASSWORD: shop
+            POSTGRES_DB: shop
+          ports:
+            - "5432:5432"
+          volumes:
+            - pgdata:/var/lib/postgresql/data
+      volumes:
+        pgdata:
+    </script>
+    <p>A common debugging flow: <code>GET /me/orders</code> returns <code>[]</code> → open Studio → filter <code>Order</code> by <code>userId</code> → discover the orders belong to user 2 while your JWT says <code>sub: 1</code>. The bug is in the test data, not the query.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Opening Studio with a <code>.env</code> that points at production, then "just fixing one value".</li>
+      <li>Using Studio edits to simulate business actions (marking orders as paid), then being confused that side effects didn't happen.</li>
+      <li>Exposing port 5555 on a shared or public server.</li>
+      <li>Expecting Studio to show tables that aren't in <code>schema.prisma</code> (it only knows your models).</li>
+      <li>Forgetting to click Save, and thinking the edit was applied.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Using only Prisma Studio: (1) find the user with email <code>an@shop.dev</code>; (2) open their orders; (3) change the stock of the "USB-C Cable" to 25; (4) try to set a second user's email to <code>an@shop.dev</code>. What happens in step 4, and which SQL query would confirm step 3?</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Steps 1–3: open <code>User</code>, add a filter <code>email</code> equals <code>an@shop.dev</code>, click the <code>orders</code> cell to jump to the related orders; open <code>Product</code>, double-click the <code>stock</code> cell of USB-C Cable, type 25, click "Save 1 change". In step 4, the save fails with a unique constraint error on <code>email</code>: the same P2002 your API would map to a 409. To confirm step 3:</p>
+      <script type="text/x-code" data-lang="sql">
+        SELECT id, name, stock FROM products WHERE name = 'USB-C Cable';
+        -- id | name        | stock
+        --  4 | USB-C Cable |    25
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is Prisma Studio and when do you use it?</summary>
+      <p>A browser-based GUI (<code>npx prisma studio</code>, port 5555) to view and edit data through your Prisma models. It's used in development to verify seeds and migrations, debug data issues and prepare manual test scenarios.</p></details>
+    <details><summary>Why shouldn't you edit production data with Prisma Studio?</summary>
+      <p>Edits bypass application validation, business logic, side effects and audit trails, there's no fine-grained access control, and mistakes are immediate. Production changes should go through the app, a reviewed script/migration, or a proper admin tool.</p></details>
+    <details><summary>Does Prisma Studio enforce database constraints?</summary>
+      <p>Yes. It writes through Prisma to the real database, so NOT NULL, UNIQUE, foreign key and CHECK constraints all apply, and failed saves show the corresponding error.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Prisma Studio (<code>npx prisma studio</code>) is your development window into the data: great for checking seeds, debugging and setting up test cases, but it bypasses your app's rules and doesn't belong anywhere near production.</div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="topic" id="raw-queries">
+  <div class="topic-head"><span class="num">12</span><h2>Raw queries</h2></div>
+  <p class="tagline">know when it's safe to drop to raw SQL</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Prisma's query API covers most everyday needs, but SQL can do much more: window functions, CTEs, special Postgres features. Raw queries let you send your own SQL through Prisma. The danger is <strong>SQL injection</strong>: if user input is glued into the SQL text, a clever user can change what the query does. The rule is simple: values travel <em>separately</em> from the SQL text, as parameters. Prisma's tagged template <code>$queryRaw`...`</code> does that for you automatically; the <code>Unsafe</code> functions don't.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The four methods:</strong></p>
+  <table>
+    <tr><th>Method</th><th>For</th><th>Returns</th><th>Parameters</th></tr>
+    <tr><td><code>$queryRaw`…`</code></td><td>SELECT (anything returning rows)</td><td>array of rows</td><td>✅ automatic from <code>${}</code></td></tr>
+    <tr><td><code>$executeRaw`…`</code></td><td>INSERT/UPDATE/DELETE/DDL</td><td>number of affected rows</td><td>✅ automatic from <code>${}</code></td></tr>
+    <tr><td><code>$queryRawUnsafe(sql, ...values)</code></td><td>SQL built as a string</td><td>array of rows</td><td>⚠️ only if you use <code>$1, $2</code> yourself</td></tr>
+    <tr><td><code>$executeRawUnsafe(sql, ...values)</code></td><td>same, for writes</td><td>number</td><td>⚠️ same</td></tr>
+  </table>
+
+  <p><strong>Safe by default: the tagged template.</strong> Each <code>${value}</code> becomes a parameter (<code>$1</code>, <code>$2</code>…), not text:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const email = "an@shop.dev' OR '1'='1";          // a malicious input
+
+    // ✅ Safe: sent as  SELECT ... WHERE email = $1   with  $1 = "an@shop.dev' OR '1'='1"
+    const users = await prisma.$queryRaw<{ id: number; email: string }[]>`
+      SELECT id, email FROM users WHERE email = ${email}
+    `;
+    // → [] (no user has that weird email)
+
+    // ❌ INJECTION: the input becomes part of the SQL → returns EVERY user
+    await prisma.$queryRawUnsafe(`SELECT id, email FROM users WHERE email = '${email}'`);
+
+    // ✅ Unsafe variant used correctly: positional parameters
+    await prisma.$queryRawUnsafe('SELECT id, email FROM users WHERE email = $1', email);
+  </script>
+
+  <p><strong>A real reason to go raw: a report Prisma can't express.</strong> Top customers with their rank and share of revenue uses a CTE and a window function:</p>
+  <script type="text/x-code" data-lang="typescript">
+    type TopCustomerRow = { userId: number; name: string; spent: Prisma.Decimal; rank: number; share: number };
+
+    const since = new Date('2026-09-01');
+    const rows = await prisma.$queryRaw<TopCustomerRow[]>`
+      WITH spend AS (
+        SELECT o.user_id, SUM(o.total) AS spent
+        FROM orders o
+        WHERE o.status <> 'CANCELLED' AND o.created_at >= ${since}
+        GROUP BY o.user_id
+      )
+      SELECT u.id                                          AS "userId",   -- quote to keep camelCase
+             u.name,
+             s.spent,
+             RANK() OVER (ORDER BY s.spent DESC)::int       AS rank,
+             ROUND(100 * s.spent / SUM(s.spent) OVER (), 1)::float8 AS share
+      FROM spend s
+      JOIN users u ON u.id = s.user_id
+      ORDER BY rank
+      LIMIT 10
+    `;
+  </script>
+  <script type="text/x-code" data-lang="json" data-title="rows (with the Lesson 3 sample data)">
+    [
+      { "userId": 1, "name": "An",   "spent": "257.5", "rank": 1, "share": 93 },
+      { "userId": 2, "name": "Binh", "spent": "19.5",  "rank": 2, "share": 7 }
+    ]
+  </script>
+  <p>Notice three details. Column aliases are quoted (<code>"userId"</code>) because Postgres lower-cases unquoted names. Counts and window results are cast (<code>::int</code>, <code>::float8</code>) because Postgres <code>bigint</code> comes back as a JavaScript <code>BigInt</code> and <code>numeric</code> as <code>Decimal</code>. And the generic <code>&lt;TopCustomerRow[]&gt;</code> is a <strong>promise you make</strong>, not something Prisma checks. If the SQL and the type disagree, TypeScript won't notice.</p>
+
+  <p><strong>Other good reasons for raw SQL:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // Postgres features: a job queue with row locking that skips locked rows
+    const jobs = await prisma.$queryRaw<{ id: number }[]>`
+      SELECT id FROM jobs WHERE status = 'QUEUED'
+      ORDER BY id LIMIT 10
+      FOR UPDATE SKIP LOCKED
+    `;   // (run inside tx.$queryRaw in an interactive transaction so the lock is held)
+
+    // Bulk update in one statement instead of 10,000 Prisma calls
+    const affected = await prisma.$executeRaw`
+      UPDATE products SET price = ROUND(price * ${1.05}::numeric, 2) WHERE stock > ${0}
+    `;   // → number of rows updated
+
+    // Maintenance
+    await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY product_sales`;
+  </script>
+
+  <p><strong>Dynamic SQL, safely.</strong> Parameters can only replace <em>values</em>, never identifiers (table/column names) or keywords like <code>ASC</code>. Use <code>Prisma.sql</code>, <code>Prisma.join</code>, <code>Prisma.empty</code> for composition, and a <strong>whitelist</strong> for identifiers:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { Prisma } from '@prisma/client';
+
+    const ids = [1, 2, 3];
+    // IN list → IN ($1, $2, $3)
+    await prisma.$queryRaw`SELECT * FROM products WHERE id IN (${Prisma.join(ids)})`;
+
+    // Optional condition
+    const status: string | undefined = 'PAID';
+    // status is a Postgres enum column, so cast the text parameter to the enum type
+    const statusFilter = status ? Prisma.sql`AND status = ${status}::"OrderStatus"` : Prisma.empty;
+    await prisma.$queryRaw`SELECT * FROM orders WHERE total > ${50} ${statusFilter}`;
+
+    // Sort column chosen by the client
+    const SORTABLE = { price: 'price', name: 'name', newest: 'id' } as const;
+    function orderByClause(sort: string, dir: string) {
+      const column = SORTABLE[sort as keyof typeof SORTABLE] ?? 'id';     // ✅ whitelist
+      const direction = dir === 'desc' ? 'DESC' : 'ASC';                  // ✅ whitelist
+      return Prisma.raw(`ORDER BY ${column} ${direction}`);              // raw ONLY for whitelisted text
+    }
+    // ❌ Prisma.raw(`ORDER BY ${req.query.sort}`)  — injection again
+  </script>
+
+  <p><strong>Typed SQL.</strong> Recent Prisma versions (5.19+, preview feature <code>typedSql</code>) can generate types from <code>.sql</code> files in <code>prisma/sql/</code>, so the result type is checked against the real database instead of being a promise you make. It's worth trying once your project has several raw reports.</p>
+
+  <p><strong>When to stay with the Prisma API:</strong> simple CRUD, filters, relations and pagination. You keep type safety, automatic mapping (<code>@map</code> names, enums, Decimal), and refactoring support. Go raw for: complex reports (CTEs, window functions, <code>GROUP BY</code> across joins), Postgres-specific features (<code>FOR UPDATE SKIP LOCKED</code>, full-text search, <code>LATERAL</code>), bulk operations, and measured performance problems.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Keep raw SQL in a dedicated place (a repository or "queries" class), type the result rows explicitly, and convert database types before returning JSON:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="reports/reports.repository.ts">
+      import { Injectable } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import { PrismaService } from '../prisma/prisma.service';
+
+      type ProductSalesRow = { productId: number; name: string; unitsSold: number; revenue: Prisma.Decimal };
+
+      @Injectable()
+      export class ReportsRepository {
+        constructor(private readonly prisma: PrismaService) {}
+
+        async productSales(from: Date, to: Date) {
+          const rows = await this.prisma.$queryRaw<ProductSalesRow[]>`
+            SELECT p.id                                  AS "productId",
+                   p.name,
+                   COALESCE(SUM(oi.quantity), 0)::int    AS "unitsSold",
+                   COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS revenue
+            FROM products p
+            LEFT JOIN (                                -- order lines in the period, not cancelled
+              SELECT oi.product_id, oi.quantity, oi.unit_price
+              FROM order_items oi
+              JOIN orders o ON o.id = oi.order_id
+              WHERE o.status <> 'CANCELLED'
+                AND o.created_at >= ${from} AND o.created_at < ${to}
+            ) oi ON oi.product_id = p.id
+            GROUP BY p.id, p.name
+            ORDER BY revenue DESC
+          `;
+          // Decimal → string for JSON
+          return rows.map((r) => ({ ...r, revenue: r.revenue.toFixed(2) }));
+        }
+      }
+    </script>
+    <p>Pair it with a DTO that validates <code>from</code>/<code>to</code> (<code>@Type(() =&gt; Date) @IsDate()</code>), and an e2e test that runs the query against a real database, since the compiler can't check the SQL for you.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>String-concatenating user input into <code>$queryRawUnsafe</code> or <code>Prisma.raw</code>. That's SQL injection.</li>
+      <li>Trying to parameterize a column name or sort direction (<code>ORDER BY ${col}</code>). It becomes a value, not an identifier, and silently does nothing useful. Whitelist instead.</li>
+      <li>Returning <code>COUNT(*)</code> results directly: <code>bigint</code> → <code>BigInt</code> → "Do not know how to serialize a BigInt". Cast with <code>::int</code>.</li>
+      <li>Forgetting that raw SQL uses <em>database</em> names (<code>user_id</code>, <code>order_items</code>), not Prisma model/field names. Also, comparing a Prisma enum column with a parameter needs a cast (<code>${status}::"OrderStatus"</code>), otherwise Postgres reports <code>operator does not exist</code>.</li>
+      <li>Trusting the generic type argument as if it were validated. It isn't; test the query.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a safe raw query that returns, for a given <code>userId</code> and an optional <code>status</code>, the number of orders and the total spent, as <code>{ orderCount: number; spent: string }</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { Prisma } from '@prisma/client';
+
+        async function userSpend(userId: number, status?: string) {
+          const statusFilter = status ? Prisma.sql`AND status = ${status}::"OrderStatus"` : Prisma.empty;
+
+          const [row] = await prisma.$queryRaw<{ orderCount: number; spent: Prisma.Decimal }[]>`
+            SELECT COUNT(*)::int                AS "orderCount",
+                   COALESCE(SUM(total), 0)      AS spent
+            FROM orders
+            WHERE user_id = ${userId} ${statusFilter}
+          `;
+          return { orderCount: row.orderCount, spent: row.spent.toFixed(2) };
+        }
+
+        await userSpend(1);          // { orderCount: 2, spent: '257.50' }
+        await userSpend(1, 'PAID');  // { orderCount: 1, spent: '68.50' }
+      </script>
+      <p>(In this simple case <code>prisma.order.aggregate</code> would also work, and would be the better choice. Raw SQL shines when the Prisma API can't express the query.)</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How does <code>$queryRaw</code> prevent SQL injection?</summary>
+      <p>It's a tagged template: the interpolated <code>${}</code> values are not inserted into the SQL string but sent to PostgreSQL as bound parameters (<code>$1</code>, <code>$2</code>), so the database treats them strictly as data, never as SQL code.</p></details>
+    <details><summary>When is it reasonable to use raw SQL with Prisma?</summary>
+      <p>For queries the API can't express or expresses inefficiently: complex reporting (CTEs, window functions, grouped joins), Postgres-specific features (row locking with SKIP LOCKED, full-text search, LATERAL), bulk updates and maintenance commands. Keep it isolated, parameterized and tested.</p></details>
+    <details><summary>How do you safely build a dynamic ORDER BY in raw SQL?</summary>
+      <p>Identifiers can't be parameters, so map user input through a whitelist of allowed columns and directions, and only then insert the known-safe text with <code>Prisma.raw</code> or <code>Prisma.sql</code>. Never pass raw user input to <code>Prisma.raw</code>.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use the Prisma API by default and raw SQL when it truly helps. With raw SQL: always the tagged template (or <code>$1</code> parameters), whitelist identifiers, cast <code>bigint</code>, and type and test the result yourself.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="PostgreSQL-Fundamentals.html">← Prev: 3. PostgreSQL Fundamentals</a>
+  <a href="Architecture.html">Next: 5. Architecture →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Senior Engineering Mindset</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 12 of 12</span>
+  </nav>
+  <h1>12. Senior Engineering Mindset</h1>
+  <p class="goal"><strong>Goal:</strong> Move from writing code to owning technical decisions.</p>
+  <p class="howto">How to use this page: this lesson is less about syntax and more about judgment. Read each point, then think about a real project you know (or your practice project) and apply it. The exercises are scenarios: write your own answer on paper <em>before</em> opening the model answer. There is rarely one "correct" answer; compare your reasoning, not your words.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#trade-offs">Trade-offs</a></li>
+      <li><a href="#code-ownership">Code ownership</a></li>
+      <li><a href="#technical-debt">Technical debt</a></li>
+      <li><a href="#refactoring">Refactoring</a></li>
+      <li><a href="#documentation">Documentation</a></li>
+      <li><a href="#mentoring">Mentoring</a></li>
+      <li><a href="#system-thinking">System thinking</a></li>
+      <li><a href="#failure-design">Failure design</a></li>
+      <li><a href="#production-thinking">Production thinking</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="trade-offs">
+  <div class="topic-head"><span class="num">1</span><h2>Trade-offs</h2></div>
+  <p class="tagline">compare simplicity, flexibility, performance and cost</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Every technical choice is like buying a car. A sports car is fast but expensive and has no space. A van carries a lot but is slow to park. There is no "best car", only the best car <em>for your situation</em>. Junior developers often ask "what is the best way?". Senior developers ask "best for what? For whom? Under which constraints?" Then they compare options honestly on a few dimensions, usually <strong>simplicity</strong>, <strong>flexibility</strong>, <strong>performance</strong> and <strong>cost</strong> (money <em>and</em> people's time), choose one, and write down why.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The four dimensions.</strong></p>
+  <table>
+    <tr><th>Dimension</th><th>Question</th><th>Hidden cost if ignored</th></tr>
+    <tr><td>Simplicity</td><td>Can a new team member understand and change it in a day?</td><td>Slow onboarding, bugs from misunderstanding</td></tr>
+    <tr><td>Flexibility</td><td>How easily can it adapt to likely future needs?</td><td>Rewrites when requirements change</td></tr>
+    <tr><td>Performance</td><td>Is it fast enough <em>for the real load</em>?</td><td>Slow pages, timeouts, bigger servers</td></tr>
+    <tr><td>Cost</td><td>Money (infrastructure, licenses) + time to build + time to operate</td><td>A "free" tool that needs one engineer full-time to babysit</td></tr>
+  </table>
+  <p>These pull against each other. More flexibility usually means more abstraction, which hurts simplicity. More performance often means caching or extra infrastructure, which adds cost and complexity. You can't maximize all four, so you must choose which ones matter <em>most right now</em>.</p>
+
+  <p><strong>Case study: product search.</strong> The shop has 20,000 products. Product asks for "search by name". Let's compare three options.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="Option A — Prisma contains (ILIKE)">
+    // Simplest: one line, no new infrastructure
+    return this.prisma.product.findMany({
+      where: { name: { contains: query, mode: 'insensitive' } },  // SQL: name ILIKE '%query%'
+      take: 20,
+    });
+    // ⚠️ '%...%' cannot use a normal B-tree index → full table scan.
+    // 20k rows: ~10 ms, fine. 5M rows: seconds.
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="Option B — PostgreSQL trigram index (same query, faster)">
+    -- One migration. ILIKE '%...%' can now use the GIN index.
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+    CREATE INDEX CONCURRENTLY "Product_name_trgm_idx" ON "Product" USING GIN ("name" gin_trgm_ops);
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="Option C — Elasticsearch / OpenSearch / Meilisearch">
+    New service to run, monitor and pay for.
+    Data must be synced from Postgres (events or a queue) → can be stale for a few seconds.
+    Gives typo tolerance, relevance ranking, facets, synonyms.
+  </script>
+  <table>
+    <tr><th></th><th>A: <code>contains</code></th><th>B: <code>pg_trgm</code></th><th>C: Search engine</th></tr>
+    <tr><td>Simplicity</td><td>✅✅✅</td><td>✅✅</td><td>❌ new system + sync</td></tr>
+    <tr><td>Flexibility</td><td>❌ substring only</td><td>✅ fuzzy similarity</td><td>✅✅✅ ranking, facets, typos</td></tr>
+    <tr><td>Performance at 20k rows</td><td>✅</td><td>✅✅</td><td>✅✅</td></tr>
+    <tr><td>Performance at 5M rows</td><td>❌</td><td>✅</td><td>✅✅</td></tr>
+    <tr><td>Cost</td><td>≈ 0</td><td>≈ 0 (one migration)</td><td>$$ + on-call + sync code</td></tr>
+  </table>
+  <p><strong>Decision:</strong> start with A (ship today), add B when the table grows or queries slow down (a 1-hour change, no API change), and only consider C if the business needs ranking and typo tolerance. Note the important trick: the <em>API contract</em> (<code>GET /products?search=...</code>) stays the same for all three, so we can upgrade later without breaking the frontend. Keeping a decision <em>reversible</em> is itself a trade-off you can choose.</p>
+
+  <p><strong>One-way vs two-way doors.</strong> Some decisions are easy to undo (a library for date formatting, an internal function shape). Decide those quickly. Others are very expensive to undo (the database engine, the public API shape, how money is stored, splitting into microservices). Slow down for those, involve more people, and write an ADR (see <a href="#documentation">Documentation</a>).</p>
+
+  <p><strong>Avoid the two classic extremes.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Over-engineering: "we might support 5 databases someday"
+    interface IRepository<T, K> { findOne(id: K): Promise<T | null>; /* ...20 methods */ }
+    class PrismaUserRepository implements IRepository<User, number> { /* wraps Prisma 1:1 */ }
+    class UserRepositoryFactory { /* chooses... the only implementation */ }
+    // 3 files, 0 real benefit today, every developer must learn the abstraction.
+
+    // ❌ Under-engineering: copy-pasted pricing logic in 4 controllers
+    //    "it's faster to write" — until the tax rule changes and you fix 3 of 4.
+
+    // ✅ Middle: the simplest design that handles KNOWN requirements cleanly,
+    //    with clear seams (a PricingService) where change is LIKELY.
+  </script>
+  <p>The principle is called <strong>YAGNI</strong> ("You Aren't Gonna Need It"): don't build for imagined futures. But don't confuse it with "no design": put clean boundaries where you have real evidence of change.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A common real trade-off: sending the order confirmation email <em>inside</em> the request, or via a queue (BullMQ + Redis).</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      // Option 1 — inline: simple, but the user waits for the SMTP server,
+      // and if the email provider is down, should the ORDER fail? Probably not.
+      const order = await this.createOrder(dto);
+      await this.mailer.sendOrderConfirmation(order);   // +300–2000 ms, can throw
+      return order;
+
+      // Option 2 — queue: fast response, automatic retries, survives provider outages.
+      // Cost: Redis to run, a worker process, "eventually sent" semantics, more to monitor.
+      const order = await this.createOrder(dto);
+      await this.emailQueue.add('order-confirmation', { orderId: order.id }, {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 10_000 },
+      });
+      return order;
+    </script>
+    <p>For an MVP with 50 orders a day, option 1 with a <code>try/catch</code> that logs failures may be the right call. When orders grow, or when emails become business-critical, the queue is worth its cost. A senior engineer can explain <em>both</em> sides and when the answer flips.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Choosing technology because it is popular or fun ("let's use Kafka") instead of because the problem needs it.</li>
+      <li>Only comparing performance and ignoring operating cost: who gets paged at 3 am when the new system breaks?</li>
+      <li>Presenting a decision with only benefits. If you can't name the downsides, you haven't understood the option.</li>
+      <li>Treating irreversible decisions as quick ones, and reversible decisions as week-long debates.</li>
+      <li>Optimizing for a scale you don't have ("we need microservices") while the real problem is shipping features.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The product list endpoint takes 400 ms. The team proposes: (a) add Redis caching, (b) add a database index, (c) move to a bigger database server. Compare them on the four dimensions and say which you would try first and why.</p>
+    <details>
+      <summary>Show answer</summary>
+      <table>
+        <tr><th></th><th>(a) Redis cache</th><th>(b) Index</th><th>(c) Bigger DB</th></tr>
+        <tr><td>Simplicity</td><td>❌ cache invalidation, new service</td><td>✅ one migration</td><td>✅ no code</td></tr>
+        <tr><td>Flexibility</td><td>⚠️ stale data risk on price/stock changes</td><td>✅ transparent</td><td>✅</td></tr>
+        <tr><td>Performance</td><td>✅✅ for repeated queries</td><td>✅✅ if the query is the cause</td><td>✅ maybe 2×</td></tr>
+        <tr><td>Cost</td><td>$ + ops</td><td>≈ 0</td><td>$$ every month</td></tr>
+      </table>
+      <p><strong>First, measure</strong> (<code>EXPLAIN ANALYZE</code>, query logs) to confirm where the 400 ms goes. If it's a sequential scan, (b) is cheapest and simplest and fixes the root cause. Consider (a) only if the query is already optimal and the same data is read very often. (c) treats the symptom and costs money forever.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Tell me about a technical trade-off you made.</summary>
+      <p>Use a structure: the context and constraints (team size, deadline, load), the options you considered, how they compared (simplicity, flexibility, performance, cost), what you chose, the downside you accepted, and what would make you change the decision. Interviewers want to hear that you saw the downsides, not that you picked the "right" tool.</p></details>
+    <details><summary>How do you avoid over-engineering?</summary>
+      <p>Design for known requirements, keep decisions reversible where possible, add abstractions only when there is a second real use case or a clear change pattern, and prefer boring, well-understood tools. Revisit the design when evidence (load, new requirements) appears.</p></details>
+    <details><summary>What is the difference between a one-way and a two-way door decision?</summary>
+      <p>A two-way door can be reversed cheaply (try it, roll back if wrong), so decide fast. A one-way door is costly or impossible to reverse (data model, public API, core infrastructure), so it deserves more analysis, more reviewers and written documentation.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> There is no "best", only "best for this context". Name the options, compare simplicity, flexibility, performance and cost, state the downside you accept, and keep the decision reversible when you can.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="code-ownership">
+  <div class="topic-head"><span class="num">2</span><h2>Code ownership</h2></div>
+  <p class="tagline">understand the whole feature, not only your file</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A plumber who replaces one pipe but never checks whether the water now leaks into the kitchen hasn't really fixed anything. Code ownership means you care about the <strong>whole result</strong>, not just "my file compiles and my ticket is closed". You follow the data from the button the user clicks, through the API, the database, emails, reports and the admin panel. And you stay responsible after the merge: you watch it go to production and check that it actually works for users.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>"Done" means more than "merged".</strong></p>
+  <table>
+    <tr><th>Junior "done"</th><th>Owner "done"</th></tr>
+    <tr><td>The endpoint returns 200 on my machine</td><td>Edge cases handled, tests cover failure paths</td></tr>
+    <tr><td>My file is changed</td><td>Every place that reads or writes this data still behaves correctly</td></tr>
+    <tr><td>PR merged</td><td>Deployed, verified in production, dashboards/errors checked after release</td></tr>
+    <tr><td>Ticket closed</td><td>Docs, <code>.env.example</code>, API consumers and support team updated</td></tr>
+  </table>
+
+  <p><strong>Case study: a "small" change that broke invoices.</strong> Ticket: <em>"Add a 10% discount code at checkout."</em> A developer changes only the order total:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts (the PR)">
+    const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0); // in cents
+    const discount = coupon ? Math.round(subtotal * coupon.percent / 100) : 0;
+    const total = subtotal - discount;                 // ✅ checkout shows the right price
+
+    await tx.order.create({ data: { userId, total, couponId: coupon?.id, items: { create: items } } });
+  </script>
+  <p>Checkout works. Two weeks later: the PDF invoice shows the <em>undiscounted</em> price (it recalculates from items), the accounting CSV export doesn't have a discount column, refunds give back the full item price (more than the customer paid!), and one coupon was used 4,000 times because nothing limited it. Each of those lives in a different file the developer never opened.</p>
+
+  <p><strong>How an owner approaches the same ticket: trace the data.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    # Who else reads or computes order money?
+    rg -n "total|unitPrice|subtotal" src/ --type ts
+    rg -n "order\.(total|items)" src/
+    # Who consumes the Order model?
+    rg -ln "prisma\.order\." src/
+    # What else is triggered when an order is created?
+    rg -n "OrderCreated|order\.created|'order-confirmation'" src/
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="feature map (written before coding)">
+    Checkout UI ─► POST /orders ─► OrdersService.create ─► Order.total (DB)
+                                        │
+                                        ├─► emits OrderCreated ─► email confirmation (shows total)
+                                        │                    └─► analytics event (revenue!)
+                                        ├─► InvoiceService.render (recalculates from items ❗)
+                                        ├─► RefundsService (refunds per item price ❗)
+                                        ├─► Admin CSV export (no discount column ❗)
+                                        └─► Coupon usage (needs limits + unique per user ❗)
+  </script>
+  <p>Now the plan includes: store <code>subtotal</code>, <code>discountAmount</code> and <code>total</code> on the order (one source of truth); make invoice and refunds use stored amounts; add <code>maxRedemptions</code> and a unique (<code>couponId</code>, <code>userId</code>) constraint; add the column to the export; tell analytics that revenue is now <code>total</code>, not the sum of items. Twenty minutes of tracing saved two weeks of production bugs.</p>
+
+  <p><strong>Ask questions before writing code.</strong> Owners clarify the requirement with product/QA: Can coupons stack? Do they apply to shipping? What happens on partial refund? What if the coupon expires while the user is on the checkout page? Each answer is a test case.</p>
+
+  <p><strong>Ownership after deploy.</strong></p>
+  <script type="text/x-code" data-lang="plaintext" data-title="post-release checklist (15 minutes)">
+    [ ] Deployed version = my commit (GET /health shows the SHA)
+    [ ] Tried the real flow in production with a test account
+    [ ] Sentry: no new issues tagged with this release
+    [ ] Error rate / latency dashboards unchanged
+    [ ] Told support/product it's live (and how to use it)
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Nest's modular structure helps you find "who depends on what". Look at a module's <code>exports</code> and search who imports it. Also, design so that one concept has one owner in the code: a single method computes order amounts, and everyone else uses it.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="pricing/pricing.service.ts">
+      export interface OrderAmounts { subtotal: number; discount: number; total: number } // cents
+
+      @Injectable()
+      export class PricingService {
+        // ✅ The ONLY place where order money is calculated.
+        // Orders, invoices, refunds and exports all use these stored numbers.
+        calculate(items: { unitPrice: number; quantity: number }[], coupon?: { percent: number }): OrderAmounts {
+          const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+          const discount = coupon ? Math.round((subtotal * coupon.percent) / 100) : 0;
+          return { subtotal, discount, total: subtotal - discount };
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="bash">
+      # Which modules depend on OrdersModule / PricingModule?
+      rg -n "imports:.*(OrdersModule|PricingModule)" src/
+      rg -n "PricingService" src/ --type ts
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>"That's not my file." Bugs don't respect file or team boundaries; users experience the whole feature.</li>
+      <li>Closing the ticket at merge and never checking production.</li>
+      <li>Duplicating business logic (prices, permissions) in several places, so a change has to be remembered everywhere.</li>
+      <li>Not asking clarifying questions and implementing a guess of the requirement.</li>
+      <li>Owning without communicating: changing an API field silently and breaking the mobile app.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Ticket: <em>"Let users change their email address."</em> Before writing code, list every part of the system you would check or change.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>Validation &amp; uniqueness:</strong> case-insensitive unique email (store lowercase or use <code>citext</code>), race between two users choosing the same email (rely on the DB unique constraint, catch Prisma <code>P2002</code> → 409).</li>
+        <li><strong>Verification:</strong> send a confirmation link to the <em>new</em> address; only switch after confirmation. Notify the <em>old</em> address (security: account takeover).</li>
+        <li><strong>Auth:</strong> require the current password; do JWTs or sessions contain the email? Revoke refresh tokens if needed. Does login use email as the username?</li>
+        <li><strong>Other systems:</strong> payment provider customer email (e.g. Stripe), newsletter/CRM sync, invoices (historical invoices keep the old email).</li>
+        <li><strong>Audit:</strong> log the change (who, when, from which IP) without logging tokens.</li>
+        <li><strong>Frontend / support:</strong> UI messages, support documentation, rate limit on the endpoint.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does "ownership" mean to you as an engineer?</summary>
+      <p>Being responsible for outcomes, not just code: understanding the requirement and the whole flow, considering every consumer of the data, testing failure paths, shipping it, verifying it in production, and fixing or following up when something goes wrong, even outside my original scope.</p></details>
+    <details><summary>How do you get familiar with an unknown part of the codebase quickly?</summary>
+      <p>Follow one real request end-to-end: start at the route, read the controller, service, Prisma queries and events it triggers. Search for usages of the key models and fields, read the tests, check recent PRs and <code>git log</code> for that area, and ask the people who changed it last. Draw a small map as you go.</p></details>
+    <details><summary>Your feature works but you notice a bug in a neighboring module. What do you do?</summary>
+      <p>I don't ignore it. If it's small and clearly related, I fix it in a separate PR. If it's bigger or another team owns it, I create a ticket with reproduction steps and tell the owner directly. If it's a serious production risk, I raise it immediately.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Map the whole flow before coding, keep one source of truth for each business rule, and your job ends when users get a working feature in production, not when the PR is merged.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="technical-debt">
+  <div class="topic-head"><span class="num">3</span><h2>Technical debt</h2></div>
+  <p class="tagline">identify and prioritize debt</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Technical debt works like a credit card. Taking a shortcut (no tests, a quick hack, copy-paste) lets you "buy" a feature today. But you pay <strong>interest</strong>: every future change in that area is slower and riskier. A little debt taken on purpose to hit an important deadline can be smart. Debt you don't know about, or never pay back, grows until the team spends all its time fighting the code instead of building features. The senior skill is not "zero debt"; it's knowing <em>which</em> debt is expensive and paying that first.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Kinds of debt</strong> (based on Martin Fowler's "debt quadrant"):</p>
+  <table>
+    <tr><th></th><th>Reckless</th><th>Prudent</th></tr>
+    <tr><td>Deliberate</td><td>"We don't have time for tests." (forever)</td><td>"We ship without bulk import now and do it properly next sprint." (ticket created)</td></tr>
+    <tr><td>Inadvertent</td><td>"What's a transaction?"</td><td>"Now that we understand the domain, we see a better design."</td></tr>
+  </table>
+
+  <p><strong>Identifying debt.</strong> Look for <em>signals</em>, not opinions like "this code is ugly":</p>
+  <ul>
+    <li>Changes in one area are always slow or always cause bugs.</li>
+    <li>People avoid touching a file ("don't touch <code>OrdersService</code>, it breaks").</li>
+    <li>The same bug comes back, or the same logic exists in several places.</li>
+    <li>Outdated dependencies with known vulnerabilities, or an unsupported Node version.</li>
+    <li>Missing tests on critical paths (payments, auth), no transactions on multi-step writes, money stored as <code>Float</code>.</li>
+  </ul>
+  <p>Use data: files that are both <strong>complex</strong> and <strong>changed often</strong> ("hotspots") are where debt costs the most interest. Debt in code nobody touches costs almost nothing.</p>
+  <script type="text/x-code" data-lang="bash">
+    # Most frequently changed files in the last 6 months
+    git log --since="6 months ago" --name-only --pretty=format: -- src/ \
+      | grep '\.ts$' | sort | uniq -c | sort -rn | head -10
+
+    #  87 src/orders/orders.service.ts      ← changed constantly
+    #  41 src/auth/auth.service.ts
+    #  12 src/products/products.service.ts
+
+    # Size as a rough complexity signal
+    wc -l src/orders/orders.service.ts      # 1,840 lines → hotspot = high change × high complexity
+
+    # Which commits were bug fixes in this file?
+    git log --oneline --grep="^fix" -- src/orders/orders.service.ts | wc -l
+  </script>
+
+  <p><strong>Prioritizing.</strong> Write each debt item as <em>problem → impact → fix → cost</em>, then score it. A simple formula many teams use: <strong>priority ≈ (impact × frequency) / effort</strong>, with risk as an override (security and data-loss issues jump the queue).</p>
+  <table>
+    <tr><th>Debt item</th><th>Impact</th><th>How often it hurts</th><th>Effort</th><th>Priority</th></tr>
+    <tr><td>Order creation without a transaction (stock can go wrong)</td><td>High (data)</td><td>Every failure</td><td>S</td><td>🔴 Now</td></tr>
+    <tr><td><code>OrdersService</code> 1,800 lines, every feature touches it</td><td>Medium</td><td>Weekly</td><td>L (in steps)</td><td>🟠 Plan, do gradually</td></tr>
+    <tr><td>Prices stored as <code>Float</code></td><td>High (money)</td><td>Rounding issues monthly</td><td>M (migration)</td><td>🟠 Next quarter</td></tr>
+    <tr><td>Old admin module, ugly but stable, rarely changed</td><td>Low</td><td>Rarely</td><td>L</td><td>🟢 Leave it</td></tr>
+  </table>
+
+  <p><strong>A debt register entry</strong> makes debt visible and discussable with product managers in their language (time, money, risk):</p>
+  <script type="text/x-code" data-lang="markdown" data-title="docs/tech-debt/TD-014-order-transaction.md">
+    # TD-014: Order creation is not atomic
+
+    **Problem:** OrdersService.create() reduces stock, creates the order and the payment intent
+    in separate queries without a transaction.
+    **Impact:** When payment intent creation fails (~0.5% of orders), stock is reduced but no
+    order exists. Support fixes stock by hand: ~3 hours/week. Risk of overselling.
+    **Proposed fix:** wrap DB writes in prisma.$transaction; move the payment call after commit
+    with an idempotency key. Add e2e test for the failure path.
+    **Effort:** 2–3 days. **Owner:** backend team. **Priority:** High (data integrity).
+  </script>
+
+  <p><strong>Paying it back.</strong> Three strategies that work in practice:</p>
+  <ul>
+    <li><strong>Boy Scout rule:</strong> leave the code a little cleaner than you found it, <em>in the area you are already changing</em>.</li>
+    <li><strong>Budget:</strong> reserve ~10–20% of each sprint for debt from the register.</li>
+    <li><strong>Attach debt to features:</strong> "Adding refunds will take 5 days, or 3 days after we fix TD-014 (2 days), and future features also get faster." This makes the business value visible.</li>
+  </ul>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Make deliberate debt traceable in code, and let tools stop new debt from sneaking in:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      // ❌ Untraceable: nobody knows why, when, or who will fix it
+      // TODO: fix this later
+      const order = await this.prisma.order.create({ data: dto as any });
+
+      // ✅ Traceable debt: reason + ticket
+      // TECH-DEBT(TD-021): DTO and Prisma input types diverged after the coupon feature.
+      // Cast is safe because ValidationPipe whitelists fields. Remove after OrderMapper lands.
+      const order = await this.prisma.order.create({ data: dto as Prisma.OrderUncheckedCreateInput });
+    </script>
+    <script type="text/x-code" data-lang="javascript" data-title="eslint.config.mjs (excerpt)">
+      export default [
+        // ...
+        {
+          rules: {
+            '@typescript-eslint/no-explicit-any': 'error',  // stop new 'any' from being added
+            'max-lines': ['warn', { max: 400, skipComments: true }],
+            'no-warning-comments': ['warn', { terms: ['todo', 'fixme'], location: 'start' }],
+          },
+        },
+      ];
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Calling every piece of code you dislike "tech debt". Debt is about cost to the business, not taste.</li>
+      <li>Asking for a "refactoring sprint" with no explanation of impact. Product says no, and the debt stays.</li>
+      <li>Rewriting a stable module nobody touches, while the painful hotspot stays as it is.</li>
+      <li>Taking deliberate shortcuts without writing them down, so "temporary" becomes permanent.</li>
+      <li>Big-bang rewrites ("we'll rebuild it from scratch in 3 months") that take 12 and still miss features.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You have time for <strong>two</strong> items this sprint. Choose and justify: (1) upgrade NestJS 9 → 11 (Node 16 is end-of-life and has known CVEs), (2) rename confusing variables in <code>reports.service.ts</code> (changed twice a year), (3) add tests to the payment webhook handler (changed monthly, caused 2 incidents), (4) replace Moment.js with date-fns across the app, (5) split a 2,000-line <code>UsersService</code> that every sprint touches.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p><strong>Pick (3) and (1).</strong></p>
+      <ul>
+        <li><strong>(3) Payment webhook tests:</strong> high impact (money, incidents already happened), changed often, small effort. Clear win.</li>
+        <li><strong>(1) Runtime upgrade:</strong> security risk on an end-of-life runtime overrides normal scoring; the longer you wait, the bigger the jump.</li>
+        <li>(5) is important but large. Start it gradually with the Boy Scout rule (extract one service each time a feature touches it) instead of a single sprint.</li>
+        <li>(4) works today; do it opportunistically. (2) is rarely touched: low interest, low priority.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is technical debt?</summary>
+      <p>The future cost of choosing a quicker or easier solution now instead of a better one. Like financial debt, it has "interest": extra time and risk in every future change to that area. It can be deliberate (a conscious trade-off) or accidental (lack of knowledge, changing requirements).</p></details>
+    <details><summary>How do you convince a product manager to prioritize technical debt?</summary>
+      <p>Translate it into business terms: hours lost per week, incident risk, slower delivery of upcoming features, security exposure. Propose a concrete, scoped fix with an estimate, ideally linked to an upcoming feature it will speed up, rather than a vague "cleanup sprint".</p></details>
+    <details><summary>How do you decide which debt to pay first?</summary>
+      <p>By impact × frequency relative to effort: debt in hotspots (complex and frequently changed code) and debt that risks security or data integrity comes first. Stable code that rarely changes can usually wait, even if it's ugly.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Debt is a tool, not a sin. Make it visible, measure its interest (hotspots, incidents, hours lost), pay the expensive debt first, and explain it in business terms.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="refactoring">
+  <div class="topic-head"><span class="num">4</span><h2>Refactoring</h2></div>
+  <p class="tagline">improve code without changing behavior</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Refactoring is tidying a messy kitchen <em>while still serving meals</em>. You move one pot at a time to a better shelf, and after every move the kitchen still works. You don't empty the whole kitchen onto the floor. The key rule: <strong>the behavior does not change</strong>. Same inputs, same outputs, same side effects. Only the structure gets better, so the <em>next</em> change is easier. If you change behavior at the same time, it's not refactoring anymore, and when a bug appears, nobody can tell whether it came from the cleanup or from the new behavior.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The safe refactoring loop.</strong></p>
+  <ol>
+    <li><strong>Lock the behavior with tests.</strong> If there are no tests, write <em>characterization tests</em>: tests that record what the code does today (even if it looks odd).</li>
+    <li><strong>Make one small change</strong> (rename, extract a function, move a method).</li>
+    <li><strong>Run the tests.</strong> Green → commit. Red → undo, smaller step.</li>
+    <li>Repeat. Never mix refactoring and new features in the same commit (and ideally not in the same PR).</li>
+  </ol>
+
+  <p><strong>Before: a typical "grown over time" function.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="shipping.ts (before)">
+    export function calcShipping(order: any) {
+      let s = 0;
+      if (order) {
+        if (order.items && order.items.length > 0) {
+          if (order.country === 'VN') {
+            if (order.total >= 500000) {
+              s = 0;
+            } else {
+              s = 30000;
+            }
+          } else {
+            if (order.express) {
+              s = 25 * 24000;
+            } else {
+              s = 12 * 24000;
+            }
+            if (order.items.length > 5) {
+              s = s + (order.items.length - 5) * 2 * 24000;
+            }
+          }
+        }
+      }
+      return s;
+    }
+  </script>
+  <p>Problems: <code>any</code>, deep nesting, magic numbers (<code>24000</code> is an exchange rate, <code>500000</code> is a free-shipping threshold), unclear names (<code>s</code>). Adding a new rule here is scary.</p>
+
+  <p><strong>Step 1: characterization tests</strong> that record current behavior, including weird cases:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="shipping.spec.ts">
+    import { calcShipping } from './shipping';
+
+    describe('calcShipping (characterization)', () => {
+      it('returns 0 for no order / no items', () => {
+        expect(calcShipping(null)).toBe(0);
+        expect(calcShipping({ items: [] })).toBe(0);
+      });
+      it('VN: free from 500k, else 30k', () => {
+        expect(calcShipping({ country: 'VN', total: 500000, items: [{}] })).toBe(0);
+        expect(calcShipping({ country: 'VN', total: 499999, items: [{}] })).toBe(30000);
+      });
+      it('international: standard/express + surcharge above 5 items', () => {
+        expect(calcShipping({ country: 'US', items: [{}] })).toBe(288000);
+        expect(calcShipping({ country: 'US', express: true, items: [{}] })).toBe(600000);
+        expect(calcShipping({ country: 'US', items: Array(7).fill({}) })).toBe(288000 + 2 * 48000);
+      });
+    });
+  </script>
+
+  <p><strong>Step 2+: small refactorings</strong>, each one followed by a green test run and a commit:</p>
+  <ul>
+    <li><em>Replace magic numbers with named constants.</em></li>
+    <li><em>Replace nested conditionals with guard clauses</em> (return early).</li>
+    <li><em>Extract function</em> for each rule.</li>
+    <li><em>Add types</em> instead of <code>any</code>.</li>
+  </ul>
+  <script type="text/x-code" data-lang="typescript" data-title="shipping.ts (after)">
+    const USD_TO_VND = 24_000;
+    const VN_FREE_SHIPPING_THRESHOLD = 500_000;
+    const VN_FLAT_FEE = 30_000;
+    const INTL_STANDARD_USD = 12;
+    const INTL_EXPRESS_USD = 25;
+    const INTL_FREE_ITEMS = 5;
+    const INTL_EXTRA_ITEM_USD = 2;
+
+    export interface ShippableOrder {
+      country?: string;
+      total?: number;      // VND
+      express?: boolean;
+      items?: unknown[];
+    }
+
+    export function calcShipping(order: ShippableOrder | null): number {
+      const itemCount = order?.items?.length ?? 0;
+      if (!order || itemCount === 0) return 0;                       // guard clause
+
+      return order.country === 'VN'
+        ? domesticShipping(order.total ?? 0)
+        : internationalShipping(itemCount, order.express ?? false);
+    }
+
+    function domesticShipping(total: number): number {
+      return total >= VN_FREE_SHIPPING_THRESHOLD ? 0 : VN_FLAT_FEE;
+    }
+
+    function internationalShipping(itemCount: number, express: boolean): number {
+      const baseUsd = express ? INTL_EXPRESS_USD : INTL_STANDARD_USD;
+      const extraItems = Math.max(0, itemCount - INTL_FREE_ITEMS);
+      return (baseUsd + extraItems * INTL_EXTRA_ITEM_USD) * USD_TO_VND;
+    }
+  </script>
+  <p>The tests still pass without any change, which is the proof that behavior is identical. Now a new rule ("express is free for VIP customers") is a one-line, low-risk change in <code>internationalShipping</code>.</p>
+
+  <p><strong>Common refactorings, with names</strong> (from Martin Fowler's catalog, useful vocabulary in reviews):</p>
+  <table>
+    <tr><th>Refactoring</th><th>When</th></tr>
+    <tr><td>Rename variable/function</td><td>Name doesn't explain the purpose (<code>s</code>, <code>data2</code>, <code>handle()</code>)</td></tr>
+    <tr><td>Extract function / class</td><td>A block needs a comment to explain it, or a class has several responsibilities</td></tr>
+    <tr><td>Guard clauses</td><td>Deeply nested <code>if</code>s</td></tr>
+    <tr><td>Introduce parameter object</td><td>Many parameters travel together (<code>page, limit, sort, order</code>)</td></tr>
+    <tr><td>Replace conditional with map/polymorphism</td><td>Long <code>switch</code> on a type that keeps growing</td></tr>
+    <tr><td>Move function</td><td>Logic lives in the wrong layer (business rules in a controller)</td></tr>
+  </table>
+
+  <p><strong>Large refactors: the strangler fig pattern.</strong> For a big legacy module, don't rewrite it at once. Build the new version next to the old one, route a small part of the traffic or one use case to the new code, and grow it until the old code can be deleted. Each step is deployable and reversible.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A frequent refactor is splitting a "god service". Nest's DI makes it safe: extract a new provider, inject it into the old service, and move one method at a time. The controller and its e2e tests don't change, so they guard the behavior.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts (step 1: delegate, don't change the public API)">
+      @Injectable()
+      export class OrdersService {
+        constructor(
+          private readonly prisma: PrismaService,
+          private readonly pricing: PricingService,      // ✅ new, extracted provider
+        ) {}
+
+        // Public method keeps its exact signature → controller and tests untouched
+        async quote(dto: QuoteDto) {
+          const products = await this.prisma.product.findMany({
+            where: { id: { in: dto.items.map((i) => i.productId) } },
+          });
+          return this.pricing.calculate(
+            dto.items.map((i) => ({
+              unitPrice: products.find((p) => p.id === i.productId)!.price,
+              quantity: i.quantity,
+            })),
+          );
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="bash">
+      git commit -m "refactor(orders): extract PricingService (no behavior change)"
+      # Separate PR afterwards: "feat(pricing): support coupons"
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Refactoring without tests and "checking manually". You will miss an edge case.</li>
+      <li>Mixing refactoring with a behavior change in one PR. Reviewers can't tell which diff lines are supposed to change behavior.</li>
+      <li>"Fixing" odd behavior during a refactor. That odd behavior may be something a client depends on. Record it, then change it on purpose in a separate PR.</li>
+      <li>Big-bang rewrites instead of small, continuous steps.</li>
+      <li>Refactoring code nobody needs to change, just for taste, while real hotspots stay messy.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Refactor this function using guard clauses and a lookup map. Behavior must stay identical.</p>
+    <script type="text/x-code" data-lang="typescript">
+      function statusLabel(order: { status: string; paidAt?: Date } | undefined): string {
+        if (order) {
+          if (order.status === 'PENDING') {
+            return 'Waiting for payment';
+          } else if (order.status === 'PAID') {
+            if (order.paidAt) return 'Paid';
+            else return 'Paid (date unknown)';
+          } else if (order.status === 'SHIPPED') {
+            return 'On the way';
+          } else {
+            return 'Unknown';
+          }
+        } else {
+          return 'Unknown';
+        }
+      }
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // A Map (not a plain object) so a status like "toString" can't hit Object.prototype
+        const LABELS = new Map<string, string>([
+          ['PENDING', 'Waiting for payment'],
+          ['SHIPPED', 'On the way'],
+        ]);
+
+        function statusLabel(order: { status: string; paidAt?: Date } | undefined): string {
+          if (!order) return 'Unknown';                                         // guard
+          if (order.status === 'PAID') return order.paidAt ? 'Paid' : 'Paid (date unknown)';
+          return LABELS.get(order.status) ?? 'Unknown';
+        }
+      </script>
+      <p>Before refactoring, write tests for: <code>undefined</code>, each status, <code>PAID</code> with and without <code>paidAt</code>, and an unknown status. They must pass before and after.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is refactoring, and how is it different from rewriting?</summary>
+      <p>Refactoring is a series of small, behavior-preserving changes to improve structure, each verified by tests. Rewriting replaces the code with a new implementation, usually changing behavior along the way and carrying much more risk.</p></details>
+    <details><summary>How do you refactor code that has no tests?</summary>
+      <p>First add characterization tests around the part you'll change, recording current behavior (high-level e2e or integration tests are often easiest). Then refactor in small steps, running the tests after each step. Use safe automated IDE refactorings (rename, extract) where possible.</p></details>
+    <details><summary>When should you <em>not</em> refactor?</summary>
+      <p>When the code is stable and rarely changed, when you're under a critical deadline for an unrelated change (note it as debt instead), when there's no way to verify behavior yet, or when the code is about to be deleted.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Tests first, tiny steps, run tests after each step, commit often, and never mix refactoring with behavior changes.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="documentation">
+  <div class="topic-head"><span class="num">5</span><h2>Documentation</h2></div>
+  <p class="tagline">document important decisions and complex behavior</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Code tells you <em>what</em> the system does. It almost never tells you <em>why</em> it does it that way, what alternatives were rejected, or how to run it. That knowledge lives in people's heads, and people go on holiday, change teams or forget. Documentation is a letter to your future teammates (and to future you). The goal is not to document everything. It's to document the things that are <strong>expensive to rediscover</strong>: decisions, tricky business rules, setup steps and what to do when things break.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What to document, and where.</strong></p>
+  <table>
+    <tr><th>Type</th><th>Answers</th><th>Where</th></tr>
+    <tr><td>README</td><td>What is this? How do I run it, test it, deploy it?</td><td><code>README.md</code> in the repo</td></tr>
+    <tr><td>ADR (Architecture Decision Record)</td><td>Why did we choose X over Y?</td><td><code>docs/adr/0007-*.md</code></td></tr>
+    <tr><td>API docs</td><td>Which endpoints, inputs, outputs, errors?</td><td>Swagger/OpenAPI generated from code</td></tr>
+    <tr><td>Code comments</td><td>Why is this tricky line written like this?</td><td>Next to the code</td></tr>
+    <tr><td>Runbook</td><td>Alert X fired: what do I check and do?</td><td><code>docs/runbooks/</code>, linked from the alert</td></tr>
+  </table>
+  <p>Keep docs <strong>in the repo</strong>, next to the code, and change them in the same PR as the code. Docs in a separate wiki go out of date because nobody reviews them.</p>
+
+  <p><strong>Comments: explain why, not what.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Repeats the code — adds nothing, and will become wrong when the code changes
+    // increment retries by one
+    retries++;
+
+    // ❌ Explains WHAT a confusing block does — better to rename/extract instead
+    // check if user can edit
+    if (u.r === 2 || (u.id === p.aid && !p.l)) { ... }
+
+    // ✅ Rewritten so the code explains itself
+    const canEdit = user.role === Role.EDITOR || (user.id === post.authorId && !post.locked);
+
+    // ✅ Explains WHY — information the code cannot express
+    // The payment provider sends webhooks "at least once" and sometimes out of order.
+    // We ignore events older than the stored one instead of failing, otherwise the
+    // provider retries for 3 days and floods the logs. See ADR-0011.
+    if (event.created <= payment.lastEventAt) return;
+  </script>
+
+  <p><strong>Architecture Decision Records (ADRs).</strong> A short document (one page) for each significant decision, numbered and never deleted. If a decision changes, a new ADR "supersedes" the old one. This gives a history of <em>why</em> the system looks the way it does.</p>
+  <script type="text/x-code" data-lang="markdown" data-title="docs/adr/0007-use-bullmq-for-background-jobs.md">
+    # ADR-0007: Use BullMQ (Redis) for background jobs
+
+    - Status: Accepted
+    - Date: 2026-09-12
+    - Deciders: backend team (An, Binh), reviewed by platform (Chi)
+
+    ## Context
+    Order confirmation emails and invoice PDFs are generated inside the HTTP request.
+    p95 latency of POST /orders is 1.8 s, and when the email provider is down, orders fail.
+    We need retries and to move slow work out of the request. Volume: ~5k orders/day, growing 20%/quarter.
+
+    ## Options considered
+    1. **BullMQ + Redis** — mature Nest integration (@nestjs/bullmq), retries, delays, dashboard.
+       Needs Redis (we already run it for rate limiting).
+    2. **PostgreSQL-based queue (pg-boss)** — no new infra, transactional enqueue.
+       Smaller ecosystem; adds load on the primary DB.
+    3. **Cloud queue (AWS SQS)** — fully managed, scales infinitely.
+       Vendor lock-in, harder local development, we are not on AWS yet.
+
+    ## Decision
+    Option 1, BullMQ. Redis already exists and is monitored; the team knows it;
+    Nest support is first-class.
+
+    ## Consequences
+    + POST /orders no longer waits for email/PDF (expected p95 < 300 ms)
+    + Failed jobs retry with exponential backoff
+    − Enqueue is not in the same transaction as the order → we use the outbox pattern (ADR-0008)
+    − Redis becomes critical: enable persistence (AOF) and add memory alerts
+    Revisit if: volume exceeds ~1M jobs/day or we move to a cloud provider's managed queue.
+  </script>
+
+  <p><strong>A README that actually helps.</strong> Test: can a new developer go from <code>git clone</code> to a running app with passing tests in under 30 minutes, without asking anyone?</p>
+  <script type="text/x-code" data-lang="markdown" data-title="README.md (skeleton)">
+    # shop-api
+    NestJS + Prisma + PostgreSQL backend for the Shop web and mobile apps.
+
+    ## Quick start
+    cp .env.example .env
+    docker compose up -d db
+    npm ci
+    npx prisma migrate dev
+    npm run start:dev          # http://localhost:3000/docs
+
+    ## Tests
+    npm test                   # unit
+    npm run test:e2e           # needs the db container
+
+    ## Architecture
+    See docs/architecture.md and decisions in docs/adr/.
+
+    ## Deploying
+    Merges to main deploy to staging automatically; production needs approval in GitHub Actions.
+    Runbooks: docs/runbooks/
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>API documentation should be <em>generated from the code</em>, so it can't drift. With <code>@nestjs/swagger</code>, document the behavior that types can't show: error cases and business rules.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @ApiTags('orders')
+      @ApiBearerAuth()
+      @Controller('orders')
+      export class OrdersController {
+        constructor(private readonly ordersService: OrdersService) {}
+
+        @Post(':id/cancel')
+        @ApiOperation({
+          summary: 'Cancel an order',
+          description: 'Only PENDING orders owned by the caller can be cancelled. Reserved stock is released.',
+        })
+        @ApiOkResponse({ type: OrderResponseDto })
+        @ApiNotFoundResponse({ description: 'Order does not exist or belongs to another user' })
+        @ApiConflictResponse({ description: 'Order is already paid, shipped or cancelled' })
+        cancel(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtPayload) {
+          return this.ordersService.cancel(id, user.sub);
+        }
+      }
+    </script>
+    <p>Note that the "not found" description hides whether the order exists for another user. That's a deliberate security choice worth documenting, so nobody "fixes" it to 403 later.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Comments that describe <em>what</em> the code does, and then become lies when the code changes.</li>
+      <li>Docs in a wiki nobody updates. Put them in the repo and review them in PRs.</li>
+      <li>Documenting nothing about decisions, so the team re-debates the same question every six months.</li>
+      <li>Writing huge documents nobody reads. One clear page beats twenty vague ones.</li>
+      <li>A README that stopped working three Node versions ago. Test it with every new team member.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your team decided to store money as integer cents (<code>Int</code>) instead of <code>Decimal</code>. Write a short ADR (Context, Options, Decision, Consequences).</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="markdown">
+        # ADR-0012: Store money as integer minor units (cents)
+
+        - Status: Accepted · Date: 2026-10-05
+
+        ## Context
+        Prices were stored as Float, causing rounding errors in totals (e.g. 0.1 + 0.2).
+        We sell in USD and VND only; no fractional cents needed.
+
+        ## Options
+        1. Prisma Decimal (PostgreSQL numeric) — exact, but Decimal.js objects in TS
+           (no + or *, JSON serializes as string), easy to misuse.
+        2. Integer cents (Int/BigInt) — exact, plain numbers, fast; must convert for display.
+
+        ## Decision
+        Option 2. All amounts are integers in the currency's minor unit, with a `currency` column.
+        Names end with `Cents` / `Minor` (priceCents) to make the unit obvious.
+
+        ## Consequences
+        + Simple arithmetic, no float errors, easy JSON
+        − Frontend must format (divide by 100 for USD, 1 for VND)
+        − Migration needed: multiply existing values by 100 and round (expand/contract)
+        − Percent discounts need explicit rounding rules (Math.round, documented in PricingService)
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is an ADR and why use one?</summary>
+      <p>An Architecture Decision Record is a short document capturing one significant decision: context, options, the decision and its consequences. It preserves the reasoning so future developers understand why the system is built this way and don't repeat old debates or undo deliberate choices.</p></details>
+    <details><summary>What makes a good code comment?</summary>
+      <p>It explains intent, reasons, constraints or non-obvious consequences ("why"), which the code can't express. If a comment explains "what" the code does, it's usually better to improve names or extract a function.</p></details>
+    <details><summary>How do you keep documentation up to date?</summary>
+      <p>Keep it in the repo next to the code, update it in the same PR as the behavior change (add a checkbox to the PR template), generate API docs from code, and test the README during onboarding.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Document what is expensive to rediscover: decisions (ADRs), the why behind tricky code, how to run the project, and what to do when it breaks. Keep docs in the repo and update them with the code.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="mentoring">
+  <div class="topic-head"><span class="num">6</span><h2>Mentoring</h2></div>
+  <p class="tagline">explain concepts clearly to junior developers</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Mentoring is like teaching someone to ride a bike. You don't ride it for them, and you don't hand them a physics textbook. You explain just enough, hold the seat at first, then let go a little more each time, and you stay close when they fall. A senior engineer's impact is measured not only by their own code, but by how much better the people around them become. If you are the only person who understands the payment module, that's not job security, that's a risk for the team.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Principles for clear explanations.</strong></p>
+  <ul>
+    <li><strong>Start from what they know.</strong> Ask first: "Have you used Express before?" Then connect the new idea to it.</li>
+    <li><strong>Why before how.</strong> Explain the problem a concept solves before its syntax.</li>
+    <li><strong>One concept at a time</strong>, with a concrete example from <em>your</em> codebase.</li>
+    <li><strong>Check understanding</strong> by asking them to explain it back or apply it, not by asking "is that clear?" (everyone says yes).</li>
+  </ul>
+
+  <p><strong>Example: explaining Dependency Injection.</strong></p>
+  <script type="text/x-code" data-lang="plaintext" data-title="❌ unhelpful explanation">
+    "DI is an implementation of Inversion of Control where the IoC container resolves
+     the provider's dependency graph via constructor-based injection tokens."
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="✅ helpful explanation">
+    1. Problem first: "Imagine OrdersService creates its own PrismaService and EmailService
+       with `new`. How would you test it without sending real emails?" (let them think)
+    2. Analogy: "A restaurant kitchen doesn't build its own oven. The oven is delivered and
+       installed. The chef just uses it. Nest is the delivery company."
+    3. Show it in our code (below), then:
+    4. Let them do it: "Add a fake EmailService in this test and check it was called."
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="the code you show">
+    // ❌ The class builds its own dependencies → impossible to replace in tests
+    export class OrdersService {
+      private mailer = new MailerService();         // always the real one
+    }
+
+    // ✅ The class ASKS for dependencies → Nest provides them, tests can provide fakes
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly mailer: MailerService) {}
+    }
+
+    // In a test:
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: MailerService, useValue: { sendOrderConfirmation: jest.fn() } }, // fake
+      ],
+    }).compile();
+  </script>
+
+  <p><strong>Ask, don't tell (most of the time).</strong> When a junior is stuck, guiding questions build skill; giving the answer builds dependency. Balance it: if they've been stuck for hours or production is down, just help directly.</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="a debugging conversation">
+    Junior: "My endpoint returns 500 and I don't know why."
+    ❌ Senior: "Oh, you forgot await on line 42." (fixed, nothing learned)
+    ✅ Senior: "What does the log say?" → "Cannot read properties of undefined (reading 'id')"
+              "Which variable is undefined on that line?" → "user"
+              "Where does user come from?" → "findUnique... oh, it's a Promise, I forgot await."
+              "Nice. How could we catch this automatically next time?"
+              → "The ESLint rule @typescript-eslint/no-floating-promises!"
+  </script>
+
+  <p><strong>Teaching through code review.</strong> Reviews are the most frequent mentoring moment. Explain the principle, link to a resource, and praise what's good.</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="review comment as teaching">
+    🟡 suggestion: this loop runs one query per order (the "N+1 problem"): 100 orders = 101 queries.
+    Prisma can load the relation in one go: findMany({ include: { items: true } }).
+    Try it with DEBUG="prisma:query" and count the queries before/after, it's a nice
+    thing to see once. Docs: https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries
+    (By the way, the DTO validation here is really thorough 👍)
+  </script>
+
+  <p><strong>Pairing styles.</strong> In <em>driver/navigator</em> pairing, the junior types (driver) and the senior guides (navigator). Let the junior drive: people learn by doing, not by watching you type fast.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A concrete first-two-weeks plan for a junior joining a Nest + Prisma team:</p>
+    <table>
+      <tr><th>Day</th><th>Activity</th><th>Learns</th></tr>
+      <tr><td>1</td><td>Run the project from the README (fix the README where it fails)</td><td>Setup, Docker, Prisma migrate</td></tr>
+      <tr><td>2</td><td>Trace one request together: <code>POST /orders</code> from controller to DB</td><td>Modules, DI, DTOs, guards</td></tr>
+      <tr><td>3–4</td><td>"Good first issue": add a validated query filter to <code>GET /products</code> with a test</td><td>DTOs, class-validator, Prisma <code>where</code>, e2e tests</td></tr>
+      <tr><td>5–10</td><td>A small real feature, paired at the start, reviewed in detail</td><td>The full PR → CI → deploy cycle</td></tr>
+    </table>
+    <p>Fixing the README on day 1 is valuable twice: the junior gets a quick first PR, and the docs improve for the next person.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using jargon to explain jargon. Use plain words and analogies first, then introduce the official term.</li>
+      <li>Taking the keyboard and fixing it yourself. Fast today, but the junior is just as stuck tomorrow.</li>
+      <li>Asking "Does that make sense?" and accepting "yes". Ask them to explain it back or to apply it.</li>
+      <li>Only giving negative feedback. Point out what is good, so they know what to repeat.</li>
+      <li>Making people feel stupid for asking. Then they stop asking and start guessing, in production.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A junior asks: <em>"Why can't I just put <code>@Body() body: any</code> and use it directly? It works."</em> Write a short, friendly explanation (5–8 sentences) with a tiny example.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>"Good question, and you're right that it works when the client sends correct data. The problem is that clients don't always do that, and some send bad data on purpose. TypeScript types disappear at runtime, so <code>any</code> means nobody checks anything. For example, someone could send <code>{ "role": "ADMIN" }</code> to the update-profile endpoint and make themselves an admin, if we pass <code>body</code> straight to Prisma. A DTO class with <code>class-validator</code> plus <code>ValidationPipe({ whitelist: true })</code> checks types and removes unknown fields before your code runs. Want to try it? Send that request with <code>any</code> and then with a DTO, and compare."</p>
+      <script type="text/x-code" data-lang="typescript">
+        export class UpdateProfileDto {
+          @IsString() @MaxLength(100)
+          displayName: string;
+          // no "role" here → whitelist strips it automatically
+        }
+      </script>
+      <p>Notice the structure: validate the question, explain the risk with a concrete attack, show the fix, and invite them to try it.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you mentor a junior developer?</summary>
+      <p>Understand their current level and goals, give them gradually harder real tasks, pair at the start and step back over time, use code reviews to teach principles, ask guiding questions instead of giving answers, give regular specific feedback (positive and constructive), and make it safe to ask questions.</p></details>
+    <details><summary>How would you explain a complex concept to someone new?</summary>
+      <p>Start with the problem it solves, use an everyday analogy, show a minimal concrete example from our codebase, let them apply it, and check understanding by having them explain it back. Introduce official terminology only after the idea is clear.</p></details>
+    <details><summary>A junior keeps making the same mistake in PRs. What do you do?</summary>
+      <p>Talk one-on-one rather than repeating PR comments. Make sure they understand the <em>why</em>, pair on one example, and if possible automate the check (lint rule, test, PR template item) so the tooling catches it in the future.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Problem first, analogy second, real code third, then let them do it. Ask guiding questions, give kind and specific feedback, and measure success by how independent they become.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="system-thinking">
+  <div class="topic-head"><span class="num">7</span><h2>System thinking</h2></div>
+  <p class="tagline">understand frontend, backend, database and deployment</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A car mechanic who only knows the engine can't explain why the car pulls to the left. You need to see the whole car: engine, wheels, brakes, steering, and how they affect each other. A web application is the same. A "slow page" might be the browser making 30 requests, a missing database index, a tiny connection pool, or a server in the wrong region. System thinking means you can follow a user's click through <strong>every layer</strong> (frontend, network, backend, database, infrastructure) and understand how a change in one layer affects the others.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The journey of one request.</strong> Learn this path by heart. When something is slow or broken, walk it step by step.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Browser / mobile app
+      │ 1. DNS lookup (api.shop.com → IP)                    ~20–100 ms first time
+      │ 2. TLS handshake                                      ~50–150 ms first time
+      ▼
+    CDN / WAF (static files cached, bad traffic blocked)
+      ▼
+    Load balancer (picks a healthy instance, has its own idle timeout, e.g. 60 s)
+      ▼
+    NestJS instance (one of N containers)
+      │ middleware → guards → pipes (validation) → controller → service
+      │ 3. waits for a free DB connection from the pool       ← can be the bottleneck!
+      ▼
+    PostgreSQL (query planner → index or full scan → locks → result)
+      │ maybe also: Redis cache, queue (BullMQ), third-party APIs (payments, email)
+      ▼
+    Response travels back: serialization (JSON size!), gzip, network, browser render
+  </script>
+
+  <p><strong>Example 1: the connection pool math.</strong> Each Prisma client keeps a pool of database connections. The default size is <code>num_cpus × 2 + 1</code>. PostgreSQL's default <code>max_connections</code> is 100. Now look at the whole system:</p>
+  <table>
+    <tr><th>Situation</th><th>Connections</th><th>Result</th></tr>
+    <tr><td>3 instances × 2 vCPU → 5 per pool</td><td>15</td><td>✅ fine</td></tr>
+    <tr><td>Black Friday: autoscaling to 25 instances</td><td>125 (+ migrations, admin tools, workers)</td><td>❌ "too many connections", the whole site goes down <em>because</em> it scaled</td></tr>
+  </table>
+  <p>A backend-only view says "add more instances". A system view sees that the database is the shared limit. Fixes: set an explicit pool size per instance, cap autoscaling, or put a connection pooler (PgBouncer, or your cloud's equivalent) in front of Postgres.</p>
+  <script type="text/x-code" data-lang="ini" data-title=".env (production)">
+    # Explicit pool per instance + how long to wait for a free connection
+    DATABASE_URL=postgresql://shop_app:***@db.internal:5432/shop?schema=public&connection_limit=5&pool_timeout=10
+
+    # Through PgBouncer in transaction mode (Prisma needs pgbouncer=true there)
+    # DATABASE_URL=postgresql://shop_app:***@pgbouncer.internal:6432/shop?pgbouncer=true&connection_limit=5
+    # DIRECT_URL is used by "prisma migrate" (migrations must bypass PgBouncer)
+    # DIRECT_URL=postgresql://shop_app:***@db.internal:5432/shop
+  </script>
+
+  <p><strong>Example 2: the timeout chain.</strong> Every layer has a timeout. Inner layers must give up <em>before</em> outer layers, otherwise work continues for a user who is already gone.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    ❌ Frontend fetch: 10 s  <  LB: 60 s  <  Nest: none  <  Postgres query: none
+       → the user sees an error after 10 s, but the slow query keeps running for 5 minutes,
+         holding a connection; 50 impatient users retry → pool exhausted → outage.
+
+    ✅ Postgres statement_timeout 5 s  <  third-party calls 3–5 s  <  Nest handler ~8 s
+       <  frontend 10 s  <  LB 60 s
+  </script>
+  <script type="text/x-code" data-lang="sql">
+    -- Database-side safety net for the application's role
+    ALTER ROLE shop_app SET statement_timeout = '5s';
+    ALTER ROLE shop_app SET idle_in_transaction_session_timeout = '30s';
+  </script>
+
+  <p><strong>Example 3: the frontend is part of your system.</strong> Backend decisions change the user's experience:</p>
+  <ul>
+    <li>An endpoint without pagination works in development (10 rows) and sends 8 MB of JSON to a phone in production.</li>
+    <li>A product page that needs 6 sequential API calls is slow even if each call is fast (6 × 150 ms round trips on mobile). Sometimes one well-designed endpoint is better.</li>
+    <li>A changed response field breaks old mobile app versions that users haven't updated. Mobile clients can stay old for months.</li>
+    <li>CORS, cookies (<code>SameSite</code>, <code>Secure</code>) and cache headers are shared contracts between frontend and backend.</li>
+  </ul>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>You can't reason about a system you can't see. A small interceptor that logs duration per route is a cheap first step (later: OpenTelemetry tracing across services):</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/common/timing.interceptor.ts">
+      import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+      import { Observable, tap } from 'rxjs';
+
+      @Injectable()
+      export class TimingInterceptor implements NestInterceptor {
+        private readonly logger = new Logger('HTTP');
+
+        intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
+          const req = ctx.switchToHttp().getRequest();
+          const start = performance.now();
+          return next.handle().pipe(
+            tap(() => {
+              const ms = Math.round(performance.now() - start);
+              if (ms > 500) {
+                this.logger.warn(`${req.method} ${req.route?.path ?? req.url} took ${ms} ms`);
+              }
+            }),
+          );
+        }
+      }
+    </script>
+    <p>Combine it with Prisma query logging (<code>new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })</code> and a listener that logs queries above 200 ms) to see whether time is spent in the database or in your code.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Optimizing code in your layer while the real bottleneck is elsewhere (network round trips, the DB pool, a third-party API).</li>
+      <li>Scaling the backend horizontally without checking what the database can handle.</li>
+      <li>Missing or badly ordered timeouts, so stuck work piles up behind the scenes.</li>
+      <li>Changing an API response without thinking about old frontend or mobile versions.</li>
+      <li>"It works on my machine": local has 10 rows, no network latency and one user.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Users report: "The order history page is fast for new users, but takes 8 seconds for loyal customers, and only in production." Walk through the layers and list what you would check, in order.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ol>
+        <li><strong>Frontend / network:</strong> browser DevTools → how many requests, which one is slow, how big is the response? "Only loyal customers" suggests data volume.</li>
+        <li><strong>API:</strong> does <code>GET /orders</code> paginate? Probably not: a customer with 900 orders gets everything, plus items, maybe as N+1 queries.</li>
+        <li><strong>Database:</strong> <code>EXPLAIN ANALYZE</code> the query with a real loyal user's id. Is there an index on <code>"Order"("userId", "createdAt")</code>? Production has millions of rows, local has 50.</li>
+        <li><strong>Infrastructure:</strong> are DB pool waits or CPU high at the same time? Is the instance in the same region as the database?</li>
+        <li><strong>Fix in the right layer:</strong> cursor pagination (backend + frontend "load more"), <code>include</code> instead of N+1, a composite index. Then verify with the timing logs and the dashboard.</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What happens when a user types a URL and presses Enter?</summary>
+      <p>DNS resolves the host to an IP, the browser opens a TCP connection and negotiates TLS, sends the HTTP request, which passes through a CDN/load balancer to an app instance. The app runs middleware, auth, validation and business logic, queries the database or cache, serializes the response, and it travels back to the browser, which parses and renders it (often triggering more requests).</p></details>
+    <details><summary>Why can scaling out the API cause a database outage?</summary>
+      <p>Each instance opens its own connection pool. More instances multiply total connections, and PostgreSQL has a fixed <code>max_connections</code>, with each connection costing memory. Past the limit, new connections fail. Use explicit pool sizes, a connection pooler like PgBouncer, and capacity planning that includes the database.</p></details>
+    <details><summary>How should timeouts be configured across layers?</summary>
+      <p>Every outbound call and query needs a timeout, and inner timeouts should be shorter than the outer ones (DB &lt; service &lt; client &lt; load balancer), so work is cancelled when nobody is waiting for it anymore and resources are freed.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Follow the request through every layer: browser, network, load balancer, Nest, pool, database, third parties. Shared limits (DB connections, timeouts, API contracts) are where systems break.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="failure-design">
+  <div class="topic-head"><span class="num">8</span><h2>Failure design</h2></div>
+  <p class="tagline">think about what happens when everything goes wrong</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Buildings have fire exits, sprinklers and emergency lights, not because architects expect a fire every day, but because one day there <em>will</em> be one. Software is the same: networks drop, databases restart, payment providers time out, and your own code has bugs. Failure design means asking, for every step, <strong>"what if this fails, is slow, or happens twice?"</strong> and deciding <em>in advance</em> what should happen: retry, wait, show a fallback, or fail cleanly without corrupting data.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The "what if" questions for every external call.</strong></p>
+  <table>
+    <tr><th>What if...</th><th>Tool</th></tr>
+    <tr><td>...it never answers?</td><td><strong>Timeout</strong></td></tr>
+    <tr><td>...it fails temporarily?</td><td><strong>Retry</strong> with exponential backoff + jitter</td></tr>
+    <tr><td>...the request is sent twice (retry, double click, network replay)?</td><td><strong>Idempotency</strong></td></tr>
+    <tr><td>...it's down for a long time?</td><td><strong>Circuit breaker</strong> + <strong>graceful degradation</strong></td></tr>
+    <tr><td>...we crash between two steps?</td><td><strong>Transactions</strong>, <strong>outbox pattern</strong>, reconciliation jobs</td></tr>
+  </table>
+
+  <p><strong>1. Timeouts.</strong> Without a timeout, a hanging dependency holds your request, your memory and maybe a DB connection forever.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ No timeout: if the shipping API hangs, so do we
+    const res = await fetch('https://api.shipper.example/rates', { method: 'POST', body });
+
+    // ✅ Built-in since Node 18: abort after 3 seconds
+    const res = await fetch('https://api.shipper.example/rates', {
+      method: 'POST',
+      body,
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(3000),   // throws a TimeoutError if exceeded
+    });
+  </script>
+
+  <p><strong>2. Retries with exponential backoff and jitter.</strong> Retry only <em>temporary</em> failures (timeouts, 502/503/429), never a 400 validation error. Wait longer each time, and add randomness (jitter) so thousands of clients don't retry at the exact same moment and knock the service down again.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/common/retry.ts">
+    export async function withRetry<T>(
+      fn: () => Promise<T>,
+      { attempts = 3, baseMs = 200, isRetryable = (_e: unknown) => true } = {},
+    ): Promise<T> {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return await fn();
+        } catch (err) {
+          if (attempt >= attempts || !isRetryable(err)) throw err;
+          const backoff = baseMs * 2 ** (attempt - 1);              // 200, 400, 800...
+          const jitter = Math.random() * backoff;                  // "full jitter"
+          await new Promise((r) => setTimeout(r, jitter));
+        }
+      }
+    }
+
+    // usage: only retry network errors and 5xx/429
+    const rates = await withRetry(() => this.shipper.getRates(order), {
+      isRetryable: (e) => e instanceof ShipperError && (e.status >= 500 || e.status === 429),
+    });
+  </script>
+  <p>⚠️ Retrying a <em>non-idempotent</em> operation ("charge the card") can do it twice. That's why retries and idempotency always go together.</p>
+
+  <p><strong>3. Idempotency.</strong> An operation is idempotent if doing it twice has the same effect as doing it once. <code>GET</code>, <code>PUT</code> and <code>DELETE</code> are idempotent by design; <code>POST</code> is not. Make <code>POST</code> safe with an <code>Idempotency-Key</code> header: the client generates a unique key per action, and the server remembers the result for that key.</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    model IdempotencyKey {
+      key        String   @id                 // client-generated UUID
+      userId     Int
+      requestHash String                      // detect "same key, different body"
+      response   Json?
+      createdAt  DateTime @default(now())
+    }
+  </script>
+
+  <p><strong>4. Circuit breaker and graceful degradation.</strong> If a dependency is failing, stop calling it for a while ("open the circuit") instead of making every request wait for a timeout. Meanwhile, return something reasonable: the essential feature keeps working, the optional one degrades.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // The product page should still load if the recommendation service is down
+    async getProductPage(id: number) {
+      const product = await this.products.findOneOrThrow(id);       // essential: fail if missing
+      const recommendations = await this.recommendations
+        .forProduct(id)
+        .catch((err) => {
+          this.logger.warn(`Recommendations unavailable: ${err.message}`);
+          return [];                                                // ✅ degrade, don't fail
+        });
+      return { product, recommendations };
+    }
+  </script>
+  <p>Libraries like <code>opossum</code> implement a full circuit breaker (closed → open after N failures → half-open test → closed).</p>
+
+  <p><strong>5. Crashing between steps: the outbox pattern.</strong> "Save the order, then publish an <code>OrderCreated</code> event" is two systems. If the process dies after the DB commit and before the publish, the event is lost forever. Solution: write the event into an <code>Outbox</code> table <em>in the same transaction</em> as the order, and let a background worker publish pending outbox rows and mark them sent (at-least-once delivery, so consumers must be idempotent).</p>
+  <script type="text/x-code" data-lang="typescript">
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({ data: orderData });
+      await tx.outboxEvent.create({                               // same transaction ✅
+        data: { type: 'OrderCreated', payload: { orderId: order.id } },
+      });
+    });
+    // A worker polls OutboxEvent where sentAt IS NULL → enqueue/publish → set sentAt.
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>An idempotent payment endpoint. If the mobile app retries after a timeout, the customer is not charged twice:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="payments.service.ts">
+      import { ConflictException, Injectable } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import { createHash } from 'node:crypto';
+
+      @Injectable()
+      export class PaymentsService {
+        constructor(private readonly prisma: PrismaService, private readonly provider: PaymentProvider) {}
+
+        async pay(userId: number, idempotencyKey: string, dto: PayDto) {
+          const requestHash = createHash('sha256').update(JSON.stringify(dto)).digest('hex');
+
+          try {
+            // Claim the key first. The primary key makes this atomic: only ONE request wins.
+            await this.prisma.idempotencyKey.create({ data: { key: idempotencyKey, userId, requestHash } });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+              const existing = await this.prisma.idempotencyKey.findUniqueOrThrow({ where: { key: idempotencyKey } });
+              if (existing.userId !== userId || existing.requestHash !== requestHash) {
+                throw new ConflictException('Idempotency key reused with a different request');
+              }
+              if (!existing.response) throw new ConflictException('Request is still being processed');
+              return existing.response;                     // ✅ replay the first result, no second charge
+            }
+            throw e;
+          }
+
+          // Pass the same key to the provider: it also deduplicates on its side.
+          const charge = await this.provider.charge(
+            { amountCents: dto.amountCents, orderId: dto.orderId },
+            { idempotencyKey, timeoutMs: 5000 },
+          );
+          const response = { paymentId: charge.id, status: charge.status };
+          await this.prisma.idempotencyKey.update({ where: { key: idempotencyKey }, data: { response } });
+          return response;
+        }
+      }
+    </script>
+    <p>The controller reads the key with <code>@Headers('idempotency-key')</code> and rejects requests without one (400). Old keys can be deleted by a nightly cleanup job after, say, 24 hours.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>No timeouts on HTTP calls or queries. One slow dependency freezes everything.</li>
+      <li>Retrying immediately, forever, without jitter. You turn a small outage into a big one (a "retry storm").</li>
+      <li>Retrying non-idempotent operations, causing double charges, double emails or duplicate orders.</li>
+      <li>Treating optional features as essential, so the whole page fails because of the "you may also like" widget.</li>
+      <li>Assuming "after the DB commit, the next line always runs". Processes crash; design for it (outbox, reconciliation).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You call the payment provider to charge $50. After 5 seconds your request times out. You don't know whether the charge happened. What should your system do? Think about the user, the database and the provider.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>Never assume failure.</strong> A timeout means "unknown", not "not charged". Don't just retry with a new request, and don't tell the user "payment failed".</li>
+        <li><strong>Store state first:</strong> before calling, save a <code>Payment</code> row with status <code>PENDING</code> and an idempotency key. On timeout, leave it <code>PENDING</code>.</li>
+        <li><strong>Retry safely:</strong> retry with the <em>same</em> idempotency key; the provider returns the original charge if it exists.</li>
+        <li><strong>Reconcile:</strong> listen to the provider's webhooks (<code>payment.succeeded</code> / <code>failed</code>) and run a job that queries the provider for payments stuck in <code>PENDING</code> for more than a few minutes.</li>
+        <li><strong>User experience:</strong> show "We're confirming your payment" and update the order when the result is known; email the confirmation.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is idempotency and why does it matter?</summary>
+      <p>An operation is idempotent if repeating it gives the same result as doing it once. Networks cause retries and duplicates, so non-idempotent operations (payments, order creation) need protection, typically an idempotency key stored with a unique constraint and the original response replayed for repeats.</p></details>
+    <details><summary>Why add jitter to exponential backoff?</summary>
+      <p>Without jitter, all clients that failed at the same time retry at the same times (1 s, 2 s, 4 s...), creating synchronized traffic spikes that can keep the recovering service down. Random jitter spreads retries out.</p></details>
+    <details><summary>What is the outbox pattern?</summary>
+      <p>Writing an event to an outbox table in the same database transaction as the business change, then publishing it asynchronously from that table. It guarantees the event is eventually published if (and only if) the change was committed, avoiding lost events when the process crashes between the two steps.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> For every step ask: what if it hangs, fails, or happens twice? Add timeouts, retry only safe operations with backoff + jitter, make writes idempotent, degrade optional features, and never lose state between steps.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="production-thinking">
+  <div class="topic-head"><span class="num">9</span><h2>Production thinking</h2></div>
+  <p class="tagline">design for real users, not only the happy path</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>The "happy path" is the demo: one user, good internet, correct input, clicks once, everything works. Real users are different. They double-click "Pay", lose signal in an elevator, paste a 10,000-character name full of emojis, live in a different time zone, use an app version from last year, and a few of them actively try to break things. Production thinking means designing for <strong>that</strong> world: real data volumes, real concurrency, real mistakes and real attackers, and being able to see and fix problems quickly when they happen anyway.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Demo world vs real world.</strong></p>
+  <table>
+    <tr><th>Happy path assumption</th><th>Production reality</th><th>Design response</th></tr>
+    <tr><td>User clicks once</td><td>Double clicks, refreshes, retries</td><td>Idempotency keys, unique constraints, disabled button</td></tr>
+    <tr><td>Input is valid</td><td>Empty, huge, wrong type, malicious</td><td>DTO validation with max lengths, whitelist</td></tr>
+    <tr><td>Small data</td><td>Millions of rows after 2 years</td><td>Pagination with a max limit, indexes, background jobs for exports</td></tr>
+    <tr><td>One user at a time</td><td>Two people buy the last item at the same second</td><td>Atomic updates, transactions, constraints</td></tr>
+    <tr><td>Everyone is in my time zone</td><td>Users worldwide, servers in UTC</td><td>Store UTC (<code>timestamptz</code>), convert at display time</td></tr>
+    <tr><td>Clients are up to date</td><td>Old mobile versions for months</td><td>Backwards-compatible API changes, versioning</td></tr>
+    <tr><td>It will work</td><td>It will break at 2 am</td><td>Logs, metrics, alerts, feature flags, rollback</td></tr>
+  </table>
+
+  <p><strong>Case study: user registration, happy path vs production.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="❌ happy-path version">
+    @Post('register')
+    async register(@Body() body: any) {
+      console.log('register', body);                              // logs the password!
+      const user = await this.prisma.user.create({ data: body }); // role: 'ADMIN' accepted
+      await this.mailer.sendWelcome(user.email);                  // mail down → 500, user exists anyway
+      return user;                                                // returns passwordHash
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="✅ production version">
+    export class RegisterDto {
+      @IsEmail() @MaxLength(254)
+      @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+      email: string;
+
+      @IsString() @MinLength(10) @MaxLength(128)                  // max length: bcrypt/argon cost + DoS
+      password: string;
+
+      @IsString() @MaxLength(100)
+      displayName: string;
+    }
+
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })            // abuse protection
+    @Post('register')
+    async register(@Body() dto: RegisterDto): Promise<UserResponseDto> {
+      return this.authService.register(dto);
+    }
+
+    // auth.service.ts
+    async register(dto: RegisterDto): Promise<UserResponseDto> {
+      const passwordHash = await argon2.hash(dto.password);
+      try {
+        const user = await this.prisma.user.create({
+          data: { email: dto.email, displayName: dto.displayName, passwordHash },
+          select: { id: true, email: true, displayName: true, createdAt: true }, // never passwordHash
+        });
+        await this.emailQueue.add('welcome', { userId: user.id }); // async, retried, can't break signup
+        this.logger.log(`User registered id=${user.id}`);          // no email, no password in logs
+        return user;
+      } catch (e) {
+        // Two simultaneous requests with the same email: the DB unique constraint decides
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          throw new ConflictException('Email is already registered');
+        }
+        throw e;
+      }
+    }
+  </script>
+  <p>Every line of the second version answers a real-world question: what if the email has capitals or spaces, what if the password is 1 MB, what if someone sends <code>role</code>, what if two requests race, what if the mail server is down, what ends up in the logs?</p>
+
+  <p><strong>Time is a classic production bug.</strong> Prisma's <code>DateTime</code> maps to PostgreSQL <code>timestamp(3)</code> (no time zone) by default. Prefer <code>timestamptz</code> and always reason in UTC on the server:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model Order {
+      id        Int      @id @default(autoincrement())
+      createdAt DateTime @default(now()) @db.Timestamptz(3)
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ "today's orders" using the server's local midnight → wrong for a user in Hanoi (UTC+7)
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+
+    // ✅ the client sends its time zone; compute the range for THEIR day, query in UTC
+    //    (e.g. with date-fns-tz: fromZonedTime(startOfDay(toZonedTime(now, tz)), tz))
+  </script>
+
+  <p><strong>Ship safely: feature flags and gradual rollout.</strong> Deploying code and releasing a feature can be two different moments. Put risky features behind a flag, enable them for staff first, then 5% of users, then everyone. If something goes wrong, turn the flag off in seconds, without a deploy.</p>
+  <script type="text/x-code" data-lang="typescript">
+    if (await this.flags.isEnabled('new-checkout', { userId: user.id })) {
+      return this.newCheckout.process(cart);
+    }
+    return this.legacyCheckout.process(cart);
+  </script>
+
+  <p><strong>Learn from incidents: the blameless post-mortem.</strong> Things will still break. Mature teams write a short post-mortem that focuses on <em>how the system allowed the mistake</em>, not on who made it. People who fear blame hide information, and then nobody learns.</p>
+  <script type="text/x-code" data-lang="markdown" data-title="docs/postmortems/2026-09-28-duplicate-orders.md">
+    # Post-mortem: duplicate orders during the flash sale (2026-09-28)
+
+    **Impact:** 14:02–14:41 UTC. 312 customers charged twice (total $9,840, all refunded by 18:00).
+    **Detection:** support tickets at 14:20 (no alert fired) ← detection gap.
+
+    ## Timeline (UTC)
+    - 13:55 Flash sale starts; checkout p95 latency rises from 300 ms to 9 s (DB pool exhausted)
+    - 14:02 Mobile app's 8 s timeout triggers its automatic retry of POST /orders
+    - 14:20 Support escalates; 14:31 retry disabled via remote config; 14:41 pool size raised
+
+    ## Root causes (system, not people)
+    1. POST /orders was not idempotent; client retries created new orders and charges.
+    2. Mobile retry was added in app v3.2 without backend review.
+    3. No alert on "orders per user per minute" or on DB pool wait time.
+
+    ## What went well
+    Refund script from the previous incident worked; rollback of remote config took 1 minute.
+
+    ## Action items
+    | Action                                              | Owner | Due        |
+    |-----------------------------------------------------|-------|------------|
+    | Idempotency-Key required on POST /orders + /payments | An    | 2026-10-05 |
+    | Alert: DB pool wait > 1 s, duplicate orders/user    | Binh  | 2026-10-03 |
+    | Load test checkout at 5× normal traffic before sales | Chi   | 2026-10-15 |
+    | API change checklist includes "client retry behavior" | Team | 2026-10-10 |
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A production-readiness checklist for every new endpoint, which many teams add to their PR template:</p>
+    <script type="text/x-code" data-lang="markdown" data-title="Production checklist">
+      - [ ] Auth guard + ownership check (can user A touch user B's data?)
+      - [ ] DTO with types, max lengths, whitelist; pagination with a max `limit`
+      - [ ] DB: indexes for the WHERE/ORDER BY; transactions for multi-step writes;
+            unique constraints for things that must be unique
+      - [ ] Concurrency: what if it's called twice at the same time? (idempotency/atomic update)
+      - [ ] External calls: timeout, retry policy, fallback
+      - [ ] Logs useful but no secrets/PII; errors reach Sentry; metric/alert if critical
+      - [ ] Backwards compatible for existing clients; migration is expand-only
+      - [ ] Behind a feature flag if risky; rollback plan known
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="pagination.dto.ts (one small, very production-minded DTO)">
+      export class PaginationDto {
+        @Type(() => Number) @IsInt() @Min(1)
+        page: number = 1;
+
+        @Type(() => Number) @IsInt() @Min(1) @Max(100)     // ✅ nobody can request 1,000,000 rows
+        limit: number = 20;
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Testing only with perfect input, one user and ten rows of data.</li>
+      <li>Relying on the frontend to prevent double submits or invalid input. The API must defend itself.</li>
+      <li>Storing local times without a time zone, then fighting "off by 7 hours" bugs forever.</li>
+      <li>Releasing big risky features to 100% of users at once with no flag and no rollback plan.</li>
+      <li>Blame-focused incident reviews, so people hide mistakes and the same incident repeats.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Product asks for <code>GET /admin/orders/export</code>, "download all orders as CSV". The happy-path version is <code>findMany()</code> + build a string + return it. Today there are 2 million orders. Redesign it for production.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>Don't do it in the request.</strong> <code>POST /admin/exports</code> creates an <code>Export</code> job (status <code>PENDING</code>) and returns <code>202 Accepted</code> with its id. A BullMQ worker generates the file.</li>
+        <li><strong>Stream, don't load everything:</strong> read in batches with cursor pagination (<code>take: 5000, cursor: { id: lastId }, skip: 1</code>) and write rows to a stream (e.g. uploaded to S3/object storage), so memory stays flat.</li>
+        <li><strong>Filters and limits:</strong> require a date range; cap the range (e.g. max 1 year) or the row count.</li>
+        <li><strong>Security:</strong> admin role guard; exclude or mask personal data that isn't needed; the download link is signed and expires (e.g. 1 hour); audit log who exported what.</li>
+        <li><strong>Correctness:</strong> escape CSV values (commas, quotes, newlines, and formulas starting with <code>=</code>/<code>+</code>/<code>-</code>/<code>@</code> to prevent CSV injection in Excel); times in UTC with ISO format.</li>
+        <li><strong>Operations:</strong> run the queries against a read replica if available; notify by email when ready; failed jobs retry and are visible in monitoring; one concurrent export per admin.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does "production-ready" mean to you?</summary>
+      <p>The feature is correct for real-world inputs and concurrency, secure, performant at real data volumes, observable (logs, metrics, errors, alerts), resilient to dependency failures, backwards compatible, safely deployable and reversible (migrations, flags, rollback), and documented enough for others to support it.</p></details>
+    <details><summary>How do you prevent duplicate submissions?</summary>
+      <p>Defense in depth: disable the button on the client, but rely on the server: idempotency keys for create/payment requests, database unique constraints for natural keys, and atomic conditional updates (<code>updateMany</code> with a status condition) so a state transition can only happen once.</p></details>
+    <details><summary>What is a blameless post-mortem?</summary>
+      <p>An incident review that focuses on the timeline, the system conditions and process gaps that allowed the failure, and concrete action items, instead of blaming individuals. It encourages honesty, which is required to find and fix real root causes.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Design for double clicks, bad input, big data, concurrency, time zones, old clients and failures. Release gradually, watch it, and when it breaks anyway, learn without blame.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Git-CICD-and-Production.html">← Prev: 11. Git, CI/CD &amp; Production</a>
+  <a href="nestjs.html">Back to roadmap 🎉</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

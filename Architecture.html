@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Architecture</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 5 of 12</span>
+  </nav>
+  <h1>5. Architecture</h1>
+  <p class="goal"><strong>Goal:</strong> Learn to design maintainable NestJS applications.</p>
+  <p class="howto">How to use this page: read each point top to bottom, type the examples yourself in a local NestJS + Prisma project, do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud. The whole lesson uses <strong>one running example</strong>: an <em>orders</em> feature in a small online shop. We start with a messy version and refactor it step by step.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#layered-architecture">Layered architecture</a></li>
+      <li><a href="#repository-pattern">Repository pattern</a></li>
+      <li><a href="#dtos">DTOs</a></li>
+      <li><a href="#feature-modules">Feature modules</a></li>
+      <li><a href="#domain-layer">Domain layer</a></li>
+      <li><a href="#mapper-pattern">Mapper pattern</a></li>
+      <li><a href="#solid">SOLID</a></li>
+      <li><a href="#di-design">DI design</a></li>
+      <li><a href="#architecture-trade-offs">Architecture trade-offs</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="layered-architecture">
+  <div class="topic-head"><span class="num">1</span><h2>Layered architecture</h2></div>
+  <p class="tagline">controller, service, repository</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of a restaurant. The <strong>waiter</strong> takes your order and brings the food, but doesn't cook. The <strong>chef</strong> decides how to cook the dish, but doesn't talk to customers or go shopping. The <strong>storekeeper</strong> knows where every ingredient is kept, but doesn't care what dish it's for. Each person has <em>one job</em>, and they only talk to the person next to them.</p>
+    <p>A layered backend works the same way: the <strong>controller</strong> is the waiter (HTTP in, HTTP out), the <strong>service</strong> is the chef (business rules), and the <strong>repository</strong> is the storekeeper (reading and writing the database).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The running example.</strong> Our shop has users, products and orders. Here is the Prisma schema we'll use for the whole lesson. Money is stored as whole cents (<code>Int</code>) to avoid floating-point rounding problems:</p>
+  <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+    enum OrderStatus {
+      PENDING
+      PAID
+      SHIPPED
+      CANCELLED
+    }
+
+    model Product {
+      id         Int         @id @default(autoincrement())
+      name       String
+      priceCents Int
+      stock      Int
+      orderItems OrderItem[]
+    }
+
+    model Order {
+      id         Int         @id @default(autoincrement())
+      userId     Int
+      user       User        @relation(fields: [userId], references: [id])
+      status     OrderStatus @default(PENDING)
+      totalCents Int
+      items      OrderItem[]
+      createdAt  DateTime    @default(now())
+      updatedAt  DateTime    @updatedAt
+    }
+
+    model OrderItem {
+      id         Int     @id @default(autoincrement())
+      orderId    Int
+      order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+      productId  Int
+      product    Product @relation(fields: [productId], references: [id])
+      quantity   Int
+      priceCents Int     // price at the moment of purchase (products can change price later)
+    }
+  </script>
+
+  <p><strong>Before: the "fat controller".</strong> This is what many first NestJS projects look like. It works, but everything is mixed together in one method:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts (before) ❌">
+    @Controller('orders')
+    export class OrdersController {
+      constructor(private readonly prisma: PrismaService) {}
+
+      @Post()
+      async create(@Body() body: any, @Req() req: any) {
+        // 1. validation (HTTP concern)
+        if (!body.items || body.items.length === 0) {
+          throw new BadRequestException('Order must have items');
+        }
+
+        // 2. database reads (data concern)
+        const ids = body.items.map((i: any) => i.productId);
+        const products = await this.prisma.product.findMany({ where: { id: { in: ids } } });
+
+        // 3. business rules (domain concern)
+        let total = 0;
+        for (const item of body.items) {
+          const product = products.find((p) => p.id === item.productId);
+          if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
+          if (product.stock < item.quantity) throw new BadRequestException('Out of stock');
+          total += product.priceCents * item.quantity;
+        }
+
+        // 4. database writes (data concern)
+        return this.prisma.order.create({
+          data: {
+            userId: req.user.id,
+            totalCents: total,
+            items: {
+              create: body.items.map((i: any) => ({
+                productId: i.productId,
+                quantity: i.quantity,
+                priceCents: products.find((p) => p.id === i.productId)!.priceCents,
+              })),
+            },
+          },
+        });
+      }
+    }
+  </script>
+  <p>Problems: you can't reuse "create an order" from a CLI command or a queue worker, because the logic is tied to HTTP. You can't unit-test the price calculation without a database. And when the method grows to 200 lines, nobody wants to touch it.</p>
+
+  <p><strong>After: three layers.</strong> We split by <em>responsibility</em>. Each layer only calls the layer directly below it:</p>
+  <table>
+    <tr><th>Layer</th><th>Knows about</th><th>Must NOT know about</th><th>Example job</th></tr>
+    <tr><td>Controller</td><td>HTTP: routes, params, status codes, DTOs</td><td>Prisma, SQL, business rules</td><td>Read the body, call the service, return the result</td></tr>
+    <tr><td>Service</td><td>Business rules, use cases, transactions</td><td><code>req</code>/<code>res</code>, HTTP headers</td><td>"Check stock, compute the total, create the order"</td></tr>
+    <tr><td>Repository</td><td>Prisma / SQL, how data is stored</td><td>HTTP, business decisions</td><td>"Find products by ids", "insert an order"</td></tr>
+  </table>
+
+  <p>The controller becomes thin. Its only job is translating HTTP into a method call:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts (after) ✅">
+    @Controller('orders')
+    export class OrdersController {
+      constructor(private readonly ordersService: OrdersService) {}
+
+      @Post()
+      create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
+        // CurrentUser is a custom decorator (Lesson 7). For now: it returns { id: number }.
+        return this.ordersService.placeOrder(user.id, dto);
+      }
+
+      @Get(':id')
+      findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+        return this.ordersService.getOrder(user.id, id);
+      }
+    }
+  </script>
+
+  <p>The service holds the business logic. It talks about <em>orders and stock</em>, not about HTTP:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts (after) ✅">
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly ordersRepo: OrdersRepository) {}
+
+      async placeOrder(userId: number, dto: CreateOrderDto) {
+        const ids = dto.items.map((i) => i.productId);
+        const products = await this.ordersRepo.findProductsByIds(ids);
+
+        let totalCents = 0;
+        const lines = dto.items.map((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
+          if (product.stock < item.quantity) {
+            throw new ConflictException(`Product ${product.id} is out of stock`);
+          }
+          totalCents += product.priceCents * item.quantity;
+          return { productId: product.id, quantity: item.quantity, priceCents: product.priceCents };
+        });
+
+        return this.ordersRepo.createOrder({ userId, totalCents, lines });
+      }
+
+      async getOrder(userId: number, orderId: number) {
+        const order = await this.ordersRepo.findById(orderId);
+        if (!order || order.userId !== userId) throw new NotFoundException('Order not found');
+        return order;
+      }
+    }
+  </script>
+
+  <p>And the repository hides Prisma. It knows <em>how</em> to store things, not <em>why</em>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.repository.ts ✅">
+    @Injectable()
+    export class OrdersRepository {
+      constructor(private readonly prisma: PrismaService) {}
+
+      findProductsByIds(ids: number[]) {
+        return this.prisma.product.findMany({ where: { id: { in: ids } } });
+      }
+
+      findById(id: number) {
+        return this.prisma.order.findUnique({ where: { id }, include: { items: true } });
+      }
+
+      createOrder(input: {
+        userId: number;
+        totalCents: number;
+        lines: { productId: number; quantity: number; priceCents: number }[];
+      }) {
+        return this.prisma.order.create({
+          data: {
+            userId: input.userId,
+            totalCents: input.totalCents,
+            items: { create: input.lines },
+          },
+          include: { items: true },
+        });
+      }
+    }
+  </script>
+
+  <p><strong>The dependency rule.</strong> Arrows only point downwards: Controller → Service → Repository → Database. A repository never calls a service, and a service never imports <code>Request</code> from Express. If you follow this one rule, most "where does this code go?" questions answer themselves.</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="request flow">
+    HTTP POST /orders
+       │
+       ▼
+    OrdersController   — parse + validate input (DTO), pick status code
+       │  placeOrder(userId, dto)
+       ▼
+    OrdersService      — business rules: stock check, total, who may do what
+       │  findProductsByIds(), createOrder()
+       ▼
+    OrdersRepository   — Prisma queries
+       │
+       ▼
+    PostgreSQL
+  </script>
+
+  <p><strong>Why is this better?</strong> (1) <em>Reuse</em>: a nightly job can call <code>ordersService.placeOrder()</code> without HTTP. (2) <em>Testing</em>: you can test the service with a fake repository, no database needed. (3) <em>Change</em>: switching from REST to GraphQL changes only the controller. (4) <em>Reading</em>: a new developer knows where to look for a bug.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The Nest CLI already pushes you towards layers: <code>nest g resource orders</code> generates a controller, a service, DTOs and a module. The repository layer is your own addition. Wire all three in the feature module:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.module.ts">
+      @Module({
+        controllers: [OrdersController],
+        providers: [OrdersService, OrdersRepository],
+      })
+      export class OrdersModule {}
+    </script>
+    <p>Nest's own building blocks also fit into layers: <em>guards</em>, <em>pipes</em> and <em>interceptors</em> sit "in front of" the controller (HTTP layer), and <em>exception filters</em> turn errors into HTTP responses. Keep them in the HTTP layer too.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Putting business rules in the controller ("if status is SHIPPED, reject"). Controllers should be boring: a few lines per route.</li>
+      <li>Passing <code>req</code> or <code>res</code> into a service. Pass plain values (<code>userId</code>, a DTO) instead.</li>
+      <li>A service that is just a pass-through to Prisma with nothing else in it, <em>plus</em> a repository that is also a pass-through. Two empty layers add files but no value (see the trade-offs topic).</li>
+      <li>Calling a repository directly from a controller, skipping the service. The rules in the service are then bypassed.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Here is a fat controller method that cancels an order. Split it into a thin controller method, a service method and a repository method.</p>
+    <script type="text/x-code" data-lang="typescript">
+      @Patch(':id/cancel')
+      async cancel(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+        const order = await this.prisma.order.findUnique({ where: { id } });
+        if (!order || order.userId !== req.user.id) throw new NotFoundException();
+        if (order.status !== 'PENDING') throw new ConflictException('Only pending orders can be cancelled');
+        return this.prisma.order.update({ where: { id }, data: { status: 'CANCELLED' } });
+      }
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // controller — HTTP only
+        @Patch(':id/cancel')
+        cancel(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+          return this.ordersService.cancelOrder(user.id, id);
+        }
+
+        // service — business rules
+        async cancelOrder(userId: number, orderId: number) {
+          const order = await this.ordersRepo.findById(orderId);
+          if (!order || order.userId !== userId) throw new NotFoundException('Order not found');
+          if (order.status !== OrderStatus.PENDING) {
+            throw new ConflictException('Only pending orders can be cancelled');
+          }
+          return this.ordersRepo.updateStatus(orderId, OrderStatus.CANCELLED);
+        }
+
+        // repository — data access
+        updateStatus(id: number, status: OrderStatus) {
+          return this.prisma.order.update({ where: { id }, data: { status }, include: { items: true } });
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the responsibility of each layer in a NestJS app?</summary>
+      <p>The controller handles HTTP: routing, reading params and body, choosing status codes. The service holds business logic and use cases. The repository handles persistence (Prisma queries). Each layer depends only on the one below it.</p></details>
+    <details><summary>Why shouldn't a service receive the Express <code>Request</code> object?</summary>
+      <p>It ties business logic to HTTP. The service can no longer be reused from a queue worker, a cron job or a GraphQL resolver, and tests have to build fake request objects. Pass only the values the service needs.</p></details>
+    <details><summary>Where do you throw <code>NotFoundException</code>: service or controller?</summary>
+      <p>In practice, most Nest teams throw it in the service because it's convenient and Nest maps it to 404 automatically. Stricter designs throw a domain error in the service and map it to HTTP in an exception filter, which keeps the service fully HTTP-free. Both are acceptable. Be consistent.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Controller = HTTP, service = business rules, repository = data. Dependencies point downwards only, and a thin controller is a good controller.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="repository-pattern">
+  <div class="topic-head"><span class="num">2</span><h2>Repository pattern</h2></div>
+  <p class="tagline">isolate Prisma from business logic</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A repository is like a <strong>library desk</strong>. You ask the librarian "give me the book with this ID" or "store this book", and you don't care whether the books are on shelf 3, in the basement, or in another building. If the library moves, you still talk to the same desk. In code, the service asks the repository for orders, and doesn't care whether they come from Prisma, raw SQL, or an in-memory list in a test.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The problem.</strong> When a service calls <code>this.prisma.order.findMany({ ... })</code> directly, three things leak into business code: Prisma's query syntax, the database shape (column names, relations), and the need for a real database in every test. The same complex query also gets copy-pasted into several services.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts (before) ❌">
+    async getRecentPaidOrders(userId: number) {
+      // query details mixed with business code, repeated in 3 other services
+      return this.prisma.order.findMany({
+        where: { userId, status: 'PAID', createdAt: { gte: subDays(new Date(), 30) } },
+        include: { items: { include: { product: true } } },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+  </script>
+
+  <p><strong>Step 1: define the contract.</strong> Write down <em>what</em> the business needs, in business words, without saying <em>how</em>. In Nest, an <code>abstract class</code> is the best way to do this, because (unlike an interface) it exists at runtime and can be used as an injection token:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.repository.ts">
+    import { Order, OrderItem, OrderStatus, Product } from '@prisma/client';
+
+    export type OrderWithItems = Order & { items: OrderItem[] };
+
+    export interface CreateOrderInput {
+      userId: number;
+      totalCents: number;
+      lines: { productId: number; quantity: number; priceCents: number }[];
+    }
+
+    // The contract: business language only, no Prisma query syntax
+    export abstract class OrdersRepository {
+      abstract findById(id: number): Promise<OrderWithItems | null>;
+      abstract findRecentPaid(userId: number, sinceDays: number): Promise<OrderWithItems[]>;
+      abstract findProductsByIds(ids: number[]): Promise<Product[]>;
+      abstract create(input: CreateOrderInput): Promise<OrderWithItems>;
+      abstract updateStatus(id: number, status: OrderStatus): Promise<OrderWithItems>;
+    }
+  </script>
+
+  <p><strong>Step 2: implement it with Prisma.</strong> All Prisma code lives here, and only here:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/prisma-orders.repository.ts">
+    @Injectable()
+    export class PrismaOrdersRepository implements OrdersRepository {
+      constructor(private readonly prisma: PrismaService) {}
+
+      findById(id: number) {
+        return this.prisma.order.findUnique({ where: { id }, include: { items: true } });
+      }
+
+      findRecentPaid(userId: number, sinceDays: number) {
+        const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+        return this.prisma.order.findMany({
+          where: { userId, status: OrderStatus.PAID, createdAt: { gte: since } },
+          include: { items: true },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
+
+      findProductsByIds(ids: number[]) {
+        return this.prisma.product.findMany({ where: { id: { in: ids } } });
+      }
+
+      create(input: CreateOrderInput) {
+        return this.prisma.order.create({
+          data: { userId: input.userId, totalCents: input.totalCents, items: { create: input.lines } },
+          include: { items: true },
+        });
+      }
+
+      updateStatus(id: number, status: OrderStatus) {
+        return this.prisma.order.update({ where: { id }, data: { status }, include: { items: true } });
+      }
+    }
+  </script>
+
+  <p><strong>Step 3: bind contract to implementation in the module.</strong> The service asks for <code>OrdersRepository</code>, and Nest hands it a <code>PrismaOrdersRepository</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.module.ts">
+    @Module({
+      controllers: [OrdersController],
+      providers: [
+        OrdersService,
+        { provide: OrdersRepository, useClass: PrismaOrdersRepository },
+      ],
+    })
+    export class OrdersModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts (after) ✅">
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly ordersRepo: OrdersRepository) {} // the abstraction
+
+      getRecentPaidOrders(userId: number) {
+        return this.ordersRepo.findRecentPaid(userId, 30); // reads like a sentence
+      }
+    }
+  </script>
+
+  <p><strong>Step 4: enjoy easy tests.</strong> Because the service depends on the abstract class, a unit test can swap in a fake. No database, no Docker, and the test runs in milliseconds:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.spec.ts">
+    describe('OrdersService', () => {
+      let service: OrdersService;
+      const repo = {
+        findById: jest.fn(),
+        updateStatus: jest.fn(),
+      };
+
+      beforeEach(async () => {
+        const moduleRef = await Test.createTestingModule({
+          providers: [OrdersService, { provide: OrdersRepository, useValue: repo }],
+        }).compile();
+        service = moduleRef.get(OrdersService);
+      });
+
+      it('refuses to cancel a shipped order', async () => {
+        repo.findById.mockResolvedValue({ id: 1, userId: 7, status: 'SHIPPED', items: [] });
+        await expect(service.cancelOrder(7, 1)).rejects.toThrow(ConflictException);
+        expect(repo.updateStatus).not.toHaveBeenCalled();
+      });
+    });
+  </script>
+
+  <p><strong>What about transactions?</strong> Placing an order must create the order <em>and</em> decrease stock atomically. Keep the transaction <em>inside</em> one repository method when the operation belongs together, so Prisma's <code>$transaction</code> doesn't leak into the service:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma-orders.repository.ts">
+    async createAndReserveStock(input: CreateOrderInput): Promise<OrderWithItems> {
+      return this.prisma.$transaction(async (tx) => {
+        for (const line of input.lines) {
+          // conditional update: only succeeds if enough stock is left
+          const res = await tx.product.updateMany({
+            where: { id: line.productId, stock: { gte: line.quantity } },
+            data: { stock: { decrement: line.quantity } },
+          });
+          if (res.count === 0) throw new OutOfStockError(line.productId); // rolls everything back
+        }
+        return tx.order.create({
+          data: { userId: input.userId, totalCents: input.totalCents, items: { create: input.lines } },
+          include: { items: true },
+        });
+      });
+    }
+  </script>
+  <p>When a transaction must span <em>several</em> repositories, teams usually either pass a <code>Prisma.TransactionClient</code> as an optional parameter, or use a library such as <code>@nestjs-cls/transactional</code> that stores the transaction in async context. Start with the simple "one repository method per atomic operation" approach.</p>
+
+  <table>
+    <tr><th></th><th>Service uses Prisma directly</th><th>Service uses a repository</th></tr>
+    <tr><td>Files</td><td>Fewer</td><td>One more class per feature</td></tr>
+    <tr><td>Unit tests</td><td>Must mock Prisma's deep API (<code>prisma.order.findMany</code>)</td><td>Mock a few simple methods</td></tr>
+    <tr><td>Query reuse</td><td>Copy-paste</td><td>One named method</td></tr>
+    <tr><td>Changing ORM</td><td>Touch every service</td><td>Touch only repositories</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A shared <code>PrismaService</code> lives in a global <code>PrismaModule</code>, and each feature has its own repository that injects it. Repositories return Prisma's generated types (or domain objects, see the Mapper topic). A typical folder:</p>
+    <script type="text/x-code" data-lang="plaintext" data-title="src/orders/">
+      orders/
+      ├── dto/
+      ├── orders.controller.ts
+      ├── orders.service.ts
+      ├── orders.repository.ts           ← abstract class (the contract)
+      ├── prisma-orders.repository.ts    ← Prisma implementation
+      └── orders.module.ts
+    </script>
+    <p>Prisma 5+ also supports <em>client extensions</em> (<code>prisma.$extends</code>) to add custom model methods. They are handy, but they still put Prisma into your service, so they don't replace a repository if isolation is your goal.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>A "generic repository" with <code>findMany(where: any)</code> that just forwards Prisma arguments. Prisma's syntax still leaks out, so you gain nothing. Name methods after business needs: <code>findRecentPaid()</code>.</li>
+      <li>Putting business decisions in the repository ("if stock is low, send an email"). Repositories store and load. Services decide.</li>
+      <li>Using a TypeScript <code>interface</code> as the injection token. It disappears at runtime. Use an <code>abstract class</code> or a Symbol token with <code>@Inject()</code>.</li>
+      <li>Starting a transaction in the service with <code>this.prisma.$transaction</code> and passing <code>tx</code> everywhere by hand, which brings Prisma right back into the service.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add a method to the <code>OrdersRepository</code> contract that counts how many orders a user placed in a given status, implement it in <code>PrismaOrdersRepository</code>, and use it in the service to block users that have more than 5 <code>PENDING</code> orders.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // contract
+        export abstract class OrdersRepository {
+          // ...existing methods
+          abstract countByStatus(userId: number, status: OrderStatus): Promise<number>;
+        }
+
+        // Prisma implementation
+        countByStatus(userId: number, status: OrderStatus) {
+          return this.prisma.order.count({ where: { userId, status } });
+        }
+
+        // service
+        async placeOrder(userId: number, dto: CreateOrderDto) {
+          const pending = await this.ordersRepo.countByStatus(userId, OrderStatus.PENDING);
+          if (pending >= 5) {
+            throw new ConflictException('Too many unpaid orders. Pay or cancel one first.');
+          }
+          // ...rest of placeOrder
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Prisma is already a data-access layer. Why add a repository on top?</summary>
+      <p>Prisma gives you a typed query builder, but your services would still contain query details and depend on Prisma's API. A repository names queries in business terms, keeps them in one place, and makes services testable with simple fakes. For small CRUD apps it may be overkill, and that's a valid trade-off.</p></details>
+    <details><summary>Why use an abstract class instead of an interface for the repository in Nest?</summary>
+      <p>Nest's DI needs a runtime token. Interfaces are erased at compile time, while an abstract class remains a JavaScript value. So <code>{ provide: OrdersRepository, useClass: PrismaOrdersRepository }</code> works and the service can inject it without <code>@Inject()</code>.</p></details>
+    <details><summary>How do you handle transactions with the repository pattern?</summary>
+      <p>Prefer one repository method per atomic operation, using <code>$transaction</code> inside it. When an operation spans several repositories, pass a transaction client explicitly or use a "unit of work" helper based on async local storage (for example <code>@nestjs-cls/transactional</code>).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A repository hides <em>how</em> data is stored behind methods named for <em>what</em> the business needs. Use an abstract class as the token, and keep all Prisma code inside it.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="dtos">
+  <div class="topic-head"><span class="num">3</span><h2>DTOs</h2></div>
+  <p class="tagline">class-validator and class-transformer</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A DTO (Data Transfer Object) is like a <strong>customs form</strong> at an airport. Everything that enters the country must be written on the form in a fixed format, and the officer checks it before you're allowed in. Your API does the same: every request body is checked against a DTO class, and anything wrong or unexpected is rejected at the door, before it reaches your business code.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Why a class?</strong> TypeScript types vanish at runtime (Lesson 1), so a <code>body: CreateOrderDto</code> annotation alone checks nothing. The JSON from the client could be <code>{ "items": "hello" }</code>. A DTO <em>class</em> with decorators carries rules that still exist at runtime:</p>
+  <ul>
+    <li><strong>class-validator</strong>: decorators like <code>@IsInt()</code>, <code>@Min(1)</code> that describe the rules.</li>
+    <li><strong>class-transformer</strong>: turns the plain JSON object into a real instance of your class, converting types (e.g. string <code>"5"</code> to number <code>5</code>, nested objects to nested classes).</li>
+    <li><strong>ValidationPipe</strong>: Nest glues the two together. It transforms, validates, and throws <code>400 Bad Request</code> if anything fails.</li>
+  </ul>
+  <script type="text/x-code" data-lang="bash">
+    npm i class-validator class-transformer
+  </script>
+
+  <p><strong>Step 1: a simple DTO.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/order-item.dto.ts">
+    import { IsInt, IsPositive, Max } from 'class-validator';
+
+    export class OrderItemDto {
+      @IsInt()
+      @IsPositive()
+      productId!: number;
+
+      @IsInt()
+      @IsPositive()
+      @Max(100) // business limit: no one buys 10,000 keyboards in one go
+      quantity!: number;
+    }
+  </script>
+
+  <p><strong>Step 2: nested DTOs.</strong> An order contains a list of items. To validate <em>inside</em> an array, you need <em>both</em> <code>@ValidateNested</code> (class-validator: "check the children") <em>and</em> <code>@Type</code> (class-transformer: "the children are <code>OrderItemDto</code> instances"). Forgetting <code>@Type</code> is the number-one DTO bug: the children stay plain objects and are silently <em>not</em> validated.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/create-order.dto.ts">
+    import { Type } from 'class-transformer';
+    import {
+      ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, IsString, MaxLength, ValidateNested,
+    } from 'class-validator';
+    import { OrderItemDto } from './order-item.dto';
+
+    export class CreateOrderDto {
+      @IsArray()
+      @ArrayMinSize(1)
+      @ArrayMaxSize(50)
+      @ValidateNested({ each: true })
+      @Type(() => OrderItemDto)          // ✅ without this, items are NOT validated
+      items!: OrderItemDto[];
+
+      @IsOptional()
+      @IsString()
+      @MaxLength(500)
+      note?: string;
+    }
+  </script>
+
+  <p><strong>Step 3: turn on the global ValidationPipe</strong> with the safe options:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,             // strip properties that have no decorator
+          forbidNonWhitelisted: true,  // ...or better: reject the request if any are present
+          transform: true,             // give me a real CreateOrderDto instance, convert types
+        }),
+      );
+      await app.listen(3000);
+    }
+    bootstrap();
+  </script>
+  <p><code>whitelist</code> matters for security. Without it, a client could send <code>{ "items": [...], "status": "PAID", "totalCents": 0 }</code>, and if you spread the body into Prisma, they just paid nothing. This attack is called <em>mass assignment</em>.</p>
+
+  <p><strong>What the client sees when validation fails:</strong></p>
+  <script type="text/x-code" data-lang="json" data-title="400 Bad Request">
+    {
+      "message": [
+        "items.0.quantity must be a positive number",
+        "property status should not exist"
+      ],
+      "error": "Bad Request",
+      "statusCode": 400
+    }
+  </script>
+
+  <p><strong>Step 4: response DTOs with class-transformer.</strong> DTOs aren't only for input. For output, you choose exactly which fields leave the server. With <code>@Exclude()</code>/<code>@Expose()</code> and Nest's <code>ClassSerializerInterceptor</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users/dto/user-response.dto.ts">
+    import { Exclude, Expose } from 'class-transformer';
+
+    @Exclude()                 // hide everything by default...
+    export class UserResponseDto {
+      @Expose() id!: number;   // ...and expose only what's safe
+      @Expose() email!: string;
+      @Expose() name!: string;
+      passwordHash!: string;   // ❌ never sent, even though it's on the object
+
+      constructor(partial: Partial<UserResponseDto>) {
+        Object.assign(this, partial);
+      }
+    }
+
+    // controller (with app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector))))
+    @Get('me')
+    async me(@CurrentUser() user: AuthUser) {
+      const entity = await this.usersService.findById(user.id);
+      return new UserResponseDto(entity); // must return a class INSTANCE for @Exclude to work
+    }
+  </script>
+
+  <p><strong>Step 5: reuse DTOs with mapped types.</strong> Don't copy fields. Derive:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { PartialType, PickType } from '@nestjs/mapped-types'; // or '@nestjs/swagger'
+
+    export class UpdateOrderNoteDto extends PickType(CreateOrderDto, ['note'] as const) {}
+    export class UpdateProductDto extends PartialType(CreateProductDto) {}
+  </script>
+
+  <table>
+    <tr><th>DTO kind</th><th>Purpose</th><th>Main tool</th></tr>
+    <tr><td>Request DTO</td><td>Validate and shape input</td><td>class-validator + ValidationPipe</td></tr>
+    <tr><td>Query DTO</td><td>Validate <code>?page=2&amp;status=PAID</code></td><td>class-validator + <code>@Type(() =&gt; Number)</code></td></tr>
+    <tr><td>Response DTO</td><td>Control what leaves the server</td><td>class-transformer / a mapper</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Each feature has a <code>dto/</code> folder with one class per file. Request DTOs use class-validator; enum fields reuse the Prisma enum:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/dto/update-order-status.dto.ts">
+      import { OrderStatus } from '@prisma/client';
+      import { IsEnum } from 'class-validator';
+
+      export class UpdateOrderStatusDto {
+        @IsEnum(OrderStatus)
+        status!: OrderStatus;
+      }
+    </script>
+    <p>A key rule: <strong>never pass a DTO straight into Prisma</strong> (<code>prisma.order.create({ data: dto })</code>). The DTO is the shape of the HTTP request, and the database row is a different shape. Build the Prisma <code>data</code> object explicitly, or use a mapper.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting <code>@Type(() =&gt; ChildDto)</code> on nested objects or arrays. Nested data is then never validated.</li>
+      <li>Not enabling <code>whitelist</code>, which allows mass assignment of fields like <code>role</code> or <code>status</code>.</li>
+      <li>Using an <code>interface</code> as a DTO. Nothing gets validated at runtime.</li>
+      <li>Returning a plain object (not a class instance) and expecting <code>@Exclude()</code> to hide fields. The serializer only applies rules to class instances.</li>
+      <li>Reusing the request DTO as the response type, which leaks internal fields or forces awkward optional properties.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>CreateProductDto</code>: <code>name</code> (string, 2–100 chars), <code>priceCents</code> (integer, at least 0), <code>stock</code> (integer, at least 0, optional, default 0), and <code>tags</code> (optional array of unique strings, at most 10). Then derive <code>UpdateProductDto</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import {
+          ArrayMaxSize, ArrayUnique, IsArray, IsInt, IsOptional, IsString, Length, Min,
+        } from 'class-validator';
+        import { PartialType } from '@nestjs/mapped-types';
+
+        export class CreateProductDto {
+          @IsString()
+          @Length(2, 100)
+          name!: string;
+
+          @IsInt()
+          @Min(0)
+          priceCents!: number;
+
+          @IsOptional()
+          @IsInt()
+          @Min(0)
+          stock: number = 0; // default applied when transform: true and the field is missing
+
+          @IsOptional()
+          @IsArray()
+          @ArrayMaxSize(10)
+          @ArrayUnique()
+          @IsString({ each: true })
+          tags?: string[];
+        }
+
+        export class UpdateProductDto extends PartialType(CreateProductDto) {}
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between class-validator and class-transformer?</summary>
+      <p>class-transformer converts plain objects into class instances (and back), including type conversion and nested classes. class-validator checks an instance against the rules in its decorators. ValidationPipe uses the transformer first, then the validator.</p></details>
+    <details><summary>What do <code>whitelist</code> and <code>forbidNonWhitelisted</code> do?</summary>
+      <p><code>whitelist</code> removes properties that have no validation decorator. <code>forbidNonWhitelisted</code> rejects the request with 400 instead of silently removing them. Together they prevent mass-assignment attacks.</p></details>
+    <details><summary>Why do nested DTOs need <code>@Type()</code>?</summary>
+      <p>JSON has no type information, so class-transformer can't know the nested object should become an <code>OrderItemDto</code>. Without that, the nested value stays a plain object and <code>@ValidateNested</code> has no rules to apply.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> DTOs are classes that guard the door: validate every input with class-validator, enable <code>whitelist</code> and <code>transform</code>, add <code>@Type</code> for nested data, and use separate DTOs for responses.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="feature-modules">
+  <div class="topic-head"><span class="num">4</span><h2>Feature modules</h2></div>
+  <p class="tagline">organize by domain, not by file type</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine a supermarket that sorted products by <em>material</em>: all glass things in one aisle (jam jars, wine, light bulbs), all plastic things in another. To make breakfast you'd walk the whole shop. Real supermarkets sort by <em>purpose</em>: dairy, bakery, cleaning. Code is the same. Sorting by file type (<code>controllers/</code>, <code>services/</code>) means one change touches five folders. Sorting by feature (<code>orders/</code>, <code>products/</code>) keeps everything for one job in one place.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Before: organized by file type.</strong> To add a field to orders you open <code>controllers/</code>, <code>services/</code>, <code>dto/</code> and <code>repositories/</code>. Nothing tells you which files belong together, and everything can import everything:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="src/ (before) ❌">
+    src/
+    ├── controllers/
+    │   ├── orders.controller.ts
+    │   ├── products.controller.ts
+    │   └── users.controller.ts
+    ├── services/
+    │   ├── orders.service.ts
+    │   ├── products.service.ts
+    │   └── users.service.ts
+    ├── dto/
+    │   └── ...30 files...
+    ├── repositories/
+    └── app.module.ts        ← registers every controller and provider in one giant list
+  </script>
+
+  <p><strong>After: organized by feature (domain).</strong> Each folder is a Nest module with a clear boundary. Shared, feature-less code goes in <code>common/</code> or <code>infra/</code>:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="src/ (after) ✅">
+    src/
+    ├── orders/
+    │   ├── dto/
+    │   │   ├── create-order.dto.ts
+    │   │   └── order-response.dto.ts
+    │   ├── orders.controller.ts
+    │   ├── orders.service.ts
+    │   ├── orders.repository.ts
+    │   ├── prisma-orders.repository.ts
+    │   └── orders.module.ts
+    ├── products/
+    │   ├── ...
+    │   └── products.module.ts
+    ├── users/
+    │   └── users.module.ts
+    ├── prisma/
+    │   ├── prisma.service.ts
+    │   └── prisma.module.ts       ← infrastructure, used by every feature
+    ├── common/
+    │   ├── decorators/current-user.decorator.ts
+    │   └── filters/domain-exception.filter.ts
+    ├── app.module.ts             ← only imports feature modules
+    └── main.ts
+  </script>
+
+  <p><strong>A module is a box with a door.</strong> In Nest, providers are <em>private</em> to their module by default. Only what you list in <code>exports</code> can be used by other modules. This is how you enforce boundaries:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="products/products.module.ts">
+    @Module({
+      controllers: [ProductsController],
+      providers: [ProductsService, ProductsRepository],
+      exports: [ProductsService], // ✅ the public API of this feature
+      // ProductsRepository is NOT exported → other features can't bypass ProductsService
+    })
+    export class ProductsModule {}
+  </script>
+
+  <p>The orders feature needs product information, so it imports the products module and uses its exported service:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.module.ts">
+    @Module({
+      imports: [ProductsModule],
+      controllers: [OrdersController],
+      providers: [
+        OrdersService,
+        { provide: OrdersRepository, useClass: PrismaOrdersRepository },
+      ],
+    })
+    export class OrdersModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts">
+    @Injectable()
+    export class OrdersService {
+      constructor(
+        private readonly ordersRepo: OrdersRepository,
+        private readonly productsService: ProductsService, // ✅ via the public API
+        // private readonly productsRepo: ProductsRepository, // ❌ not exported → Nest error
+      ) {}
+    }
+  </script>
+  <p>If you try to inject <code>ProductsRepository</code> into <code>OrdersService</code>, Nest fails at startup with "Nest can't resolve dependencies of the OrdersService (OrdersRepository, ?)". That error is a <em>feature</em>: the module boundary just stopped someone from reaching into another feature's internals.</p>
+
+  <p><strong>Infrastructure modules.</strong> Things every feature needs (database, config, logging) can be marked <code>@Global()</code> so you don't import them everywhere. Use this sparingly: only for true infrastructure, never for business features.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma/prisma.module.ts">
+    @Global()
+    @Module({
+      providers: [PrismaService],
+      exports: [PrismaService],
+    })
+    export class PrismaModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    @Module({
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        PrismaModule,
+        UsersModule,
+        ProductsModule,
+        OrdersModule,
+      ],
+    })
+    export class AppModule {}
+  </script>
+
+  <p><strong>How big should a feature be?</strong> A good feature module matches a word your business people use: "orders", "payments", "catalog", "shipping". If two folders always change together, they're probably one feature. If one folder has 40 files covering unrelated things, split it.</p>
+
+  <table>
+    <tr><th></th><th>By file type</th><th>By feature</th></tr>
+    <tr><td>Adding a field to orders</td><td>Edit files in 4–5 folders</td><td>Edit files in <code>orders/</code></td></tr>
+    <tr><td>Boundaries</td><td>None: anything imports anything</td><td>Enforced by module <code>exports</code></td></tr>
+    <tr><td>Deleting a feature</td><td>Hunt across folders</td><td>Delete one folder + one import</td></tr>
+    <tr><td>Splitting into a microservice later</td><td>Very hard</td><td>The folder is already the boundary</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p><code>nest g resource orders</code> generates a feature folder for you. Larger codebases often group features under <code>src/modules/</code> and add a path alias (<code>@modules/orders</code>). Some teams also add an <code>index.ts</code> per feature that exports only the module, the public service and public DTOs, which documents the feature's public API:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products/index.ts">
+      export { ProductsModule } from './products.module';
+      export { ProductsService } from './products.service';
+      export { ProductSummaryDto } from './dto/product-summary.dto';
+      // ProductsRepository is deliberately not exported
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Exporting every provider "just in case". The boundary disappears, and features become tangled.</li>
+      <li>Making business modules <code>@Global()</code> to avoid writing <code>imports</code>. Dependencies become invisible.</li>
+      <li>A <code>shared/</code> or <code>common/</code> folder that slowly fills with business logic ("OrderUtils", "UserHelpers"). Common code should be feature-free.</li>
+      <li>Adding a provider to the <code>providers</code> array of two modules. You get <em>two separate instances</em>. Provide it once and export it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You're adding a <code>reviews</code> feature: users can review products they have bought. Reviews need to check "did this user buy this product?" (an orders question) and "does the product exist?" (a products question). Sketch the folder, the <code>ReviewsModule</code>, and what <code>OrdersModule</code> must export.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // src/reviews/: dto/, reviews.controller.ts, reviews.service.ts, reviews.repository.ts, reviews.module.ts
+
+        // orders.module.ts — add a public query service (or export OrdersService)
+        @Module({
+          imports: [ProductsModule],
+          controllers: [OrdersController],
+          providers: [OrdersService, { provide: OrdersRepository, useClass: PrismaOrdersRepository }],
+          exports: [OrdersService],
+        })
+        export class OrdersModule {}
+
+        // reviews.module.ts
+        @Module({
+          imports: [OrdersModule, ProductsModule],
+          controllers: [ReviewsController],
+          providers: [ReviewsService, ReviewsRepository],
+        })
+        export class ReviewsModule {}
+
+        // reviews.service.ts
+        async create(userId: number, dto: CreateReviewDto) {
+          await this.productsService.getById(dto.productId); // throws 404 if missing
+          const bought = await this.ordersService.hasUserBoughtProduct(userId, dto.productId);
+          if (!bought) throw new ForbiddenException('You can only review products you bought');
+          return this.reviewsRepo.create({ userId, ...dto });
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why organize by feature instead of by layer?</summary>
+      <p>Changes usually happen per feature, so keeping its controller, service, repository and DTOs together reduces the number of places to touch. It also lets Nest modules enforce boundaries through <code>exports</code>, and makes features easier to delete or extract later.</p></details>
+    <details><summary>What happens if you register the same service in two modules' <code>providers</code>?</summary>
+      <p>Nest creates two separate instances, one per module. Any state (cache, counters) is not shared. The fix is to provide it in one module, export it, and import that module where needed.</p></details>
+    <details><summary>When is <code>@Global()</code> appropriate?</summary>
+      <p>For cross-cutting infrastructure that almost every module needs and that has no business meaning, such as Prisma, config or logging. Global business modules hide dependencies and should be avoided.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> One feature = one folder = one Nest module. Export only the public service, keep repositories private, and reserve <code>@Global()</code> for infrastructure.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="domain-layer">
+  <div class="topic-head"><span class="num">5</span><h2>Domain layer</h2></div>
+  <p class="tagline">separate business rules from infrastructure</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>The rules of chess don't change if you play on a wooden board, a phone app, or by post. The rules are the <strong>domain</strong>; the board is <strong>infrastructure</strong>. In your shop, "a shipped order can't be cancelled" is a rule of the business. It's true no matter whether orders arrive by HTTP or a queue, or are saved in PostgreSQL or MongoDB. The domain layer is where these rules live, in plain TypeScript, with no framework or database code at all.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Before: rules scattered across services.</strong> The "can this order be cancelled?" rule is checked in the orders service, again in the admin service, and forgotten in the refund job:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="before ❌">
+    // orders.service.ts
+    if (order.status !== 'PENDING' && order.status !== 'PAID') {
+      throw new ConflictException('Cannot cancel');
+    }
+    await this.prisma.order.update({ where: { id }, data: { status: 'CANCELLED' } });
+
+    // admin-orders.service.ts — same rule, slightly different (bug!)
+    if (order.status === 'SHIPPED') throw new BadRequestException('Already shipped');
+    await this.prisma.order.update({ where: { id }, data: { status: 'CANCELLED' } });
+
+    // refund.job.ts — forgot the rule entirely 😱
+    await this.prisma.order.update({ where: { id }, data: { status: 'CANCELLED' } });
+  </script>
+  <p>An order's status is just a field anyone can overwrite. The "rule" exists only as copy-pasted <code>if</code> statements.</p>
+
+  <p><strong>After: a domain model that protects its own rules.</strong> An <code>Order</code> class owns its state. The only way to change the status is through methods that check the rules. These are called <em>invariants</em>: things that must always be true.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/domain/order.ts ✅">
+    // NO imports from @nestjs or @prisma here — plain TypeScript
+    export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'CANCELLED';
+
+    export interface OrderLine {
+      productId: number;
+      quantity: number;
+      priceCents: number;
+    }
+
+    export class Order {
+      private constructor(
+        readonly id: number | null,         // null = not saved yet
+        readonly userId: number,
+        private _status: OrderStatus,
+        readonly lines: readonly OrderLine[],
+        readonly createdAt: Date,
+      ) {}
+
+      // Factory for NEW orders — enforces creation rules
+      static create(userId: number, lines: OrderLine[]): Order {
+        if (lines.length === 0) throw new EmptyOrderError();
+        if (lines.some((l) => l.quantity <= 0)) throw new InvalidQuantityError();
+        return new Order(null, userId, 'PENDING', lines, new Date());
+      }
+
+      // Rebuild an EXISTING order from storage — no creation rules
+      static restore(props: {
+        id: number; userId: number; status: OrderStatus; lines: OrderLine[]; createdAt: Date;
+      }): Order {
+        return new Order(props.id, props.userId, props.status, props.lines, props.createdAt);
+      }
+
+      get status(): OrderStatus { return this._status; }
+
+      get totalCents(): number {
+        return this.lines.reduce((sum, l) => sum + l.priceCents * l.quantity, 0);
+      }
+
+      isOwnedBy(userId: number): boolean { return this.userId === userId; }
+
+      pay(): void {
+        if (this._status !== 'PENDING') throw new InvalidOrderTransitionError(this._status, 'PAID');
+        this._status = 'PAID';
+      }
+
+      ship(): void {
+        if (this._status !== 'PAID') throw new InvalidOrderTransitionError(this._status, 'SHIPPED');
+        this._status = 'SHIPPED';
+      }
+
+      cancel(): void {
+        if (this._status === 'SHIPPED' || this._status === 'CANCELLED') {
+          throw new InvalidOrderTransitionError(this._status, 'CANCELLED');
+        }
+        this._status = 'CANCELLED';
+      }
+    }
+  </script>
+
+  <p><strong>Domain errors</strong> describe what went wrong <em>in business terms</em>. They don't know about HTTP status codes:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/domain/order.errors.ts">
+    export abstract class DomainError extends Error {
+      abstract readonly code: string;
+      constructor(message: string) {
+        super(message);
+        this.name = new.target.name;
+      }
+    }
+
+    export class EmptyOrderError extends DomainError {
+      readonly code = 'ORDER_EMPTY';
+      constructor() { super('An order needs at least one item'); }
+    }
+
+    export class InvalidQuantityError extends DomainError {
+      readonly code = 'INVALID_QUANTITY';
+      constructor() { super('Quantity must be positive'); }
+    }
+
+    export class InvalidOrderTransitionError extends DomainError {
+      readonly code = 'INVALID_ORDER_TRANSITION';
+      constructor(from: string, to: string) { super(`Cannot change order from ${from} to ${to}`); }
+    }
+
+    export class OutOfStockError extends DomainError {
+      readonly code = 'OUT_OF_STOCK';
+      constructor(productId: number) { super(`Product ${productId} is out of stock`); }
+    }
+  </script>
+
+  <p><strong>The service becomes an "application service"</strong>: it loads the domain object, asks it to do something, and saves it. The rule lives in exactly one place:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts (after) ✅">
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly ordersRepo: OrdersRepository) {}
+
+      async cancelOrder(userId: number, orderId: number): Promise<Order> {
+        const order = await this.ordersRepo.findById(orderId); // returns a domain Order
+        if (!order || !order.isOwnedBy(userId)) throw new NotFoundException('Order not found');
+
+        order.cancel();                  // the rule is checked HERE, inside the domain
+        await this.ordersRepo.save(order);
+        return order;
+      }
+    }
+  </script>
+  <p>The admin service and the refund job call <code>order.cancel()</code> too, so they can't forget the rule.</p>
+
+  <p><strong>Mapping domain errors to HTTP</strong> happens once, at the edge, in an exception filter:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/filters/domain-exception.filter.ts">
+    import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
+    import { Response } from 'express';
+
+    const STATUS_BY_CODE: Record<string, number> = {
+      ORDER_EMPTY: HttpStatus.UNPROCESSABLE_ENTITY,
+      INVALID_QUANTITY: HttpStatus.UNPROCESSABLE_ENTITY,
+      INVALID_ORDER_TRANSITION: HttpStatus.CONFLICT,
+      OUT_OF_STOCK: HttpStatus.CONFLICT,
+    };
+
+    @Catch(DomainError)
+    export class DomainExceptionFilter implements ExceptionFilter {
+      catch(error: DomainError, host: ArgumentsHost) {
+        const res = host.switchToHttp().getResponse<Response>();
+        const status = STATUS_BY_CODE[error.code] ?? HttpStatus.BAD_REQUEST;
+        res.status(status).json({ statusCode: status, code: error.code, message: error.message });
+      }
+    }
+
+    // main.ts: app.useGlobalFilters(new DomainExceptionFilter());
+  </script>
+
+  <p><strong>Testing the domain is trivial</strong>: no Nest testing module, no mocks, no database:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/domain/order.spec.ts">
+    describe('Order', () => {
+      const lines = [{ productId: 1, quantity: 2, priceCents: 1500 }];
+
+      it('computes the total', () => {
+        expect(Order.create(7, lines).totalCents).toBe(3000);
+      });
+
+      it('cannot be cancelled after shipping', () => {
+        const order = Order.create(7, lines);
+        order.pay();
+        order.ship();
+        expect(() => order.cancel()).toThrow(InvalidOrderTransitionError);
+      });
+    });
+  </script>
+
+  <table>
+    <tr><th>Layer</th><th>Contains</th><th>May import</th></tr>
+    <tr><td>Domain</td><td>Entities, value objects, domain errors, pure rules</td><td>Nothing from Nest or Prisma</td></tr>
+    <tr><td>Application (service)</td><td>Use cases: load, call domain, save, emit events</td><td>Domain, repository contracts</td></tr>
+    <tr><td>Infrastructure</td><td>Prisma repositories, email clients, payment SDKs</td><td>Domain, Prisma, external SDKs</td></tr>
+    <tr><td>Interface (HTTP)</td><td>Controllers, DTOs, filters, guards</td><td>Application layer</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A common folder layout inside a feature that has real business rules:</p>
+    <script type="text/x-code" data-lang="plaintext" data-title="src/orders/">
+      orders/
+      ├── domain/
+      │   ├── order.ts               ← entity with rules (pure TS)
+      │   ├── order.errors.ts
+      │   └── orders.repository.ts   ← abstract contract (pure TS)
+      ├── infra/
+      │   ├── prisma-orders.repository.ts
+      │   └── order.mapper.ts
+      ├── http/
+      │   ├── orders.controller.ts
+      │   └── dto/
+      ├── orders.service.ts          ← application service
+      └── orders.module.ts
+    </script>
+    <p>You don't need this for every feature. A "tags" or "settings" feature with no rules is fine as plain controller + service + Prisma. Use a domain layer where the rules are rich: orders, payments, subscriptions, bookings.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>An "anemic" domain model: a class with only public fields and no methods, while all rules stay in services. You get the extra files without the protection.</li>
+      <li>Importing <code>@nestjs/common</code> exceptions (<code>BadRequestException</code>) into domain code. The domain shouldn't know about HTTP.</li>
+      <li>Using the Prisma-generated type as the domain model. Anyone can set <code>status</code> directly, and the rules are bypassed.</li>
+      <li>Running validation rules for <em>new</em> objects when restoring old ones from the database. Keep <code>create()</code> and <code>restore()</code> separate.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add a rule to the <code>Order</code> domain model: an order can only be paid if its total is at least 100 cents (payment providers reject tiny charges). Add a matching domain error and a unit test.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export class MinimumAmountError extends DomainError {
+          readonly code = 'ORDER_BELOW_MINIMUM';
+          constructor(min: number) { super(`Order total must be at least ${min} cents to pay`); }
+        }
+
+        // inside class Order
+        static readonly MIN_PAYABLE_CENTS = 100;
+
+        pay(): void {
+          if (this._status !== 'PENDING') throw new InvalidOrderTransitionError(this._status, 'PAID');
+          if (this.totalCents < Order.MIN_PAYABLE_CENTS) {
+            throw new MinimumAmountError(Order.MIN_PAYABLE_CENTS);
+          }
+          this._status = 'PAID';
+        }
+
+        // test
+        it('rejects payment below the minimum', () => {
+          const order = Order.create(7, [{ productId: 1, quantity: 1, priceCents: 50 }]);
+          expect(() => order.pay()).toThrow(MinimumAmountError);
+          expect(order.status).toBe('PENDING');
+        });
+
+        // and add ORDER_BELOW_MINIMUM: 422 to STATUS_BY_CODE in the filter
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What belongs in the domain layer?</summary>
+      <p>Business concepts and rules that are true regardless of technology: entities with behavior (<code>order.cancel()</code>), value objects (<code>Money</code>), invariants and domain errors. It must not depend on Nest, Prisma or HTTP.</p></details>
+    <details><summary>What is an anemic domain model, and why is it a problem?</summary>
+      <p>A model that is only data (getters and setters) while all logic lives in services. Rules get duplicated across services and can be bypassed by setting fields directly. A rich model encapsulates state and exposes behavior that enforces the rules.</p></details>
+    <details><summary>How do domain errors become HTTP responses?</summary>
+      <p>The domain throws its own error types with a business code. A global exception filter in the HTTP layer maps each code to a status (409, 422, …) and a response body. The domain stays independent of the transport.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Put business rules inside domain objects written in plain TypeScript. Services orchestrate, the domain decides, and infrastructure stores.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="mapper-pattern">
+  <div class="topic-head"><span class="num">6</span><h2>Mapper pattern</h2></div>
+  <p class="tagline">entity vs DTO vs domain model</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>The same thing can have different "costumes" depending on where it is. A song is a set of notes in the composer's head, a file on a server, and a sound coming out of a speaker. In your app, an order is a <strong>database row</strong> (Prisma entity), a <strong>business object</strong> with rules (domain model), and a <strong>JSON response</strong> (DTO). A mapper is the dressing room where one costume is changed into another, in one known place.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The three shapes of an order:</strong></p>
+  <table>
+    <tr><th>Shape</th><th>Where it lives</th><th>Looks like</th><th>Changes when…</th></tr>
+    <tr><td>Persistence entity</td><td>Prisma-generated type</td><td><code>{ id, userId, status, totalCents, createdAt, updatedAt, items: [...] }</code></td><td>The database schema changes</td></tr>
+    <tr><td>Domain model</td><td><code>orders/domain/order.ts</code></td><td><code>Order</code> class with <code>cancel()</code>, <code>totalCents</code> getter</td><td>Business rules change</td></tr>
+    <tr><td>DTO</td><td><code>orders/dto/</code></td><td><code>{ id, status, total: "30.00", currency: "USD", items: [...] }</code></td><td>The API contract changes</td></tr>
+  </table>
+  <p>These three change for <em>different reasons</em>. If they're one object, renaming a database column breaks the public API, and a mobile app crashes. Mappers keep them independent.</p>
+
+  <p><strong>Before: returning the Prisma row directly.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="before ❌">
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+      return this.prisma.order.findUnique({ where: { id }, include: { items: true, user: true } });
+      // leaks: user.passwordHash, internal columns, cents instead of a price string,
+      // and renaming a column silently changes the API
+    }
+  </script>
+
+  <p><strong>Step 1: type the Prisma shape.</strong> Prisma can generate the exact type for a query with <code>include</code>, using <code>Prisma.OrderGetPayload</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/infra/order.mapper.ts">
+    import { Prisma } from '@prisma/client';
+
+    export const orderInclude = { items: true } satisfies Prisma.OrderInclude;
+    export type PrismaOrderWithItems = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
+  </script>
+
+  <p><strong>Step 2: persistence ⇄ domain mapper</strong>, used only by the repository:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/infra/order.mapper.ts (continued)">
+    import { Order } from '../domain/order';
+
+    export class OrderPersistenceMapper {
+      static toDomain(row: PrismaOrderWithItems): Order {
+        return Order.restore({
+          id: row.id,
+          userId: row.userId,
+          status: row.status, // Prisma enum 'PENDING' | ... matches the domain union
+          createdAt: row.createdAt,
+          lines: row.items.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            priceCents: i.priceCents,
+          })),
+        });
+      }
+
+      static toCreateInput(order: Order): Prisma.OrderUncheckedCreateInput {
+        return {
+          userId: order.userId,
+          status: order.status,
+          totalCents: order.totalCents,
+          items: { create: order.lines.map((l) => ({ ...l })) },
+        };
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/infra/prisma-orders.repository.ts">
+    async findById(id: number): Promise<Order | null> {
+      const row = await this.prisma.order.findUnique({ where: { id }, include: orderInclude });
+      return row ? OrderPersistenceMapper.toDomain(row) : null;
+    }
+
+    async save(order: Order): Promise<Order> {
+      if (order.id === null) {
+        const row = await this.prisma.order.create({
+          data: OrderPersistenceMapper.toCreateInput(order),
+          include: orderInclude,
+        });
+        return OrderPersistenceMapper.toDomain(row);
+      }
+      const row = await this.prisma.order.update({
+        where: { id: order.id },
+        data: { status: order.status },
+        include: orderInclude,
+      });
+      return OrderPersistenceMapper.toDomain(row);
+    }
+  </script>
+
+  <p><strong>Step 3: domain → response DTO mapper</strong>, used by the controller or service. This is where you format values for clients:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/order-response.dto.ts">
+    export class OrderItemResponseDto {
+      productId!: number;
+      quantity!: number;
+      unitPrice!: string;   // "15.00"
+    }
+
+    export class OrderResponseDto {
+      id!: number;
+      status!: string;
+      total!: string;       // "30.00" — clients never see cents
+      currency!: string;
+      createdAt!: string;   // ISO 8601
+      items!: OrderItemResponseDto[];
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/http/order-response.mapper.ts">
+    const formatCents = (cents: number) => (cents / 100).toFixed(2);
+
+    export class OrderResponseMapper {
+      static toDto(order: Order): OrderResponseDto {
+        if (order.id === null) throw new Error('Cannot map an unsaved order');
+        return {
+          id: order.id,
+          status: order.status,
+          total: formatCents(order.totalCents),
+          currency: 'USD',
+          createdAt: order.createdAt.toISOString(),
+          items: order.lines.map((l) => ({
+            productId: l.productId,
+            quantity: l.quantity,
+            unitPrice: formatCents(l.priceCents),
+          })),
+        };
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/http/orders.controller.ts">
+    @Get(':id')
+    async findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number): Promise<OrderResponseDto> {
+      const order = await this.ordersService.getOrder(user.id, id);
+      return OrderResponseMapper.toDto(order);
+    }
+  </script>
+
+  <p><strong>The full journey of one request:</strong></p>
+  <script type="text/x-code" data-lang="plaintext">
+    JSON body ──ValidationPipe──▶ CreateOrderDto
+                                     │  (service builds the domain object)
+                                     ▼
+                                   Order (domain)  ◀──toDomain── Prisma row
+                                     │                              ▲
+                                     ├──toCreateInput──────────────┘  (repository)
+                                     ▼
+                              OrderResponseDto ──▶ JSON response
+  </script>
+
+  <p><strong>Plain functions or classes?</strong> Mappers are just functions. A class with static methods, a module of exported functions, or an injectable <code>@Injectable() OrderMapper</code> (when the mapper needs a dependency, e.g. a currency service) are all fine. Libraries like <code>@automapper/nestjs</code> exist, but hand-written mappers are explicit, type-checked, and easy to debug, so most teams prefer them.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>In a simpler feature without a domain model, you still benefit from a response mapper. A Prisma <code>select</code> plus a small mapper is a very common, lightweight combination:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users/users.service.ts">
+      const publicUserSelect = { id: true, email: true, name: true, createdAt: true } satisfies Prisma.UserSelect;
+      type PublicUserRow = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
+
+      export const toUserResponse = (u: PublicUserRow) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        memberSince: u.createdAt.toISOString().slice(0, 10),
+      });
+
+      async getProfile(id: number) {
+        const user = await this.prisma.user.findUnique({ where: { id }, select: publicUserSelect });
+        if (!user) throw new NotFoundException('User not found');
+        return toUserResponse(user); // passwordHash was never even loaded ✅
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Returning Prisma rows straight from controllers, leaking columns like <code>passwordHash</code> or <code>deletedAt</code> and coupling the API to the schema.</li>
+      <li>Putting business logic in mappers ("if total &gt; 100, add free shipping"). Mappers translate shapes, nothing more.</li>
+      <li>Mapping in many places (some in controllers, some in services, some inline). Pick one place per direction.</li>
+      <li>Returning <code>Date</code> objects or <code>Decimal</code> values and letting <code>JSON.stringify</code> decide the format. Be explicit (ISO strings, fixed decimals).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write an <code>OrderSummaryDto</code> for the "my orders" list page. It should contain <code>id</code>, <code>status</code>, <code>total</code> (string like <code>"30.00"</code>), <code>itemCount</code> (sum of quantities) and <code>placedAt</code> (date only, <code>"2026-10-05"</code>). Write the mapper from the domain <code>Order</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export class OrderSummaryDto {
+          id!: number;
+          status!: string;
+          total!: string;
+          itemCount!: number;
+          placedAt!: string;
+        }
+
+        export function toOrderSummary(order: Order): OrderSummaryDto {
+          return {
+            id: order.id!,  // orders from the repository are always saved
+            status: order.status,
+            total: (order.totalCents / 100).toFixed(2),
+            itemCount: order.lines.reduce((n, l) => n + l.quantity, 0),
+            placedAt: order.createdAt.toISOString().slice(0, 10),
+          };
+        }
+
+        // controller
+        @Get()
+        async list(@CurrentUser() user: AuthUser) {
+          const orders = await this.ordersService.listForUser(user.id);
+          return orders.map(toOrderSummary);
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between an entity, a domain model and a DTO?</summary>
+      <p>The persistence entity mirrors the database table (Prisma type). The domain model represents the business concept with behavior and rules. The DTO is the shape of data crossing the API boundary. They change for different reasons, so mapping between them keeps those changes isolated.</p></details>
+    <details><summary>Isn't mapping just boilerplate?</summary>
+      <p>It is some extra code, but it buys a stable API that doesn't break when the schema changes, prevents data leaks, and keeps formatting in one place. In small CRUD features, a single response mapper (or a Prisma <code>select</code>) is often enough.</p></details>
+    <details><summary>Where should mapping happen?</summary>
+      <p>Persistence ⇄ domain mapping belongs in the repository (infrastructure). Domain → response DTO mapping belongs at the HTTP edge (controller or a dedicated presenter), or at the end of the service if the team prefers services to return DTOs. Be consistent.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Row, domain object and DTO are three different shapes that change for different reasons. Translate between them in mappers, in one known place, and never return raw Prisma rows to clients.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="solid">
+  <div class="topic-head"><span class="num">7</span><h2>SOLID</h2></div>
+  <p class="tagline">each principle with practical NestJS examples</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>SOLID is five pieces of advice for writing classes that are easy to change. Think of building with LEGO instead of carving one big block of wood. Each brick does one thing (<strong>S</strong>), you add new bricks instead of re-carving old ones (<strong>O</strong>), any 2x4 brick fits where a 2x4 is expected (<strong>L</strong>), bricks only have the studs they need (<strong>I</strong>), and you design around the standard stud shape, not one specific brick (<strong>D</strong>).</p>
+  </div>
+
+  <h3>How it works</h3>
+
+  <p><strong>S: Single Responsibility Principle.</strong> "A class should have only one reason to change." Here, "reason" means a person or team who could ask for a change.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="before ❌ — one class, four reasons to change">
+    @Injectable()
+    export class OrdersService {
+      async placeOrder(userId: number, dto: CreateOrderDto) {
+        // 1. business rules (product team)
+        // 2. building HTML email templates (marketing team)
+        // 3. generating a PDF invoice (accounting team)
+        // 4. pushing analytics events (data team)
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="after ✅ — each concern has its own class">
+    @Injectable()
+    export class OrdersService {
+      constructor(
+        private readonly ordersRepo: OrdersRepository,
+        private readonly notifier: OrderNotifier,     // emails
+        private readonly invoices: InvoiceService,    // PDFs
+      ) {}
+
+      async placeOrder(userId: number, dto: CreateOrderDto) {
+        const order = await this.createOrder(userId, dto); // only order logic here
+        await this.invoices.generateFor(order);
+        await this.notifier.orderPlaced(order);
+        return order;
+      }
+    }
+  </script>
+  <p>Marketing can change the email without anyone touching order logic. (Later in the DI topic we'll go one step further and use events.)</p>
+
+  <p><strong>O: Open/Closed Principle.</strong> "Open for extension, closed for modification": you should be able to add new behavior <em>without editing</em> working code. Classic smell: a growing <code>switch</code>.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="before ❌">
+    calculateDiscount(order: Order, code: string): number {
+      switch (code) {
+        case 'WELCOME10': return order.totalCents * 0.1;
+        case 'FREESHIP':  return 500;
+        case 'BLACKFRIDAY': return order.totalCents * 0.3;
+        // every new promo = edit this method, re-test everything
+      }
+      return 0;
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="after ✅ — strategies registered in DI">
+    export interface DiscountRule {
+      supports(code: string): boolean;
+      discountCents(order: Order): number;
+    }
+    export const DISCOUNT_RULES = Symbol('DISCOUNT_RULES');
+
+    @Injectable()
+    export class WelcomeDiscount implements DiscountRule {
+      supports(code: string) { return code === 'WELCOME10'; }
+      discountCents(order: Order) { return Math.round(order.totalCents * 0.1); }
+    }
+
+    @Injectable()
+    export class FreeShippingDiscount implements DiscountRule {
+      supports(code: string) { return code === 'FREESHIP'; }
+      discountCents() { return 500; }
+    }
+
+    @Injectable()
+    export class DiscountService {
+      constructor(@Inject(DISCOUNT_RULES) private readonly rules: DiscountRule[]) {}
+
+      discountFor(order: Order, code: string): number {
+        const rule = this.rules.find((r) => r.supports(code));
+        return rule ? Math.min(rule.discountCents(order), order.totalCents) : 0;
+      }
+    }
+
+    // module: adding a promo = add a class + one line here. DiscountService is untouched.
+    @Module({
+      providers: [
+        WelcomeDiscount,
+        FreeShippingDiscount,
+        {
+          provide: DISCOUNT_RULES,
+          useFactory: (...rules: DiscountRule[]) => rules,
+          inject: [WelcomeDiscount, FreeShippingDiscount],
+        },
+        DiscountService,
+      ],
+      exports: [DiscountService],
+    })
+    export class DiscountsModule {}
+  </script>
+
+  <p><strong>L: Liskov Substitution Principle.</strong> "Any implementation must be usable wherever its abstraction is expected, without surprises." If the contract says <code>findById</code> returns <code>null</code> when nothing is found, every implementation must do that:</p>
+  <script type="text/x-code" data-lang="typescript">
+    export abstract class OrdersRepository {
+      /** Returns null when the order does not exist. */
+      abstract findById(id: number): Promise<Order | null>;
+    }
+
+    // ✅ honors the contract
+    class PrismaOrdersRepository implements OrdersRepository {
+      async findById(id: number) {
+        const row = await this.prisma.order.findUnique({ where: { id }, include: orderInclude });
+        return row ? OrderPersistenceMapper.toDomain(row) : null;
+      }
+    }
+
+    // ❌ breaks LSP: throws instead of returning null.
+    // OrdersService's "if (!order) throw new NotFoundException()" never runs;
+    // callers get a 500 in tests that use this implementation.
+    class CachedOrdersRepository implements OrdersRepository {
+      async findById(id: number): Promise<Order | null> {
+        const hit = this.cache.get(id);
+        if (!hit) throw new Error('not in cache');
+        return hit;
+      }
+    }
+  </script>
+  <p>LSP is about <em>behavior</em>, not just types: the compiler checks signatures, but you must keep the promises (what's returned, what's thrown, side effects).</p>
+
+  <p><strong>I: Interface Segregation Principle.</strong> "Don't force clients to depend on methods they don't use." Split big contracts into small, focused ones:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ one fat contract — the SMS provider must fake refund() and createCheckoutSession()
+    interface NotificationAndPaymentGateway {
+      sendSms(to: string, text: string): Promise<void>;
+      charge(amountCents: number, token: string): Promise<string>;
+      refund(chargeId: string): Promise<void>;
+      createCheckoutSession(orderId: number): Promise<string>;
+    }
+
+    // ✅ small contracts; a class implements only what it really supports
+    export abstract class PaymentGateway {
+      abstract charge(amountCents: number, token: string): Promise<string>;
+    }
+    export abstract class RefundGateway {
+      abstract refund(chargeId: string): Promise<void>;
+    }
+
+    @Injectable()
+    export class StripeGateway implements PaymentGateway, RefundGateway {
+      async charge(amountCents: number, token: string) { /* Stripe SDK */ return 'ch_123'; }
+      async refund(chargeId: string) { /* Stripe SDK */ }
+    }
+
+    // CheckoutService depends only on PaymentGateway; RefundsService only on RefundGateway.
+  </script>
+  <p>Note: TypeScript lets a class <code>implements</code> several abstract classes, because <code>implements</code> only checks the shape.</p>
+
+  <p><strong>D: Dependency Inversion Principle.</strong> "High-level code should depend on abstractions, not on concrete details." The business logic (<code>CheckoutService</code>) shouldn't import the Stripe SDK. Both depend on the <code>PaymentGateway</code> abstraction:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ high-level code tied to a vendor
+    @Injectable()
+    export class CheckoutServiceBad {
+      private stripe = new Stripe(process.env.STRIPE_KEY!); // created inside, impossible to mock
+    }
+
+    // ✅ depends on the abstraction; Nest decides the concrete class
+    @Injectable()
+    export class CheckoutService {
+      constructor(
+        private readonly ordersRepo: OrdersRepository,
+        private readonly payments: PaymentGateway,
+      ) {}
+
+      async pay(userId: number, orderId: number, paymentToken: string) {
+        const order = await this.ordersRepo.findById(orderId);
+        if (!order || !order.isOwnedBy(userId)) throw new NotFoundException('Order not found');
+        order.pay();                                          // domain rule
+        await this.payments.charge(order.totalCents, paymentToken);
+        return this.ordersRepo.save(order);
+      }
+    }
+
+    // payments.module.ts
+    providers: [
+      StripeGateway,
+      { provide: PaymentGateway, useExisting: StripeGateway },
+      { provide: RefundGateway, useExisting: StripeGateway }, // same instance for both
+    ]
+  </script>
+  <p>Dependency <em>Inversion</em> (the principle) is achieved with dependency <em>Injection</em> (Nest's mechanism). Swapping Stripe for another provider, or for a fake in tests, is a one-line change in the module.</p>
+
+  <table>
+    <tr><th>Principle</th><th>Smell that breaks it</th><th>NestJS tool that helps</th></tr>
+    <tr><td>S</td><td>A 900-line service</td><td>More small providers, events</td></tr>
+    <tr><td>O</td><td>Ever-growing <code>switch</code>/<code>if</code> chains</td><td>Strategy classes + <code>useFactory</code> token</td></tr>
+    <tr><td>L</td><td>"This implementation behaves differently, be careful"</td><td>Clear contracts on abstract classes, shared contract tests</td></tr>
+    <tr><td>I</td><td>Methods that throw "not implemented"</td><td>Several small abstract classes</td></tr>
+    <tr><td>D</td><td><code>new SomeSdk()</code> inside a service</td><td>Custom providers (<code>useClass</code>, <code>useExisting</code>, <code>useFactory</code>)</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Nest itself is built on SOLID ideas: guards, pipes, interceptors and filters are small single-purpose classes (S), you add behavior by adding new ones rather than editing the framework (O), and everything is wired through DI (D). In your own code, the two principles you'll use daily are <strong>S</strong> (keep services focused) and <strong>D</strong> (inject abstractions for external systems: payments, email, storage, SMS).</p>
+    <script type="text/x-code" data-lang="typescript" data-title="payments.module.ts — swap by environment">
+      @Module({
+        providers: [
+          {
+            provide: PaymentGateway,
+            useFactory: (config: ConfigService) =>
+              config.get('PAYMENTS_DRIVER') === 'fake'
+                ? new FakePaymentGateway()
+                : new StripeGateway(config.getOrThrow<string>('STRIPE_SECRET_KEY')),
+            inject: [ConfigService],
+          },
+        ],
+        exports: [PaymentGateway],
+      })
+      export class PaymentsModule {}
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Applying SOLID mechanically: an interface for every class, a strategy for every <code>if</code>. Use it where change actually happens.</li>
+      <li>Confusing Dependency <em>Inversion</em> (a design principle) with Dependency <em>Injection</em> (a technique). You can inject concrete classes and still violate DIP.</li>
+      <li>Splitting a class "by method" instead of "by reason to change", producing many tiny classes that always change together.</li>
+      <li>Implementations that silently weaken a contract (throwing where the contract returns <code>null</code>), which breaks LSP.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The shop must support shipping cost calculation by carrier: <code>standard</code> (500 cents flat), <code>express</code> (1500 cents) and <code>free</code> (0 cents when the order total is above 5000 cents, otherwise not allowed). Design it so that adding a new carrier doesn't change existing code. Which principles did you use?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export interface ShippingMethod {
+          readonly code: string;
+          costCents(order: Order): number; // throws if not allowed
+        }
+        export const SHIPPING_METHODS = Symbol('SHIPPING_METHODS');
+
+        @Injectable() export class StandardShipping implements ShippingMethod {
+          readonly code = 'standard';
+          costCents() { return 500; }
+        }
+        @Injectable() export class ExpressShipping implements ShippingMethod {
+          readonly code = 'express';
+          costCents() { return 1500; }
+        }
+        @Injectable() export class FreeShipping implements ShippingMethod {
+          readonly code = 'free';
+          costCents(order: Order) {
+            if (order.totalCents <= 5000) throw new ShippingNotAllowedError(this.code);
+            return 0;
+          }
+        }
+
+        @Injectable()
+        export class ShippingService {
+          constructor(@Inject(SHIPPING_METHODS) private readonly methods: ShippingMethod[]) {}
+          quote(order: Order, code: string): number {
+            const method = this.methods.find((m) => m.code === code);
+            if (!method) throw new UnknownShippingMethodError(code);
+            return method.costCents(order);
+          }
+        }
+
+        // module
+        providers: [
+          StandardShipping, ExpressShipping, FreeShipping,
+          {
+            provide: SHIPPING_METHODS,
+            useFactory: (...m: ShippingMethod[]) => m,
+            inject: [StandardShipping, ExpressShipping, FreeShipping],
+          },
+          ShippingService,
+        ]
+        // O: new carrier = new class + register it. S: each class has one pricing rule.
+        // D: ShippingService depends on the ShippingMethod abstraction.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Explain the Single Responsibility Principle with a NestJS example.</summary>
+      <p>A class should have one reason to change. An <code>OrdersService</code> that also renders emails and PDFs changes whenever marketing or accounting want something. Moving those into <code>OrderNotifier</code> and <code>InvoiceService</code> means each class changes for one audience only.</p></details>
+    <details><summary>How does NestJS help with the Dependency Inversion Principle?</summary>
+      <p>Its DI container lets high-level services depend on abstract classes or tokens, while modules bind those to concrete implementations with <code>useClass</code>, <code>useExisting</code> or <code>useFactory</code>. Services never construct their dependencies, so implementations can be swapped per environment or in tests.</p></details>
+    <details><summary>Give an example of a Liskov violation.</summary>
+      <p>A repository contract says <code>findById</code> returns <code>null</code> when not found, but one implementation throws an error instead. Code written against the contract (<code>if (!order) throw new NotFoundException()</code>) then behaves differently depending on the implementation.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> SOLID is a toolbox for code that changes. In Nest you'll use S and D every day, O for growing families of rules, and I/L to keep contracts small and honest.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="di-design">
+  <div class="topic-head"><span class="num">8</span><h2>DI design</h2></div>
+  <p class="tagline">avoid tight coupling between modules</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Dependency injection (DI) is like electricity in a house. Your lamp doesn't build its own power plant. It has a plug, and the house provides power. That keeps the lamp simple and lets you move it anywhere. But if every room's wiring is connected directly to every other room, one change makes the whole house flicker. Good <em>DI design</em> is about having a few clean sockets between rooms (modules), not a tangle of wires.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Signs of tight coupling between modules:</strong></p>
+  <ul>
+    <li>Circular dependencies: <code>OrdersModule</code> imports <code>UsersModule</code> and <code>UsersModule</code> imports <code>OrdersModule</code>, so you end up sprinkling <code>forwardRef()</code>.</li>
+    <li>A service with 8+ constructor dependencies from 5 different modules.</li>
+    <li>Modules exporting their repositories so others can query their tables directly.</li>
+    <li>You can't test one feature without bootstrapping half the app.</li>
+  </ul>
+
+  <p><strong>Example: a circular dependency.</strong> When an order is paid, we update the user's loyalty points. And the users feature needs to show "number of orders" on the profile:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="before ❌">
+    // orders.service.ts
+    constructor(private readonly usersService: UsersService) {}
+    async pay(orderId: number) {
+      // ...
+      await this.usersService.addLoyaltyPoints(order.userId, order.totalCents / 100);
+    }
+
+    // users.service.ts
+    constructor(private readonly ordersService: OrdersService) {}
+    async getProfile(userId: number) {
+      const orderCount = await this.ordersService.countForUser(userId);
+      // ...
+    }
+
+    // Nest at startup: "A circular dependency between modules. Use forwardRef() to avoid it."
+  </script>
+  <p><code>forwardRef()</code> makes the error go away, but the design problem remains: two features that can't exist without each other are really one big feature.</p>
+
+  <p><strong>Fix 1: invert the direction with events.</strong> The orders feature shouldn't need to <em>know</em> that loyalty points exist. It announces "an order was paid", and whoever cares listens. Install <code>@nestjs/event-emitter</code>:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @nestjs/event-emitter
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/events/order-paid.event.ts">
+    export class OrderPaidEvent {
+      static readonly eventName = 'order.paid';
+      constructor(
+        readonly orderId: number,
+        readonly userId: number,
+        readonly totalCents: number,
+      ) {}
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts ✅ — no dependency on users">
+    import { EventEmitter2 } from '@nestjs/event-emitter';
+
+    @Injectable()
+    export class OrdersService {
+      constructor(
+        private readonly ordersRepo: OrdersRepository,
+        private readonly events: EventEmitter2,
+      ) {}
+
+      async markPaid(orderId: number) {
+        const order = await this.ordersRepo.findById(orderId);
+        if (!order) throw new NotFoundException('Order not found');
+        order.pay();
+        await this.ordersRepo.save(order);
+        this.events.emit(OrderPaidEvent.eventName, new OrderPaidEvent(order.id!, order.userId, order.totalCents));
+        return order;
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="users/listeners/loyalty.listener.ts">
+    import { OnEvent } from '@nestjs/event-emitter';
+
+    @Injectable()
+    export class LoyaltyListener {
+      constructor(private readonly usersService: UsersService) {}
+
+      @OnEvent(OrderPaidEvent.eventName, { async: true })
+      async handle(event: OrderPaidEvent) {
+        await this.usersService.addLoyaltyPoints(event.userId, Math.floor(event.totalCents / 100));
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    @Module({
+      imports: [EventEmitterModule.forRoot(), PrismaModule, UsersModule, OrdersModule],
+    })
+    export class AppModule {}
+  </script>
+  <p>Now the dependency only goes one way (users knows about the <code>OrderPaidEvent</code> class; orders knows nothing about users). Adding "send a thank-you email" later means adding a new listener; <code>OrdersService</code> stays untouched.</p>
+  <p>⚠️ In-process events are lost if the server crashes between saving and handling. For important side effects (money, emails that must be sent), teams use a durable queue (BullMQ) or the "outbox" pattern. In-memory events are fine for learning and for non-critical work.</p>
+
+  <p><strong>Fix 2: move the shared read to the side that owns the data.</strong> "How many orders does this user have?" is an orders question. Instead of <code>UsersService</code> calling <code>OrdersService</code>, let the orders feature expose an endpoint (<code>GET /users/:id/orders/count</code>) or let a small "profile" feature compose both, depending on both modules while neither depends on the other:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="profile/profile.module.ts">
+    @Module({
+      imports: [UsersModule, OrdersModule], // profile depends on both; they don't depend on each other
+      controllers: [ProfileController],
+      providers: [ProfileService],
+    })
+    export class ProfileModule {}
+  </script>
+
+  <p><strong>Choose the right kind of provider.</strong> Nest gives you several ways to register a dependency. Using the right one keeps coupling low:</p>
+  <table>
+    <tr><th>Provider</th><th>Use it for</th><th>Example</th></tr>
+    <tr><td><code>useClass</code></td><td>Binding an abstraction to an implementation</td><td><code>{ provide: OrdersRepository, useClass: PrismaOrdersRepository }</code></td></tr>
+    <tr><td><code>useValue</code></td><td>Constants, test doubles</td><td><code>{ provide: CLOCK, useValue: { now: () =&gt; new Date() } }</code></td></tr>
+    <tr><td><code>useFactory</code></td><td>Building something from config or other providers</td><td>Create an SDK client from <code>ConfigService</code></td></tr>
+    <tr><td><code>useExisting</code></td><td>An alias: two tokens, one instance</td><td><code>{ provide: RefundGateway, useExisting: StripeGateway }</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript" data-title="injecting things you'd normally 'new' or import globally">
+    export const CLOCK = Symbol('CLOCK');
+    export interface Clock { now(): Date; }
+
+    @Injectable()
+    export class OrdersExpiryService {
+      constructor(
+        private readonly ordersRepo: OrdersRepository,
+        @Inject(CLOCK) private readonly clock: Clock, // ✅ tests can freeze time
+      ) {}
+
+      async expireOldPendingOrders() {
+        const cutoff = new Date(this.clock.now().getTime() - 24 * 60 * 60 * 1000);
+        return this.ordersRepo.cancelPendingOlderThan(cutoff);
+      }
+    }
+  </script>
+
+  <p><strong>Keep scopes simple.</strong> Providers are singletons by default: one instance for the whole app, which is fast. <code>Scope.REQUEST</code> creates a new instance per request, and it "bubbles up": every provider that injects a request-scoped one also becomes request-scoped. Avoid request scope unless you really need per-request state. Pass the needed value (like <code>userId</code>) as a method parameter instead.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A healthy module graph looks like a tree or a layered graph, with arrows pointing towards more "basic" modules: features → shared domain modules → infrastructure (Prisma, config, mail). A few checks you can apply in code review:</p>
+    <ul>
+      <li>Does this module export only services (never repositories)?</li>
+      <li>Is there any <code>forwardRef()</code>? If yes, can an event or a third module remove it?</li>
+      <li>Does any service call <code>new</code> on an infrastructure class (<code>new Stripe()</code>, <code>new S3Client()</code>)? Move it to a factory provider.</li>
+      <li>Is <code>process.env</code> read inside services? Inject <code>ConfigService</code> instead.</li>
+    </ul>
+    <p>Tools like <code>madge --circular src</code> can detect circular imports at the file level in CI.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>forwardRef()</code> as a permanent fix for circular dependencies instead of redesigning.</li>
+      <li>Creating dependencies with <code>new</code> inside services, which makes them impossible to replace in tests.</li>
+      <li>Making a provider request-scoped "just in case", slowing down every request and every provider that depends on it.</li>
+      <li>Using events for everything, including calls that need a return value. If you need an answer, call a service. Use events for "something happened" notifications.</li>
+      <li>Injecting <code>ModuleRef</code> and resolving providers manually everywhere (service-locator style), which hides dependencies.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p><code>ProductsService</code> injects <code>OrdersService</code> to block deleting a product that appears in an order, and <code>OrdersService</code> injects <code>ProductsService</code> to read prices. Nest reports a circular dependency. Remove the cycle without <code>forwardRef()</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Orders legitimately depends on products (it needs prices). The reverse check, "is this product used in any order?", can be answered from the products side without importing the orders feature, since <code>OrderItem.productId</code> references <code>Product</code> with a foreign key. Two good options:</p>
+      <script type="text/x-code" data-lang="typescript">
+        // Option A: let the database enforce it. OrderItem → Product has no onDelete: Cascade,
+        // so deleting a referenced product fails with Prisma error P2003 (foreign key).
+        async remove(id: number) {
+          try {
+            await this.productsRepo.delete(id);
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2003') {
+              throw new ConflictException('Product is used in orders. Archive it instead.');
+            }
+            throw e;
+          }
+        }
+
+        // Option B: a query in the products repository (it may read the order_items table
+        // for this one fact; the dependency is on the DATA, not on the orders module)
+        isReferencedByOrders(productId: number) {
+          return this.prisma.orderItem.count({ where: { productId } }).then((n) => n > 0);
+        }
+
+        // Result: OrdersModule imports ProductsModule; ProductsModule imports nothing from orders.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you resolve a circular dependency between two Nest modules?</summary>
+      <p><code>forwardRef()</code> is the quick fix, but the better fix is a redesign: make one direction an event (the producer doesn't know the consumer), move the shared logic into a third module that both depend on, or move the query to the module that owns the data.</p></details>
+    <details><summary>What are the four kinds of custom providers?</summary>
+      <p><code>useClass</code> (bind a token to a class), <code>useValue</code> (a ready-made value), <code>useFactory</code> (build the value with a function that can inject other providers), and <code>useExisting</code> (alias one token to another provider's instance).</p></details>
+    <details><summary>Why avoid request-scoped providers?</summary>
+      <p>A new instance is created per request, which costs performance, and the scope propagates to every provider that depends on it. Most per-request data can be passed as method arguments or read from async local storage instead.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Keep the module graph one-directional: export services, not repositories; use events to announce what happened; inject infrastructure through providers; and treat <code>forwardRef()</code> as a design warning.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="architecture-trade-offs">
+  <div class="topic-head"><span class="num">9</span><h2>Architecture trade-offs</h2></div>
+  <p class="tagline">avoid unnecessary over-engineering</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>You don't build a garden shed with the foundations of a skyscraper. Every layer, abstraction and pattern in this lesson has a <strong>cost</strong> (more files, more indirection, slower onboarding) and a <strong>benefit</strong> (easier change, easier tests). Good architecture is not "use every pattern". It's choosing the patterns whose benefit is bigger than their cost <em>for this project, right now</em>, and leaving room to add more later.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Over-engineering in action.</strong> Here is a "tags" feature (create, list, delete tags, with no business rules) built with every pattern from this lesson:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="tags/ (over-engineered) ❌">
+    tags/
+    ├── domain/tag.ts                    ← class with one field and no behavior
+    ├── domain/tag.errors.ts
+    ├── domain/tags.repository.ts        ← abstract class
+    ├── infra/prisma-tags.repository.ts  ← forwards to prisma.tag.*
+    ├── infra/tag.persistence-mapper.ts  ← copies { id, name } to { id, name }
+    ├── http/tag.response-mapper.ts      ← copies { id, name } to { id, name } again
+    ├── http/tags.controller.ts
+    ├── http/dto/...
+    ├── application/create-tag.use-case.ts
+    ├── application/delete-tag.use-case.ts
+    └── tags.module.ts
+    13 files, 3 copies of the same shape, zero business rules protected.
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="tags/tags.service.ts (right-sized) ✅">
+    @Injectable()
+    export class TagsService {
+      constructor(private readonly prisma: PrismaService) {}
+
+      findAll() {
+        return this.prisma.tag.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
+      }
+
+      async create(dto: CreateTagDto) {
+        try {
+          return await this.prisma.tag.create({ data: { name: dto.name }, select: { id: true, name: true } });
+        } catch (e) {
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            throw new ConflictException('Tag already exists');
+          }
+          throw e;
+        }
+      }
+
+      async remove(id: number) {
+        await this.prisma.tag.delete({ where: { id } });
+      }
+    }
+    // controller + DTO + module + this service = 4 files. Uses `select` so no mapper is needed.
+  </script>
+  <p>Meanwhile, the <em>orders</em> feature, with state transitions, stock, payments and money, really does benefit from a domain model, a repository and mappers. <strong>The same codebase can use different levels of architecture per feature.</strong></p>
+
+  <p><strong>A decision guide.</strong> Add a pattern when you can name the problem it solves today:</p>
+  <table>
+    <tr><th>Pattern</th><th>Worth it when…</th><th>Skip it when…</th></tr>
+    <tr><td>Service layer</td><td>Almost always (cheap, gives reuse)</td><td>Rarely skipped</td></tr>
+    <tr><td>Repository</td><td>Complex or reused queries; you want fast unit tests of services</td><td>Simple CRUD where services just call <code>findMany</code></td></tr>
+    <tr><td>Domain model</td><td>Real rules: state machines, money, limits, invariants</td><td>Data in, data out, no rules</td></tr>
+    <tr><td>Mappers</td><td>Public API must stay stable; shapes differ</td><td>A Prisma <code>select</code> already gives the exact shape</td></tr>
+    <tr><td>Strategy/abstraction</td><td>2+ implementations exist, or an external system must be faked in tests</td><td>"We might switch databases one day"</td></tr>
+    <tr><td>Events</td><td>Side effects owned by other features; breaking cycles</td><td>You need the result immediately</td></tr>
+    <tr><td>Microservices</td><td>Independent teams, scaling or deployment needs</td><td>One team, one product, early stage: use a modular monolith</td></tr>
+  </table>
+
+  <p><strong>Key principles behind the guide:</strong></p>
+  <ul>
+    <li><strong>YAGNI</strong> ("You Aren't Gonna Need It"): don't build for imagined futures. Abstractions for "maybe someday" usually guess wrong.</li>
+    <li><strong>Rule of three</strong>: the first time, just write it. The second time, notice the duplication. The third time, extract an abstraction. By then you know what really varies.</li>
+    <li><strong>Make it easy to change, not "future-proof"</strong>: clear feature modules and thin controllers make refactoring cheap. That's better than guessing.</li>
+    <li><strong>Consistency beats perfection</strong>: one well-understood pattern across the team is better than five clever ones.</li>
+  </ul>
+
+  <p><strong>Evolve step by step.</strong> Start simple and refactor <em>when the pain appears</em>. Our orders feature could grow like this:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="evolution of the orders feature">
+    v1  controller → service → Prisma                     (MVP, 3 endpoints)
+          pain: same query in 4 places, tests need a DB
+    v2  + OrdersRepository                                 (queries named and reusable)
+          pain: status rules duplicated in admin + jobs; a bug shipped cancelled orders
+    v3  + Order domain model, domain errors, filter        (rules in one place)
+          pain: renaming a column broke the mobile app
+    v4  + response DTOs and mappers                        (stable API contract)
+          pain: OrdersService grew to 800 lines doing emails, invoices, loyalty
+    v5  + events, OrderNotifier, InvoiceService            (S in SOLID, no cycles)
+  </script>
+  <p>Each step was driven by a real, named problem. Nobody started with v5.</p>
+
+  <p><strong>Signs you've under-engineered:</strong> controllers with business logic; the same rule copied in three places; tests that need a database for simple logic; fear of changing anything. <strong>Signs you've over-engineered:</strong> adding a field touches 8 files; mappers that copy identical shapes; interfaces with exactly one implementation and no test fake; new team members need a diagram to add an endpoint.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A pragmatic default that works for most NestJS + Prisma teams:</p>
+    <ul>
+      <li>Feature modules for every domain area, with <code>exports</code> limited to services.</li>
+      <li>Thin controllers, validated DTOs, a global <code>ValidationPipe</code>, response shaping with Prisma <code>select</code> or a small mapper.</li>
+      <li>Services call Prisma directly <em>until</em> queries get complex or reused; then extract a repository for that feature.</li>
+      <li>A domain model only for the 2–3 features with rich rules (orders, payments, subscriptions).</li>
+      <li>Abstractions (tokens or abstract classes) for every <em>external</em> system: payments, email, storage, SMS. These are almost always worth it, because you need fakes in tests.</li>
+    </ul>
+    <p>Write the agreed conventions down in a short <code>ARCHITECTURE.md</code> or as ADRs (Architecture Decision Records) so the team applies them consistently.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Copying a "clean architecture" template with 10 folders per feature into a small CRUD project.</li>
+      <li>Adding abstractions "in case we switch from Prisma/PostgreSQL" when there's no plan to do so.</li>
+      <li>The opposite: refusing any structure ("we'll refactor later") until the code is too tangled to refactor safely.</li>
+      <li>Splitting into microservices to fix a messy monolith. You get a messy distributed system with network failures added.</li>
+      <li>Applying different patterns randomly per developer, with no team convention.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>For each feature, choose a level: <strong>A</strong> (controller → service → Prisma), <strong>B</strong> (+ repository), or <strong>C</strong> (+ domain model, mappers). Justify each in one sentence. (1) Newsletter signup (store an email). (2) Hotel room bookings with no double-booking, cancellation fees and check-in rules. (3) Product search with 12 filters used by the storefront, the admin panel and a CSV export. (4) Feature flags read from a table.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>Newsletter: A.</strong> Store an email, with a unique constraint. No rules to protect.</li>
+        <li><strong>Bookings: C.</strong> Real invariants (no overlaps, fee rules, state transitions) that must hold no matter which code path changes a booking. Also a transaction or a PostgreSQL exclusion constraint for overlaps.</li>
+        <li><strong>Product search: B.</strong> A complex query reused by three callers. Put it in one repository method (<code>search(filters)</code>), test it with an integration test against a real PostgreSQL database. No domain rules, so no domain model.</li>
+        <li><strong>Feature flags: A</strong> (maybe with caching). Simple reads, no rules.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you decide whether to add a repository layer?</summary>
+      <p>I add it when it solves a concrete problem: complex or duplicated queries, or the need to unit-test business logic without a database. For simple CRUD features, services using Prisma directly are clearer, and I can extract a repository later because the service already isolates the logic.</p></details>
+    <details><summary>What is over-engineering, and how do you avoid it?</summary>
+      <p>Adding structure whose cost (files, indirection, onboarding time) is greater than its benefit. Avoid it with YAGNI, the rule of three, and by tying every pattern to a problem you can name today, while keeping code modular enough to refactor cheaply later.</p></details>
+    <details><summary>Monolith or microservices for a new NestJS product?</summary>
+      <p>Usually a modular monolith: feature modules with clear boundaries in one deployable app. It's simpler to develop, test and deploy. If a module later needs independent scaling or a separate team, its boundaries already make extraction possible.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Every pattern has a cost. Start simple with clear feature boundaries, add layers when a real problem appears, and let rich features be rich and simple features stay simple.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Prisma-ORM.html">← Prev: 4. Prisma ORM</a>
+  <a href="REST-API-Design.html">Next: 6. REST API Design →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

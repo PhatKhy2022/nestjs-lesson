@@ -1,0 +1,2760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NestJS Fundamentals</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 2 of 12</span>
+  </nav>
+  <h1>2. NestJS Fundamentals</h1>
+  <p class="goal"><strong>Goal:</strong> Understand what NestJS is doing instead of only memorizing decorators.</p>
+  <p class="howto">How to use this page: read each point top to bottom, type the examples yourself in a real project (<code>npx @nestjs/cli new shop-api</code>, then <code>npm run start:dev</code>), call your routes with a tool like curl, Postman or the VS Code REST Client, do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#controllers">Controllers</a></li>
+      <li><a href="#providers-services">Providers &amp; services</a></li>
+      <li><a href="#dependency-injection">Dependency injection</a></li>
+      <li><a href="#request-lifecycle">Request lifecycle</a></li>
+      <li><a href="#middleware">Middleware</a></li>
+      <li><a href="#exception-filters">Exception filters</a></li>
+      <li><a href="#pipes">Pipes</a></li>
+      <li><a href="#guards">Guards</a></li>
+      <li><a href="#interceptors">Interceptors</a></li>
+      <li><a href="#custom-decorators">Custom decorators</a></li>
+      <li><a href="#configuration">Configuration</a></li>
+      <li><a href="#circular-dependencies">Circular dependencies</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="modules">
+  <div class="topic-head"><span class="num">1</span><h2>Modules</h2></div>
+  <p class="tagline">@Module, imports, exports, providers</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of a NestJS app as a company and each <strong>module</strong> as a <em>department</em>: Users, Orders, Payments. Each department has its own staff (services) and its own front desk (controllers). Staff are private by default. If the Orders department needs help from someone in Users, the Users department must <strong>export</strong> that person, and Orders must <strong>import</strong> the Users department. The <code>@Module()</code> decorator is the department's org chart. Nest reads all the org charts at startup and wires everyone together.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>A module is just a class with the <code>@Module()</code> decorator. The decorator takes an object with four keys:</p>
+  <table>
+    <tr><th>Key</th><th>What goes in it</th><th>Question it answers</th></tr>
+    <tr><td><code>controllers</code></td><td>Controller classes</td><td>"Which HTTP routes does this module own?"</td></tr>
+    <tr><td><code>providers</code></td><td>Services, repositories, helpers, factories</td><td>"Which classes should Nest create and inject <em>inside</em> this module?"</td></tr>
+    <tr><td><code>imports</code></td><td>Other modules</td><td>"Which other modules' exported providers do I need?"</td></tr>
+    <tr><td><code>exports</code></td><td>A subset of <code>providers</code> (or imported modules)</td><td>"Which of my providers may other modules use?"</td></tr>
+  </table>
+
+  <p><strong>Step 1: the smallest module.</strong> Every app has one root module, usually <code>AppModule</code>. <code>main.ts</code> gives it to <code>NestFactory</code>, which builds the whole app from it.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
+    import { NestFactory } from '@nestjs/core';
+    import { AppModule } from './app.module';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule); // reads AppModule and everything it imports
+      await app.listen(process.env.PORT ?? 3000);
+    }
+    bootstrap();
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { UsersModule } from './users/users.module';
+    import { OrdersModule } from './orders/orders.module';
+
+    @Module({
+      imports: [UsersModule, OrdersModule], // the root module just glues feature modules together
+    })
+    export class AppModule {}
+  </script>
+
+  <p><strong>Step 2: a feature module.</strong> Each business area gets its own folder and module. The CLI command <code>nest g resource users</code> creates the module, controller, service and DTOs for you.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/users/users.module.ts">
+    import { Module } from '@nestjs/common';
+    import { UsersController } from './users.controller';
+    import { UsersService } from './users.service';
+
+    @Module({
+      controllers: [UsersController],
+      providers: [UsersService],
+      exports: [UsersService],   // 👈 other modules may now inject UsersService
+    })
+    export class UsersModule {}
+  </script>
+
+  <p><strong>Step 3: using another module's provider.</strong> <code>OrdersService</code> needs to look up the user who places an order. Two things must be true: <code>UsersModule</code> exports <code>UsersService</code>, <em>and</em> <code>OrdersModule</code> imports <code>UsersModule</code>.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/orders/orders.module.ts">
+    import { Module } from '@nestjs/common';
+    import { UsersModule } from '../users/users.module';
+    import { OrdersController } from './orders.controller';
+    import { OrdersService } from './orders.service';
+
+    @Module({
+      imports: [UsersModule],          // ✅ import the MODULE
+      controllers: [OrdersController],
+      providers: [OrdersService],
+      // providers: [OrdersService, UsersService], // ❌ creates a SECOND UsersService instance
+    })
+    export class OrdersModule {}
+  </script>
+  <p>Why not just add <code>UsersService</code> to the <code>providers</code> of <code>OrdersModule</code>? Because then Nest creates a <em>second, separate</em> instance of it inside <code>OrdersModule</code>, and it would also need all of <code>UsersService</code>'s own dependencies. Providers belong to exactly one module. Others reach them through imports and exports.</p>
+
+  <p><strong>Step 4: what happens if you forget.</strong> If <code>OrdersModule</code> does not import <code>UsersModule</code>, or <code>UsersModule</code> does not export <code>UsersService</code>, the app crashes at startup with one of the most common Nest errors:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Nest can't resolve dependencies of the OrdersService (?).
+    Please make sure that the argument UsersService at index [0]
+    is available in the OrdersModule context.
+  </script>
+  <p>Read it literally: "inside the <code>OrdersModule</code> context, I cannot find <code>UsersService</code>". The fix is always one of: add it to <code>providers</code> (if it belongs here), or import the module that exports it.</p>
+
+  <p><strong>Step 5: global modules and re-exporting.</strong> Some providers are needed everywhere (database client, config, logger). Instead of importing their module in 20 places, you can mark it <code>@Global()</code>. A global module must still be imported once (usually in <code>AppModule</code>), and its exported providers then become available in every module.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/prisma/prisma.module.ts">
+    import { Global, Module } from '@nestjs/common';
+    import { PrismaService } from './prisma.service';
+
+    @Global()                       // use sparingly: only for true infrastructure
+    @Module({
+      providers: [PrismaService],
+      exports: [PrismaService],
+    })
+    export class PrismaModule {}
+  </script>
+  <p>A module can also re-export a module it imports, so its consumers get both: <code>imports: [UsersModule], exports: [UsersModule]</code>. This is useful for a "shared" module that bundles several common modules.</p>
+
+  <p><strong>Step 6: dynamic modules (a first look).</strong> Some modules need settings when you import them. They expose a static method like <code>forRoot()</code> or <code>register()</code> that returns a configured module. You will use these constantly, even if you don't write them yourself yet:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @Module({
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true }),                    // config for the whole app
+        JwtModule.register({ secret: 'dev-secret', signOptions: { expiresIn: '15m' } }),
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <p><strong>Why modules exist at all:</strong> they give each feature a clear boundary. You can see at a glance what a feature exposes, you can test one module in isolation, and as the app grows you can even move a module into its own service. Modules are <em>singletons</em>: if five modules import <code>UsersModule</code>, they all share the same instance and the same <code>UsersService</code>.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A typical NestJS + Prisma backend has a folder per feature and one global <code>PrismaModule</code>:</p>
+    <script type="text/x-code" data-lang="plaintext">
+      src/
+      ├── main.ts
+      ├── app.module.ts
+      ├── prisma/      prisma.module.ts, prisma.service.ts   (@Global, exports PrismaService)
+      ├── auth/        auth.module.ts  (imports UsersModule, JwtModule)
+      ├── users/       users.module.ts (exports UsersService)
+      ├── products/    products.module.ts
+      └── orders/      orders.module.ts (imports UsersModule, ProductsModule)
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.module.ts">
+      @Module({
+        imports: [
+          UsersModule,                                  // need UsersService to find users by email
+          JwtModule.register({ global: false, signOptions: { expiresIn: '15m' } }),
+        ],
+        controllers: [AuthController],
+        providers: [AuthService],
+        exports: [AuthService],
+      })
+      export class AuthModule {}
+    </script>
+    <p>Because <code>PrismaModule</code> is global, <code>UsersService</code> and <code>OrdersService</code> can both inject <code>PrismaService</code> without importing anything.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Adding another module's service to your own <code>providers</code> instead of importing its module. You get a duplicate instance and often a new "can't resolve dependencies" error.</li>
+      <li>Exporting a provider but forgetting to import the module (or importing the module but forgetting to export the provider). Both sides are required.</li>
+      <li>Putting a <em>module</em> in <code>providers</code> or a <em>service</em> in <code>imports</code>. Modules go in <code>imports</code>, classes Nest should create go in <code>providers</code>.</li>
+      <li>Making everything <code>@Global()</code>. It hides dependencies and makes modules harder to understand and test. Keep it for infrastructure like Prisma or config.</li>
+      <li>One giant <code>AppModule</code> with every controller and service in it. Split by feature from day one.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You have a <code>ProductsModule</code> with a <code>ProductsService</code>. <code>OrdersService</code> must call <code>productsService.findOne(id)</code> to check the price. Write the two module files so this works.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="products.module.ts">
+        @Module({
+          controllers: [ProductsController],
+          providers: [ProductsService],
+          exports: [ProductsService],     // 1. make it public
+        })
+        export class ProductsModule {}
+      </script>
+      <script type="text/x-code" data-lang="typescript" data-title="orders.module.ts">
+        @Module({
+          imports: [ProductsModule],      // 2. import the module, not the service
+          controllers: [OrdersController],
+          providers: [OrdersService],
+        })
+        export class OrdersModule {}
+
+        // orders.service.ts
+        @Injectable()
+        export class OrdersService {
+          constructor(private readonly productsService: ProductsService) {}
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between <code>imports</code>, <code>providers</code> and <code>exports</code>?</summary>
+      <p><code>providers</code> lists classes that this module creates and owns. <code>exports</code> makes some of those providers visible to other modules. <code>imports</code> brings in other modules so this module can use whatever <em>they</em> export. A provider is private to its module unless exported.</p></details>
+    <details><summary>Are modules singletons?</summary>
+      <p>Yes. Each module is instantiated once, so every module that imports <code>UsersModule</code> shares the same <code>UsersService</code> instance (with the default scope). That's why it's safe to keep things like a database connection in a provider.</p></details>
+    <details><summary>When would you use <code>@Global()</code>?</summary>
+      <p>For infrastructure providers that almost every module needs, such as a <code>PrismaService</code>, configuration or a logger. For business features it's better to import modules explicitly so dependencies stay visible.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A provider lives in one module. To share it: <em>export</em> it from its home module and <em>import</em> that module where you need it.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="controllers">
+  <div class="topic-head"><span class="num">2</span><h2>Controllers</h2></div>
+  <p class="tagline">routing, @Get/@Post/@Param/@Body</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A controller is the <em>receptionist</em> of a feature. It stands at the door, listens for HTTP requests ("GET /users/5"), pulls out the useful pieces (the id, the body, the query string), hands them to the right staff member (a service), and gives the answer back to the client. A good receptionist does <strong>not</strong> do the actual work: no database calls, no business rules. It just routes.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: a route prefix and a handler.</strong> <code>@Controller('users')</code> sets the path prefix for every route in the class. Method decorators (<code>@Get</code>, <code>@Post</code>, <code>@Put</code>, <code>@Patch</code>, <code>@Delete</code>) map an HTTP method plus a sub-path to a method.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+    import { Controller, Get } from '@nestjs/common';
+
+    @Controller('users')            // prefix: /users
+    export class UsersController {
+      @Get()                        // GET /users
+      findAll() {
+        return [{ id: 1, email: 'an@shop.com' }];   // returned value → JSON response, status 200
+      }
+    }
+  </script>
+  <p>Nest serializes whatever you return to JSON. If you return a <code>Promise</code>, Nest waits for it. You don't call <code>res.json()</code> like in Express.</p>
+
+  <p><strong>Step 2: reading data from the request.</strong> Parameter decorators pull out parts of the request:</p>
+  <table>
+    <tr><th>Decorator</th><th>Reads</th><th>Example request</th></tr>
+    <tr><td><code>@Param('id')</code></td><td>A path segment</td><td><code>GET /users/42</code> → <code>'42'</code></td></tr>
+    <tr><td><code>@Query('page')</code></td><td>A query-string value</td><td><code>GET /users?page=2</code> → <code>'2'</code></td></tr>
+    <tr><td><code>@Body()</code></td><td>The parsed JSON body</td><td><code>POST /users</code> with <code>{ "email": "..." }</code></td></tr>
+    <tr><td><code>@Headers('authorization')</code></td><td>A request header</td><td><code>Bearer eyJ...</code></td></tr>
+    <tr><td><code>@Req()</code> / <code>@Res()</code></td><td>The raw Express request / response</td><td>Use rarely (see below)</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+    import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+    import { UsersService } from './users.service';
+    import { CreateUserDto } from './dto/create-user.dto';
+    import { UpdateUserDto } from './dto/update-user.dto';
+
+    @Controller('users')
+    export class UsersController {
+      constructor(private readonly usersService: UsersService) {}
+
+      @Get()                                         // GET /users?page=2
+      findAll(@Query('page') page?: string) {
+        return this.usersService.findAll(Number(page ?? 1));
+      }
+
+      @Get(':id')                                    // GET /users/42
+      findOne(@Param('id', ParseIntPipe) id: number) {   // ParseIntPipe turns '42' into 42 (or 400)
+        return this.usersService.findOne(id);
+      }
+
+      @Post()                                        // POST /users → 201 Created by default
+      create(@Body() dto: CreateUserDto) {
+        return this.usersService.create(dto);
+      }
+
+      @Patch(':id')                                  // PATCH /users/42
+      update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
+        return this.usersService.update(id, dto);
+      }
+
+      @Delete(':id')                                 // DELETE /users/42
+      @HttpCode(204)                                 // no content
+      remove(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.remove(id);
+      }
+    }
+  </script>
+  <p>Important: path and query values always arrive as <strong>strings</strong>. Writing <code>id: number</code> does not convert anything, because TypeScript types disappear at runtime. That's why we use <code>ParseIntPipe</code> (you'll learn pipes in point 8).</p>
+
+  <p><strong>Step 3: DTOs for the body.</strong> A DTO (Data Transfer Object) is a class that describes the shape of incoming data. It must be a <em>class</em>, not an interface, because Nest needs something that exists at runtime to validate against.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="dto/create-user.dto.ts">
+    import { IsEmail, IsString, MinLength } from 'class-validator';
+
+    export class CreateUserDto {
+      @IsEmail()
+      email!: string;
+
+      @IsString()
+      @MinLength(8)
+      password!: string;
+    }
+  </script>
+
+  <p><strong>Step 4: status codes and route order.</strong> Defaults: <code>200</code> for most methods, <code>201</code> for <code>@Post</code>. Change them with <code>@HttpCode()</code>. Errors are thrown, not returned: <code>throw new NotFoundException()</code> becomes a 404. Routes are matched <strong>in the order they are declared</strong>, so put fixed paths before parameter paths:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @Get(':id')   // ❌ declared first: GET /users/me matches this with id = 'me' → ParseIntPipe 400
+    findOne(@Param('id', ParseIntPipe) id: number) {}
+
+    @Get('me')    // never reached
+    me() {}
+
+    // ✅ declare @Get('me') ABOVE @Get(':id')
+  </script>
+
+  <p><strong>Step 5: why avoid <code>@Res()</code>.</strong> As soon as you inject the raw response with <code>@Res()</code>, Nest stops sending the response for you, and interceptors that transform the return value no longer work. If you only need to set a header or cookie, use <code>@Res({ passthrough: true })</code> so Nest still handles the body:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import type { Response } from 'express';
+
+    @Post('login')
+    async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+      const { accessToken, refreshToken } = await this.authService.login(dto);
+      res.cookie('refresh_token', refreshToken, { httpOnly: true, sameSite: 'strict' });
+      return { accessToken };           // ✅ Nest still serializes this
+    }
+  </script>
+  <p>(Using <code>import type</code> is fine here because <code>Response</code> is only used as a type on a decorated parameter, not as a DI token.)</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Controllers stay thin. A typical orders controller with a global prefix (<code>app.setGlobalPrefix('api')</code> in <code>main.ts</code>) looks like this:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @Controller('orders')                 // → /api/orders
+      export class OrdersController {
+        constructor(private readonly ordersService: OrdersService) {}
+
+        @Get()
+        list(@Query() query: ListOrdersQueryDto) {          // { status?, page, limit } validated by a DTO
+          return this.ordersService.list(query);
+        }
+
+        @Get(':id')
+        findOne(@Param('id', ParseUUIDPipe) id: string) {    // Prisma model uses @id @default(uuid())
+          return this.ordersService.findOne(id);
+        }
+
+        @Post()
+        create(@Body() dto: CreateOrderDto) {
+          return this.ordersService.create(dto);             // all logic lives in the service
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Putting Prisma queries or business rules directly in the controller. It becomes untestable and impossible to reuse.</li>
+      <li>Expecting <code>@Param('id') id: number</code> to give a number. It's a string until a pipe converts it.</li>
+      <li>Declaring <code>@Get(':id')</code> before <code>@Get('me')</code> or <code>@Get('search')</code>.</li>
+      <li>Using <code>@Res()</code> without <code>passthrough</code> and then wondering why the request hangs or why interceptors are skipped.</li>
+      <li>Using an <code>interface</code> as a DTO. Validation needs a class.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a <code>ProductsController</code> with: <code>GET /products?category=books</code> (list, optional filter), <code>GET /products/:id</code> (number id), and <code>POST /products</code> (body <code>CreateProductDto</code>). Delegate everything to <code>ProductsService</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="products.controller.ts">
+        @Controller('products')
+        export class ProductsController {
+          constructor(private readonly productsService: ProductsService) {}
+
+          @Get()
+          findAll(@Query('category') category?: string) {
+            return this.productsService.findAll(category);
+          }
+
+          @Get(':id')
+          findOne(@Param('id', ParseIntPipe) id: number) {
+            return this.productsService.findOne(id);
+          }
+
+          @Post()
+          create(@Body() dto: CreateProductDto) {
+            return this.productsService.create(dto);
+          }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the responsibility of a controller?</summary>
+      <p>Handling the HTTP layer: mapping routes to methods, extracting params, query, body and headers, and returning the response. Business logic and data access belong in services so they can be reused and tested without HTTP.</p></details>
+    <details><summary>Why must DTOs be classes and not interfaces?</summary>
+      <p>Interfaces are erased at compile time. Classes exist at runtime, so <code>ValidationPipe</code> and <code>class-transformer</code> can read the decorators on them and validate or transform the incoming data.</p></details>
+    <details><summary>What happens when you use <code>@Res()</code> in a handler?</summary>
+      <p>Nest switches to "library-specific mode": you must send the response yourself (<code>res.json()</code>), and features that work on the return value (interceptors mapping the result, <code>@HttpCode</code>) no longer apply. <code>@Res({ passthrough: true })</code> keeps the standard behavior while giving access to the response object.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Controllers map HTTP to methods and nothing more. Read inputs with <code>@Param</code>/<code>@Query</code>/<code>@Body</code>, convert them with pipes, and delegate to a service.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="providers-services">
+  <div class="topic-head"><span class="num">3</span><h2>Providers &amp; services</h2></div>
+  <p class="tagline">@Injectable and business logic separation</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>If the controller is the receptionist, a <strong>service</strong> is the <em>expert in the back office</em> who actually does the work: checks the rules, talks to the database, calculates totals. A <strong>provider</strong> is the general name for anything Nest can create and hand to others: services, repositories, helpers, even plain values. <code>@Injectable()</code> is the badge that says "Nest, you are allowed to create this class and give it what it needs".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: a basic service.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+    import { Injectable, NotFoundException } from '@nestjs/common';
+
+    @Injectable()
+    export class UsersService {
+      private users = [{ id: 1, email: 'an@shop.com' }];   // temporary in-memory data
+
+      findAll() {
+        return this.users;
+      }
+
+      findOne(id: number) {
+        const user = this.users.find((u) => u.id === id);
+        if (!user) throw new NotFoundException(`User ${id} not found`);
+        return user;
+      }
+    }
+  </script>
+  <p>Then you register it in a module's <code>providers</code> array. Nest creates <strong>one</strong> instance when the app starts and reuses it for every request.</p>
+
+  <p><strong>Step 2: what <code>@Injectable()</code> really does.</strong> It marks the class so TypeScript emits metadata about its constructor parameters (thanks to <code>emitDecoratorMetadata</code>). Nest reads that metadata to know <em>what to inject</em>. A class with no constructor dependencies would technically work without it, but always add it: the moment you add a dependency, it becomes required, and it documents the intent.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ no @Injectable(): Nest can't see constructor param types → "can't resolve dependencies"
+    export class OrdersService {
+      constructor(private readonly prisma: PrismaService) {}
+    }
+
+    // ✅
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly prisma: PrismaService) {}
+    }
+  </script>
+
+  <p><strong>Step 3: business logic separation.</strong> Compare the same feature written two ways:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Fat controller: HTTP + rules + database all mixed together
+    @Post()
+    async create(@Body() dto: CreateOrderDto) {
+      const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
+      if (!product) throw new NotFoundException();
+      if (product.stock < dto.quantity) throw new BadRequestException('Not enough stock');
+      return this.prisma.order.create({
+        data: { productId: product.id, quantity: dto.quantity, total: product.price.mul(dto.quantity) },
+      });
+    }
+
+    // ✅ Thin controller, logic in the service
+    @Post()
+    create(@Body() dto: CreateOrderDto) {
+      return this.ordersService.create(dto);
+    }
+  </script>
+  <p>Why does this matter?</p>
+  <ul>
+    <li><strong>Reuse:</strong> the same <code>ordersService.create()</code> can be called from a REST controller, a GraphQL resolver, a queue consumer or a CLI script.</li>
+    <li><strong>Testing:</strong> you can unit-test the service by passing a fake Prisma client, with no HTTP server.</li>
+    <li><strong>Readability:</strong> the controller shows the API surface; the service shows the business rules.</li>
+  </ul>
+
+  <p><strong>Step 4: "provider" is more than "service".</strong> The short form <code>providers: [UsersService]</code> is shorthand for <code>{ provide: UsersService, useClass: UsersService }</code>. A provider is really a pair: a <em>token</em> (the key) and a <em>recipe</em> (how to make the value).</p>
+  <script type="text/x-code" data-lang="typescript">
+    providers: [
+      UsersService,                                              // class provider (shorthand)
+      { provide: 'APP_NAME', useValue: 'shop-api' },             // value provider
+      { provide: MailService, useClass: process.env.NODE_ENV === 'test' ? FakeMailService : SmtpMailService },
+      {
+        provide: 'STRIPE_CLIENT',                                // factory provider
+        useFactory: (config: ConfigService) => new Stripe(config.getOrThrow('STRIPE_KEY')),
+        inject: [ConfigService],
+      },
+    ]
+  </script>
+  <p>You'll see these again in the dependency-injection point. For now, remember: anything listed in <code>providers</code> is a provider; a service is just the most common kind.</p>
+
+  <p><strong>Step 5: lifecycle hooks.</strong> Providers can react to the app starting or stopping by implementing interfaces such as <code>OnModuleInit</code> and <code>OnApplicationShutdown</code>. The classic example is connecting to the database:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
+    import { Injectable, OnModuleInit } from '@nestjs/common';
+    import { PrismaClient } from '@prisma/client';
+
+    @Injectable()
+    export class PrismaService extends PrismaClient implements OnModuleInit {
+      async onModuleInit() {
+        await this.$connect();   // connect once when the module starts, fail fast if DB is down
+      }
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A service owns the business rules and uses <code>PrismaService</code> for data. Notice how it turns database-level facts (no row, unique conflict) into meaningful HTTP exceptions:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+      import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import * as bcrypt from 'bcrypt';
+      import { PrismaService } from '../prisma/prisma.service';
+      import { CreateUserDto } from './dto/create-user.dto';
+
+      @Injectable()
+      export class UsersService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        async create(dto: CreateUserDto) {
+          const passwordHash = await bcrypt.hash(dto.password, 10);
+          try {
+            return await this.prisma.user.create({
+              data: { email: dto.email, passwordHash },
+              select: { id: true, email: true, createdAt: true },   // never return the hash
+            });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+              throw new ConflictException('Email already registered');
+            }
+            throw e;
+          }
+        }
+
+        async findOne(id: number) {
+          const user = await this.prisma.user.findUnique({ where: { id } });
+          if (!user) throw new NotFoundException(`User ${id} not found`);
+          return user;
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting <code>@Injectable()</code> on a class that has constructor dependencies.</li>
+      <li>Creating services with <code>new UsersService()</code> yourself. You bypass DI and must pass dependencies manually; tests can no longer swap them.</li>
+      <li>Storing per-request data (current user, request id) in a field of a singleton service. All users share that instance, so data leaks between requests.</li>
+      <li>Letting services depend on HTTP objects (<code>Request</code>, <code>Response</code>). Pass plain values (user id, DTO) instead so the service stays reusable.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>ProductsService</code> with <code>findOne(id)</code> that throws <code>NotFoundException</code> when the product doesn't exist, and <code>decreaseStock(id, qty)</code> that throws <code>BadRequestException</code> if stock is too low. Use <code>PrismaService</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="products.service.ts">
+        @Injectable()
+        export class ProductsService {
+          constructor(private readonly prisma: PrismaService) {}
+
+          async findOne(id: number) {
+            const product = await this.prisma.product.findUnique({ where: { id } });
+            if (!product) throw new NotFoundException(`Product ${id} not found`);
+            return product;
+          }
+
+          async decreaseStock(id: number, qty: number) {
+            const product = await this.findOne(id);
+            if (product.stock < qty) {
+              throw new BadRequestException(`Only ${product.stock} left in stock`);
+            }
+            return this.prisma.product.update({
+              where: { id },
+              data: { stock: { decrement: qty } },
+            });
+          }
+        }
+      </script>
+      <p>(In production you'd do the check and the update atomically, e.g. with <code>updateMany</code> and a <code>stock: { gte: qty }</code> condition, to avoid race conditions. You'll learn this in the Prisma lesson.)</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between a provider and a service?</summary>
+      <p>A provider is anything registered in a module's <code>providers</code> array that Nest can inject: a class, a value, or the result of a factory. A service is a <em>class</em> provider that holds business logic. All services are providers, but not all providers are services.</p></details>
+    <details><summary>Why keep business logic out of controllers?</summary>
+      <p>So it can be reused by other entry points (REST, GraphQL, queues, cron jobs), unit-tested without HTTP, and read independently of routing concerns. Controllers then only translate HTTP to method calls.</p></details>
+    <details><summary>Is it safe to keep state in a service?</summary>
+      <p>Only state that is meant to be shared app-wide (a cache, a client connection). Services are singletons by default, so per-request or per-user data stored in a field would be shared between concurrent requests.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Mark classes with <code>@Injectable()</code>, register them in <code>providers</code>, and put all business logic in services so controllers stay thin.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="dependency-injection">
+  <div class="topic-head"><span class="num">4</span><h2>Dependency injection</h2></div>
+  <p class="tagline">constructor injection and provider scopes</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine a restaurant kitchen. A chef doesn't go out to buy a stove, knives and ingredients before cooking. The restaurant <em>provides</em> them, and the chef just says "I need a stove and a knife". <strong>Dependency injection (DI)</strong> works the same way: a class lists what it needs in its constructor, and Nest's <em>IoC container</em> (the restaurant manager) creates those things and hands them over. The class never calls <code>new</code> on its dependencies.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: without DI.</strong> In plain JavaScript you might write:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ The service builds its own dependencies
+    class OrdersService {
+      private prisma = new PrismaClient();          // a new DB connection pool per service!
+      private mailer = new SmtpMailer('smtp://...'); // hard-coded, can't fake it in tests
+    }
+  </script>
+  <p>Problems: every class creates its own copies (wasteful), configuration is scattered, and in tests you can't replace the real mailer with a fake one.</p>
+
+  <p><strong>Step 2: constructor injection.</strong> With Nest you just <em>declare</em> what you need:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+    @Injectable()
+    export class OrdersService {
+      constructor(
+        private readonly prisma: PrismaService,      // ✅ "I need a PrismaService"
+        private readonly mail: MailService,          // ✅ "I need a MailService"
+      ) {}
+    }
+  </script>
+  <p>The <code>private readonly</code> in the constructor is a TypeScript shortcut that declares a field and assigns it in one go (you saw it in Lesson 1). <code>readonly</code> prevents accidental re-assignment.</p>
+
+  <p><strong>Step 3: how Nest figures it out.</strong> At startup Nest does roughly this:</p>
+  <ol>
+    <li>Scans every module and collects its providers into a registry: <em>token → recipe</em>.</li>
+    <li>For each class, reads the constructor parameter types from the metadata saved by <code>emitDecoratorMetadata</code> (here: <code>[PrismaService, MailService]</code>).</li>
+    <li>Recursively creates those dependencies first (and <em>their</em> dependencies), then calls <code>new OrdersService(prisma, mail)</code>.</li>
+    <li>Caches the instance, so the next class needing <code>OrdersService</code> gets the same object.</li>
+  </ol>
+  <p>The type in the constructor <em>is</em> the lookup key (the "token"). That's why it must be a class, which exists at runtime, and not an interface or type alias.</p>
+
+  <p><strong>Step 4: custom tokens with <code>@Inject()</code>.</strong> When the dependency isn't a class (a config value, a third-party client, an interface), you use a string or <code>Symbol</code> token:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // payment.constants.ts
+    export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
+
+    export interface PaymentGateway {
+      charge(amountCents: number, customerId: string): Promise<{ id: string }>;
+    }
+
+    // payments.module.ts
+    @Module({
+      providers: [
+        { provide: PAYMENT_GATEWAY, useClass: StripeGateway },   // swap for FakeGateway in tests
+        PaymentsService,
+      ],
+      exports: [PaymentsService],
+    })
+    export class PaymentsModule {}
+
+    // payments.service.ts
+    @Injectable()
+    export class PaymentsService {
+      constructor(@Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway) {}
+    }
+  </script>
+
+  <p><strong>Step 5: the four provider recipes.</strong></p>
+  <table>
+    <tr><th>Recipe</th><th>Use it when</th><th>Example</th></tr>
+    <tr><td><code>useClass</code></td><td>Nest should instantiate a class (maybe a different one per environment)</td><td><code>{ provide: MailService, useClass: FakeMailService }</code></td></tr>
+    <tr><td><code>useValue</code></td><td>You already have the value (constant, mock object)</td><td><code>{ provide: 'APP_NAME', useValue: 'shop-api' }</code></td></tr>
+    <tr><td><code>useFactory</code></td><td>Creating it needs code or other providers; can be <code>async</code></td><td>Create a Redis client from <code>ConfigService</code></td></tr>
+    <tr><td><code>useExisting</code></td><td>An alias: a second token pointing to the same instance</td><td><code>{ provide: 'Logger', useExisting: AppLogger }</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    {
+      provide: 'REDIS',
+      useFactory: async (config: ConfigService) => {
+        const client = createClient({ url: config.getOrThrow<string>('REDIS_URL') });
+        await client.connect();             // Nest waits for async factories before starting
+        return client;
+      },
+      inject: [ConfigService],              // dependencies passed to the factory, in order
+    }
+  </script>
+
+  <p><strong>Step 6: provider scopes.</strong> A scope decides <em>how often</em> a new instance is created.</p>
+  <table>
+    <tr><th>Scope</th><th>Instances</th><th>Typical use</th></tr>
+    <tr><td><code>Scope.DEFAULT</code> (singleton)</td><td>One for the whole app</td><td>Almost everything: services, Prisma, clients</td></tr>
+    <tr><td><code>Scope.REQUEST</code></td><td>A new one for every incoming request</td><td>Per-request context (tenant id, request-scoped cache)</td></tr>
+    <tr><td><code>Scope.TRANSIENT</code></td><td>A new one for every class that injects it</td><td>A logger that stores the name of its consumer</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    import { Inject, Injectable, Scope } from '@nestjs/common';
+    import { REQUEST } from '@nestjs/core';
+    import type { Request } from 'express';
+
+    @Injectable({ scope: Scope.REQUEST })
+    export class TenantContext {
+      constructor(@Inject(REQUEST) private readonly req: Request) {}
+
+      get tenantId(): string {
+        return this.req.headers['x-tenant-id'] as string;
+      }
+    }
+  </script>
+  <p><strong>The scope "bubbles up".</strong> If <code>OrdersService</code> injects a request-scoped <code>TenantContext</code>, then <code>OrdersService</code> also becomes request-scoped, and so does the controller that injects <code>OrdersService</code>. Now three objects are created for <em>every</em> request. This costs performance, so keep the default singleton scope unless you really need per-request state. Often, passing the value as a method argument is simpler.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The biggest everyday benefit of DI is testing. In a unit test you build a small module and replace real providers with fakes:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.service.spec.ts">
+      import { Test } from '@nestjs/testing';
+
+      describe('UsersService', () => {
+        let service: UsersService;
+        const prismaMock = {
+          user: { findUnique: jest.fn() },
+        };
+
+        beforeEach(async () => {
+          const moduleRef = await Test.createTestingModule({
+            providers: [
+              UsersService,
+              { provide: PrismaService, useValue: prismaMock },   // 👈 swap the real DB for a fake
+            ],
+          }).compile();
+
+          service = moduleRef.get(UsersService);
+        });
+
+        it('throws when the user does not exist', async () => {
+          prismaMock.user.findUnique.mockResolvedValue(null);
+          await expect(service.findOne(99)).rejects.toThrow(NotFoundException);
+        });
+      });
+    </script>
+    <p><code>UsersService</code> didn't change at all: it still asks for <code>PrismaService</code>, and the container decides what to give it.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Injecting an interface or type: <code>constructor(private gateway: PaymentGateway)</code>. Interfaces don't exist at runtime; use <code>@Inject(TOKEN)</code>.</li>
+      <li>Using <code>import type { UsersService }</code> for an injected class. The import is erased, the metadata becomes <code>undefined</code>, and DI fails.</li>
+      <li>Making a provider <code>Scope.REQUEST</code> without realizing that every class depending on it becomes request-scoped too.</li>
+      <li>Typos in string tokens (<code>'STRIPE_CLIENT'</code> vs <code>'STRIPE-CLIENT'</code>). Export a constant or <code>Symbol</code> and reuse it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a token <code>CLOCK</code> for an object with a <code>now(): Date</code> method. Register a real clock in the module and inject it into <code>OrdersService</code> to set <code>createdAt</code>. Then show how a test would provide a fixed clock.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export const CLOCK = Symbol('CLOCK');
+        export interface Clock { now(): Date; }
+
+        // orders.module.ts
+        providers: [
+          OrdersService,
+          { provide: CLOCK, useValue: { now: () => new Date() } satisfies Clock },
+        ]
+
+        // orders.service.ts
+        @Injectable()
+        export class OrdersService {
+          constructor(@Inject(CLOCK) private readonly clock: Clock) {}
+          buildOrder() {
+            return { createdAt: this.clock.now() };
+          }
+        }
+
+        // orders.service.spec.ts
+        providers: [
+          OrdersService,
+          { provide: CLOCK, useValue: { now: () => new Date('2025-01-01T00:00:00Z') } },
+        ]
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is Inversion of Control (IoC)?</summary>
+      <p>The control of creating and wiring objects is moved from your classes to a container. Classes declare their dependencies; the framework creates and supplies them. DI is the technique Nest uses to implement IoC.</p></details>
+    <details><summary>How does Nest know what to inject into a constructor?</summary>
+      <p>With <code>emitDecoratorMetadata</code>, TypeScript stores the constructor parameter types as <code>design:paramtypes</code> metadata on decorated classes. Nest reads it and uses each type (or an explicit <code>@Inject()</code> token) as a key into its provider registry.</p></details>
+    <details><summary>What are the provider scopes and their trade-offs?</summary>
+      <p>Default (singleton, one instance, fastest), Request (new instance per request, gives access to the request but adds overhead and bubbles up the dependency chain), and Transient (new instance per consumer). Prefer singletons.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Ask for dependencies in the constructor, let Nest create them, use <code>@Inject(TOKEN)</code> for non-class values, and stay with singleton scope unless you truly need per-request state.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="request-lifecycle">
+  <div class="topic-head"><span class="num">5</span><h2>Request lifecycle</h2></div>
+  <p class="tagline">middleware → guards → interceptors → pipes → handler</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of airport security. Before you reach your gate (the <strong>handler</strong>), you pass several checkpoints in a fixed order: the entrance door (<strong>middleware</strong>), the passport check that can refuse you (<strong>guards</strong>), a camera that records when you entered and left (<strong>interceptors</strong>), and the bag scanner that checks and repacks your luggage (<strong>pipes</strong>). If something goes wrong anywhere, a supervisor (<strong>exception filter</strong>) decides what to tell you. Knowing this order tells you <em>where</em> each piece of logic belongs.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>The full order for one HTTP request:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Incoming request
+      │
+      ├─ 1. Middleware            (global → module-bound)
+      ├─ 2. Guards                (global → controller → route)     → false = 403
+      ├─ 3. Interceptors (before) (global → controller → route)
+      ├─ 4. Pipes                 (global → controller → route → param)  → invalid = 400
+      ├─ 5. Route handler         (your controller method → service)
+      ├─ 6. Interceptors (after)  (route → controller → global)  — reverse order
+      │
+      ├─ 7. Exception filters     (route → controller → global) — only if something threw
+      ▼
+    Response
+  </script>
+
+  <p><strong>What each layer is for:</strong></p>
+  <table>
+    <tr><th>Layer</th><th>Knows the target handler?</th><th>Best for</th></tr>
+    <tr><td>Middleware</td><td>No</td><td>Logging raw requests, request ids, CORS, cookies, body parsing</td></tr>
+    <tr><td>Guard</td><td>Yes (<code>ExecutionContext</code>)</td><td>Yes/no decisions: is the user logged in? do they have the role?</td></tr>
+    <tr><td>Interceptor</td><td>Yes</td><td>Wrapping the handler: timing, caching, mapping the response, timeouts</td></tr>
+    <tr><td>Pipe</td><td>Per argument</td><td>Validating and transforming input (<code>@Body</code>, <code>@Param</code>, <code>@Query</code>)</td></tr>
+    <tr><td>Exception filter</td><td>Yes</td><td>Turning thrown errors into HTTP responses</td></tr>
+  </table>
+
+  <p><strong>Why this order makes sense.</strong> Authentication (guards) runs <em>before</em> validation (pipes), so an anonymous user gets a 401/403 instead of learning about your DTO rules. Interceptors run before pipes, so a timing interceptor measures validation too. Interceptors also run <em>after</em> the handler, which is why they can transform the response, while guards and pipes cannot.</p>
+
+  <p><strong>Seeing it for yourself.</strong> Add a <code>console.log</code> in each layer and call the route:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="lifecycle-demo.ts">
+    import {
+      ArgumentMetadata, CallHandler, CanActivate, ExecutionContext,
+      Injectable, NestInterceptor, NestMiddleware, PipeTransform,
+    } from '@nestjs/common';
+    import { Observable, tap } from 'rxjs';
+    import type { NextFunction, Request, Response } from 'express';
+
+    @Injectable()
+    export class DemoMiddleware implements NestMiddleware {
+      use(req: Request, res: Response, next: NextFunction) {
+        console.log('1. middleware');
+        next();
+      }
+    }
+
+    @Injectable()
+    export class DemoGuard implements CanActivate {
+      canActivate(context: ExecutionContext) {
+        console.log('2. guard');
+        return true;
+      }
+    }
+
+    @Injectable()
+    export class DemoInterceptor implements NestInterceptor {
+      intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+        console.log('3. interceptor (before)');
+        return next.handle().pipe(tap(() => console.log('6. interceptor (after)')));
+      }
+    }
+
+    @Injectable()
+    export class DemoPipe implements PipeTransform {
+      transform(value: unknown, metadata: ArgumentMetadata) {
+        console.log('4. pipe for', metadata.type);
+        return value;
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="demo.controller.ts">
+    @Controller('demo')
+    @UseGuards(DemoGuard)
+    @UseInterceptors(DemoInterceptor)
+    export class DemoController {
+      @Get(':id')
+      find(@Param('id', DemoPipe) id: string) {
+        console.log('5. handler');
+        return { id };
+      }
+    }
+    // Console output for GET /demo/1:
+    // 1. middleware  2. guard  3. interceptor (before)  4. pipe for param  5. handler  6. interceptor (after)
+  </script>
+
+  <p><strong>Where errors go.</strong> If any layer throws (a guard returning <code>false</code> causes a <code>ForbiddenException</code>, a pipe throws <code>BadRequestException</code>, a service throws <code>NotFoundException</code>), the remaining steps are skipped and the exception filters take over. Note that errors thrown by <em>middleware</em> are also caught by Nest's filters.</p>
+
+  <p><strong>Binding levels.</strong> Guards, interceptors, pipes and filters can all be attached at three levels:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Global, in main.ts (no DI available for `new` instances)
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+    // Global, through a module (✅ supports DI: the guard can inject Reflector, services...)
+    providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }]
+
+    // Controller level
+    @UseGuards(RolesGuard)
+    @Controller('admin')
+    export class AdminController {}
+
+    // Route level
+    @UseInterceptors(CacheInterceptor)
+    @Get('stats')
+    stats() {}
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A production app typically registers one of each globally, then adds more specific ones where needed:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+      import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+
+      @Module({
+        imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, UsersModule, OrdersModule],
+        providers: [
+          { provide: APP_GUARD, useClass: JwtAuthGuard },              // 2. who are you?
+          { provide: APP_GUARD, useClass: RolesGuard },                // 2. are you allowed?
+          { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },  // 3/6. timing + logs
+          { provide: APP_PIPE, useValue: new ValidationPipe({ whitelist: true, transform: true }) }, // 4.
+          { provide: APP_FILTER, useClass: PrismaExceptionFilter },    // 7. DB errors → HTTP
+        ],
+      })
+      export class AppModule implements NestModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer.apply(RequestIdMiddleware).forRoutes('*');          // 1.
+        }
+      }
+    </script>
+    <p>Multiple global guards run in the order they are registered, so <code>JwtAuthGuard</code> sets <code>request.user</code> before <code>RolesGuard</code> reads it.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Doing authorization in middleware. Middleware doesn't know which handler will run, so it can't read <code>@Roles()</code> metadata. Use a guard.</li>
+      <li>Expecting a guard to see validated/transformed DTOs. Pipes run <em>after</em> guards.</li>
+      <li>Trying to change the response in a guard or pipe. Only interceptors (and filters, for errors) see the outgoing response.</li>
+      <li>Using <code>app.useGlobalGuards(new JwtAuthGuard())</code> and then wondering why its injected dependencies are <code>undefined</code>. Use <code>APP_GUARD</code> to get DI.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>For each requirement, pick the right layer: (a) reject requests without a valid JWT; (b) add an <code>X-Request-Id</code> header to every request/response; (c) wrap every response in <code>{ data: ... }</code>; (d) convert <code>?page=2</code> to a number; (e) turn a Prisma "record not found" error into a 404.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>(a) Guard. (b) Middleware (simple, no handler info needed). An interceptor would also work. (c) Interceptor (it sees the return value). (d) Pipe. (e) Exception filter.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Describe the NestJS request lifecycle.</summary>
+      <p>Middleware → guards → interceptors (before) → pipes → handler → interceptors (after) → response. If an exception is thrown at any point, exception filters handle it. Within each layer, global bindings run first, then controller, then route (filters are the reverse: route first).</p></details>
+    <details><summary>What is the difference between middleware and a guard?</summary>
+      <p>Middleware is a plain Express-style function with <code>req</code>, <code>res</code>, <code>next</code>; it doesn't know which handler will execute. A guard receives an <code>ExecutionContext</code>, so it can read the handler and class metadata (e.g. required roles) and returns a boolean that decides whether the request continues.</p></details>
+    <details><summary>Why use <code>APP_GUARD</code> instead of <code>app.useGlobalGuards()</code>?</summary>
+      <p><code>useGlobalGuards()</code> takes an instance you create with <code>new</code>, outside the DI container, so it can't inject dependencies. Registering with <code>APP_GUARD</code> in a module lets Nest construct it with full DI.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Middleware → guards → interceptors → pipes → handler → interceptors → (filters on error). Put each concern in the layer that runs at the right moment and has the right information.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="middleware">
+  <div class="topic-head"><span class="num">6</span><h2>Middleware</h2></div>
+  <p class="tagline">custom middleware and applying it to routes</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Middleware is the <em>doorman</em> of your app. Every request walks past it before anything else happens. The doorman can look at the request, add a sticker to it ("request #8812"), write in a logbook, or turn someone away. Then he says "go on" by calling <code>next()</code>. If he forgets to say "go on", the visitor waits at the door forever. Nest middleware is the same as Express middleware, just organized as a class with DI.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the Express idea.</strong> A middleware is a function <code>(req, res, next)</code>. It must either send a response or call <code>next()</code>.</p>
+  <script type="text/x-code" data-lang="javascript">
+    // Plain Express, for comparison
+    app.use((req, res, next) => {
+      console.log(req.method, req.url);
+      next();               // pass control to the next middleware / route
+    });
+  </script>
+
+  <p><strong>Step 2: a class middleware in Nest.</strong> Implement <code>NestMiddleware</code>. Because it's <code>@Injectable()</code>, it can inject services.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/middleware/request-logger.middleware.ts">
+    import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+    import type { NextFunction, Request, Response } from 'express';
+
+    @Injectable()
+    export class RequestLoggerMiddleware implements NestMiddleware {
+      private readonly logger = new Logger('HTTP');
+
+      use(req: Request, res: Response, next: NextFunction) {
+        const start = Date.now();
+
+        // 'finish' fires after the response has been sent → we know the status code
+        res.on('finish', () => {
+          const ms = Date.now() - start;
+          this.logger.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${ms}ms`);
+        });
+
+        next();   // ⚠️ never forget this
+      }
+    }
+  </script>
+
+  <p><strong>Step 3: applying it.</strong> Middleware is not listed in <code>@Module()</code>. Instead, the module implements <code>NestModule</code> and its <code>configure()</code> method uses the <code>MiddlewareConsumer</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+
+    @Module({ imports: [UsersModule, OrdersModule] })
+    export class AppModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply(RequestLoggerMiddleware)
+          .forRoutes('*');                                     // every route (see the Nest 11 note below)
+
+        consumer
+          .apply(RequireJsonMiddleware)
+          .exclude({ path: 'health', method: RequestMethod.GET })
+          .forRoutes(
+            { path: 'orders', method: RequestMethod.POST },     // only POST /orders
+            UsersController,                                    // every route of a controller
+          );
+      }
+    }
+  </script>
+  <p><code>forRoutes()</code> accepts path strings, <code>{ path, method }</code> objects or controller classes. <code>exclude()</code> removes specific routes. <code>apply()</code> takes several middleware at once, and they run in the order given.</p>
+  <p><strong>Nest 11 note:</strong> Nest 11 uses Express 5, whose path matching changed. Named wildcards are now preferred, e.g. <code>forRoutes('{*splat}')</code> for all routes or <code>'users/*splat'</code> for a sub-tree. Plain <code>'*'</code> still works for "everything" in Nest 11 (it is converted automatically with a warning), but use the new syntax in new code.</p>
+
+  <p><strong>Step 4: functional middleware.</strong> If the middleware has no dependencies, a plain function is enough:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/middleware/request-id.middleware.ts">
+    import { randomUUID } from 'node:crypto';
+    import type { NextFunction, Request, Response } from 'express';
+
+    export function requestId(req: Request, res: Response, next: NextFunction) {
+      const id = (req.headers['x-request-id'] as string) ?? randomUUID();
+      req.headers['x-request-id'] = id;       // available to later layers
+      res.setHeader('X-Request-Id', id);      // returned to the client
+      next();
+    }
+
+    // app.module.ts → consumer.apply(requestId).forRoutes('*');
+  </script>
+
+  <p><strong>Step 5: global middleware in <code>main.ts</code>.</strong> Third-party Express middleware (helmet, cookie-parser, compression) is usually registered with <code>app.use()</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import helmet from 'helmet';
+    import cookieParser from 'cookie-parser';
+
+    const app = await NestFactory.create(AppModule);
+    app.use(helmet());          // security headers
+    app.use(cookieParser());    // fills req.cookies
+    app.enableCors({ origin: ['https://shop.example.com'], credentials: true });
+  </script>
+  <p><code>app.use()</code> runs for every route but cannot use DI (you pass a function, not a Nest class). Class middleware applied through <code>configure()</code> can.</p>
+
+  <p><strong>When <em>not</em> to use middleware.</strong> Middleware runs before Nest knows which controller method will handle the request, so it can't read decorators like <code>@Roles('admin')</code> or <code>@Public()</code>. For anything that depends on the handler, use a guard or an interceptor.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Typical uses: request ids for tracing, HTTP access logs, raw-body capture for webhook signature checks, and third-party Express middleware. For example, Stripe webhooks need the raw body to verify the signature, so you enable it in <code>main.ts</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+      const app = await NestFactory.create(AppModule, { rawBody: true });  // keeps req.rawBody
+      app.use(helmet());
+      app.setGlobalPrefix('api');
+      await app.listen(3000);
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="payments.module.ts">
+      export class PaymentsModule implements NestModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer.apply(RequestLoggerMiddleware).forRoutes(PaymentsController);
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting to call <code>next()</code> (or to send a response). The request hangs until the client times out.</li>
+      <li>Trying to do role checks in middleware. It can't see handler metadata; use a guard.</li>
+      <li>Adding middleware to <code>providers</code> and expecting it to run. It only runs when applied through <code>configure()</code> or <code>app.use()</code>.</li>
+      <li>Calling <code>next()</code> <em>and</em> sending a response, which leads to "Cannot set headers after they are sent".</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a middleware <code>MaintenanceMiddleware</code> that returns <code>503</code> with <code>{ message: 'Down for maintenance' }</code> when the env var <code>MAINTENANCE=true</code>, except for <code>GET /health</code>. Inject <code>ConfigService</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        @Injectable()
+        export class MaintenanceMiddleware implements NestMiddleware {
+          constructor(private readonly config: ConfigService) {}
+
+          use(req: Request, res: Response, next: NextFunction) {
+            if (this.config.get('MAINTENANCE') === 'true') {
+              res.status(503).json({ message: 'Down for maintenance' });
+              return;                      // do NOT call next()
+            }
+            next();
+          }
+        }
+
+        // app.module.ts
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply(MaintenanceMiddleware)
+            .exclude({ path: 'health', method: RequestMethod.GET })
+            .forRoutes('*');
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you apply middleware in NestJS?</summary>
+      <p>Implement <code>NestModule</code> on a module and use <code>consumer.apply(...).forRoutes(...)</code> in <code>configure()</code>, optionally with <code>.exclude()</code>. For global third-party middleware you can also call <code>app.use()</code> in <code>main.ts</code>.</p></details>
+    <details><summary>Can middleware use dependency injection?</summary>
+      <p>Class-based middleware marked <code>@Injectable()</code> and applied through <code>MiddlewareConsumer</code> can inject providers available in that module. Functional middleware and anything passed to <code>app.use()</code> cannot.</p></details>
+    <details><summary>When would you choose middleware over an interceptor?</summary>
+      <p>When the logic is generic, works on the raw request/response, and doesn't need to know the target handler or modify the returned value (request ids, access logs, security headers, cookies). If you need handler metadata or the response body, use an interceptor.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Middleware is the first door: it sees every raw request, must call <code>next()</code>, and is applied with <code>configure()</code>, not with <code>providers</code>.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="exception-filters">
+  <div class="topic-head"><span class="num">7</span><h2>Exception filters</h2></div>
+  <p class="tagline">custom exceptions and global error handling</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>When something goes wrong deep inside your app, the code just <em>throws</em> an error and stops. An <strong>exception filter</strong> is the <em>customer-service desk</em> that catches that error and decides what the client is told: which status code, which message, which format. It makes sure a crash in the database turns into a polite, consistent JSON answer instead of a stack trace.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the built-in filter.</strong> Nest already has a global filter. When you throw an <code>HttpException</code> (or a subclass), it produces a JSON response:</p>
+  <script type="text/x-code" data-lang="typescript">
+    throw new NotFoundException('Order 42 not found');
+  </script>
+  <script type="text/x-code" data-lang="json">
+    { "statusCode": 404, "message": "Order 42 not found", "error": "Not Found" }
+  </script>
+  <p>Any error that is <strong>not</strong> an <code>HttpException</code> (a <code>TypeError</code>, a Prisma error) becomes a generic <code>500 Internal server error</code>, and the details are logged on the server.</p>
+
+  <p><strong>Step 2: built-in HTTP exceptions.</strong></p>
+  <table>
+    <tr><th>Class</th><th>Status</th><th>Typical case</th></tr>
+    <tr><td><code>BadRequestException</code></td><td>400</td><td>Invalid input, business rule broken</td></tr>
+    <tr><td><code>UnauthorizedException</code></td><td>401</td><td>Missing or invalid token / credentials</td></tr>
+    <tr><td><code>ForbiddenException</code></td><td>403</td><td>Logged in but not allowed</td></tr>
+    <tr><td><code>NotFoundException</code></td><td>404</td><td>Resource doesn't exist</td></tr>
+    <tr><td><code>ConflictException</code></td><td>409</td><td>Duplicate email, version conflict</td></tr>
+    <tr><td><code>UnprocessableEntityException</code></td><td>422</td><td>Valid shape but semantically wrong</td></tr>
+    <tr><td><code>InternalServerErrorException</code></td><td>500</td><td>Unexpected failure</td></tr>
+  </table>
+  <p>You can pass an object instead of a string to control the body, and an <code>options</code> object with a <code>cause</code> (kept for logging, not sent to the client):</p>
+  <script type="text/x-code" data-lang="typescript">
+    throw new BadRequestException(
+      { code: 'OUT_OF_STOCK', message: 'Only 2 items left', productId: 7 },
+      { cause: originalError },
+    );
+  </script>
+
+  <p><strong>Step 3: custom exceptions.</strong> Create domain-specific exceptions by extending <code>HttpException</code> (or a subclass). This gives your errors names and stable error codes that the frontend can rely on:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/exceptions/insufficient-stock.exception.ts">
+    import { HttpException, HttpStatus } from '@nestjs/common';
+
+    export class InsufficientStockException extends HttpException {
+      constructor(productId: number, available: number) {
+        super(
+          { code: 'INSUFFICIENT_STOCK', message: `Only ${available} left`, productId },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
+    // usage in OrdersService
+    if (product.stock < dto.quantity) {
+      throw new InsufficientStockException(product.id, product.stock);
+    }
+  </script>
+
+  <p><strong>Step 4: writing a filter.</strong> A filter is a class with <code>@Catch(...)</code> that implements <code>ExceptionFilter</code>. <code>@Catch()</code> lists the exception types it handles; empty means "everything".</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/filters/all-exceptions.filter.ts">
+    import {
+      ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger,
+    } from '@nestjs/common';
+    import type { Request, Response } from 'express';
+
+    @Catch()                                   // no argument = catch everything
+    export class AllExceptionsFilter implements ExceptionFilter {
+      private readonly logger = new Logger(AllExceptionsFilter.name);
+
+      catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();       // the same filter could also serve WebSockets/RPC
+        const res = ctx.getResponse<Response>();
+        const req = ctx.getRequest<Request>();
+
+        const status =
+          exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+
+        const body =
+          exception instanceof HttpException ? exception.getResponse() : { message: 'Internal server error' };
+
+        if (status >= 500) {
+          this.logger.error(exception);        // full details only in the server log
+        }
+
+        res.status(status).json({
+          ...(typeof body === 'string' ? { message: body } : body),
+          statusCode: status,
+          path: req.url,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+  </script>
+
+  <p><strong>Step 5: binding a filter.</strong> Like guards and pipes: per route, per controller, or globally. Global with DI is done through <code>APP_FILTER</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @UseFilters(AllExceptionsFilter)          // route or controller level
+    @Get(':id') findOne() {}
+
+    app.useGlobalFilters(new AllExceptionsFilter());           // main.ts, no DI
+
+    providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }]  // ✅ module, with DI
+  </script>
+  <p>When several filters could match, the most specific binding wins (route before controller before global), and among global filters the one registered <em>later</em> with a matching <code>@Catch</code> is tried first. Keep a catch-all filter plus a few specific ones.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma throws its own errors, which would become 500s. A dedicated filter maps the common Prisma error codes to proper HTTP responses, so services don't need try/catch everywhere:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
+      import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import type { Response } from 'express';
+
+      @Catch(Prisma.PrismaClientKnownRequestError)
+      export class PrismaExceptionFilter implements ExceptionFilter {
+        catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+          const res = host.switchToHttp().getResponse<Response>();
+
+          switch (exception.code) {
+            case 'P2002':   // unique constraint failed
+              return res.status(HttpStatus.CONFLICT).json({
+                statusCode: 409,
+                message: `Duplicate value for ${String(exception.meta?.target ?? 'field')}`,
+              });
+            case 'P2025':   // record to update/delete not found
+              return res.status(HttpStatus.NOT_FOUND).json({ statusCode: 404, message: 'Record not found' });
+            case 'P2003':   // foreign key constraint failed
+              return res.status(HttpStatus.BAD_REQUEST).json({ statusCode: 400, message: 'Related record does not exist' });
+            default:
+              return res.status(500).json({ statusCode: 500, message: 'Database error' });
+          }
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+      providers: [
+        { provide: APP_FILTER, useClass: AllExceptionsFilter },
+        { provide: APP_FILTER, useClass: PrismaExceptionFilter },   // more specific, tried first
+      ]
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Returning error objects (<code>return { error: 'not found' }</code>) instead of throwing. The client gets a 200 with an error inside.</li>
+      <li>Throwing plain <code>Error('Not found')</code> and getting a 500 instead of a 404. Use the HTTP exception classes or a filter that maps your domain errors.</li>
+      <li>Sending <code>exception.message</code> or stack traces of unknown errors to the client. This leaks internals (SQL, file paths). Log them, send a generic message.</li>
+      <li>Catching errors in every service method just to re-throw them. Let a global filter handle common cases.</li>
+      <li>Forgetting that a filter must send the response itself (<code>res.status().json()</code>); if it doesn't, the request hangs.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create an <code>EmailAlreadyUsedException</code> (409, code <code>EMAIL_TAKEN</code>) and use it in <code>UsersService.register()</code> when <code>findUnique({ where: { email } })</code> finds a user.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export class EmailAlreadyUsedException extends ConflictException {
+          constructor(email: string) {
+            super({ code: 'EMAIL_TAKEN', message: `${email} is already registered` });
+          }
+        }
+
+        async register(dto: RegisterDto) {
+          const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+          if (existing) throw new EmailAlreadyUsedException(dto.email);
+          // ... hash password and create
+        }
+      </script>
+      <p>Keep the unique index in the database too: two simultaneous requests could both pass the check, and the Prisma filter (P2002) is your safety net.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What happens to an error that is not an <code>HttpException</code>?</summary>
+      <p>The built-in global filter treats it as unknown and responds with 500 "Internal server error", logging the details. To map it to something else (e.g. Prisma P2002 → 409), write a filter with <code>@Catch(ThatErrorClass)</code>.</p></details>
+    <details><summary>What is <code>ArgumentsHost</code>?</summary>
+      <p>A wrapper around the arguments of the current handler that works across transports. <code>host.switchToHttp()</code> gives you the request and response for HTTP; <code>switchToWs()</code> and <code>switchToRpc()</code> exist for WebSockets and microservices.</p></details>
+    <details><summary>How do you set up global error handling with DI?</summary>
+      <p>Register the filter as a provider with the <code>APP_FILTER</code> token in a module. Unlike <code>app.useGlobalFilters(new X())</code>, Nest then constructs it, so it can inject a logger, config or other services.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Throw, don't return, errors. Use HTTP exceptions for expected failures, and global filters to turn everything else (like Prisma errors) into consistent, safe responses.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="pipes">
+  <div class="topic-head"><span class="num">8</span><h2>Pipes</h2></div>
+  <p class="tagline">validation pipes and transformation pipes</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A pipe is a <em>quality-control station</em> on a conveyor belt, placed just before the handler. Every argument (the id, the body, the query) passes through it. The station does one of two jobs: <strong>validation</strong> ("is this item OK? if not, reject it with 400") or <strong>transformation</strong> ("turn the string <code>'42'</code> into the number <code>42</code>"). By the time data reaches your method, it's guaranteed to be clean and correctly typed.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the problem.</strong> HTTP input is untrusted text. TypeScript types don't check anything at runtime:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @Get(':id')
+    findOne(@Param('id') id: number) {
+      console.log(typeof id);   // 'string' 😱 — the type annotation lied
+    }
+
+    @Post()
+    create(@Body() dto: CreateUserDto) {
+      // dto could be { email: 123, isAdmin: true } — nothing stopped it
+    }
+  </script>
+
+  <p><strong>Step 2: built-in transformation pipes.</strong> Nest ships with pipes for common conversions. They throw <code>BadRequestException</code> (400) when conversion fails:</p>
+  <table>
+    <tr><th>Pipe</th><th>Converts / checks</th></tr>
+    <tr><td><code>ParseIntPipe</code>, <code>ParseFloatPipe</code></td><td><code>'42'</code> → <code>42</code></td></tr>
+    <tr><td><code>ParseBoolPipe</code></td><td><code>'true'</code> → <code>true</code></td></tr>
+    <tr><td><code>ParseUUIDPipe</code></td><td>Checks the string is a valid UUID</td></tr>
+    <tr><td><code>ParseEnumPipe</code></td><td>Checks the value is one of an enum's values</td></tr>
+    <tr><td><code>ParseArrayPipe</code></td><td><code>'1,2,3'</code> → array (with items validated)</td></tr>
+    <tr><td><code>DefaultValuePipe</code></td><td>Supplies a default when the value is missing</td></tr>
+    <tr><td><code>ValidationPipe</code></td><td>Validates DTO classes with <code>class-validator</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    @Get()
+    findAll(
+      @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,       // pipes run left → right
+      @Query('status', new ParseEnumPipe(OrderStatus, { optional: true })) status?: OrderStatus,
+    ) {
+      return this.ordersService.findAll({ page, status });
+    }
+
+    @Get(':id')
+    findOne(@Param('id', ParseUUIDPipe) id: string) {}   // GET /orders/abc → 400 "Validation failed (uuid is expected)"
+  </script>
+  <p>Notice: you can pass the pipe <em>class</em> (<code>ParseIntPipe</code>, Nest creates it) or an <em>instance</em> (<code>new ParseIntPipe({ errorHttpStatusCode: 422 })</code>) when you need options.</p>
+
+  <p><strong>Step 3: <code>ValidationPipe</code> + DTOs.</strong> Install <code>class-validator</code> and <code>class-transformer</code>, decorate the DTO, and turn the pipe on globally:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i class-validator class-transformer
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/create-order.dto.ts">
+    import { Type } from 'class-transformer';
+    import { ArrayMinSize, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+
+    export class OrderItemDto {
+      @IsInt()
+      productId!: number;
+
+      @IsInt()
+      @Min(1)
+      quantity!: number;
+    }
+
+    export class CreateOrderDto {
+      @ValidateNested({ each: true })     // validate each nested object…
+      @Type(() => OrderItemDto)           // …after turning plain objects into OrderItemDto instances
+      @ArrayMinSize(1)
+      items!: OrderItemDto[];
+
+      @IsOptional()
+      @IsString()
+      note?: string;
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,              // strip properties that have no decorator
+        forbidNonWhitelisted: true,   // …or reject the request if any are present
+        transform: true,              // turn the plain body into a real CreateOrderDto instance
+        transformOptions: { enableImplicitConversion: true }, // '2' → 2 based on the TS type
+      }),
+    );
+  </script>
+  <p>Now a bad request is rejected automatically:</p>
+  <script type="text/x-code" data-lang="json">
+    {
+      "statusCode": 400,
+      "message": ["items must contain at least 1 elements", "property isAdmin should not exist"],
+      "error": "Bad Request"
+    }
+  </script>
+  <p><strong>Why <code>whitelist</code> matters:</strong> without it, a client could send <code>{ "email": "...", "role": "ADMIN" }</code> and, if you pass the DTO straight to Prisma, become an admin. This is called <em>mass assignment</em>.</p>
+
+  <p><strong>Step 4: writing your own pipe.</strong> Implement <code>PipeTransform</code>. <code>transform(value, metadata)</code> returns the new value or throws.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/pipes/parse-sort.pipe.ts">
+    import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+
+    type Sort = { field: string; direction: 'asc' | 'desc' };
+
+    // "?sort=-createdAt" → { field: 'createdAt', direction: 'desc' }
+    @Injectable()
+    export class ParseSortPipe implements PipeTransform<string | undefined, Sort | undefined> {
+      constructor(private readonly allowed: string[]) {}
+
+      transform(value: string | undefined, _metadata: ArgumentMetadata): Sort | undefined {
+        if (!value) return undefined;
+        const direction = value.startsWith('-') ? 'desc' : 'asc';
+        const field = value.replace(/^-/, '');
+        if (!this.allowed.includes(field)) {
+          throw new BadRequestException(`Cannot sort by "${field}"`);
+        }
+        return { field, direction };
+      }
+    }
+
+    // usage
+    @Get()
+    list(@Query('sort', new ParseSortPipe(['createdAt', 'total'])) sort?: Sort) {}
+  </script>
+  <p>The whitelist of fields is important: it prevents users from sorting by sensitive or unindexed columns.</p>
+
+  <p><strong>Step 5: <code>PartialType</code> for update DTOs.</strong> Instead of copying all fields with <code>@IsOptional()</code>, derive the update DTO from the create DTO. <code>PartialType</code> from <code>@nestjs/mapped-types</code> (or <code>@nestjs/swagger</code>) keeps the validation rules and makes everything optional:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { PartialType, OmitType } from '@nestjs/mapped-types';
+
+    export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['password'] as const)) {}
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A query DTO for pagination and filtering, validated and converted by the global <code>ValidationPipe</code>, then passed straight into Prisma:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
+      import { Type } from 'class-transformer';
+      import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+      import { OrderStatus } from '@prisma/client';
+
+      export class ListOrdersQueryDto {
+        @IsOptional() @IsEnum(OrderStatus)
+        status?: OrderStatus;
+
+        @Type(() => Number) @IsInt() @Min(1)
+        page: number = 1;
+
+        @Type(() => Number) @IsInt() @Min(1) @Max(100)
+        limit: number = 20;
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      list({ status, page, limit }: ListOrdersQueryDto) {
+        return this.prisma.order.findMany({
+          where: { status },                 // undefined → Prisma ignores the filter
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        });
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting to register <code>ValidationPipe</code>. The <code>class-validator</code> decorators then do nothing at all.</li>
+      <li>Not using <code>whitelist: true</code>, which allows mass assignment of fields like <code>role</code> or <code>isVerified</code>.</li>
+      <li>Forgetting <code>@Type(() =&gt; ChildDto)</code> on nested objects, so <code>@ValidateNested()</code> silently validates nothing.</li>
+      <li>Expecting query values to be numbers without <code>transform: true</code> + <code>@Type(() =&gt; Number)</code> (or a <code>ParseIntPipe</code>).</li>
+      <li>Putting business checks (e.g. "email is not taken") in a pipe. Pipes check the <em>shape</em> of input; database rules belong in the service.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>CreateProductDto</code>: <code>name</code> (string, 2–100 chars), <code>price</code> (positive number, max 2 decimals), <code>stock</code> (integer ≥ 0, default 0), optional <code>tags</code> (array of strings). Then write <code>UpdateProductDto</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export class CreateProductDto {
+          @IsString() @Length(2, 100)
+          name!: string;
+
+          @IsNumber({ maxDecimalPlaces: 2 }) @IsPositive()
+          price!: number;
+
+          @IsOptional() @IsInt() @Min(0)
+          stock: number = 0;
+
+          @IsOptional() @IsArray() @IsString({ each: true })
+          tags?: string[];
+        }
+
+        export class UpdateProductDto extends PartialType(CreateProductDto) {}
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What are the two main uses of pipes?</summary>
+      <p>Transformation (convert input to the desired form, e.g. string to number) and validation (check input and throw a 400 if invalid). Both run right before the handler, on each argument.</p></details>
+    <details><summary>What do <code>whitelist</code>, <code>forbidNonWhitelisted</code> and <code>transform</code> do?</summary>
+      <p><code>whitelist</code> removes properties that have no validation decorator. <code>forbidNonWhitelisted</code> rejects the request instead of silently removing them. <code>transform</code> converts the plain payload into an instance of the DTO class and converts primitive params based on their types.</p></details>
+    <details><summary>Why do guards run before pipes?</summary>
+      <p>Authorization should be decided before spending effort validating input, and unauthorized users shouldn't receive detailed validation messages about your API.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Never trust input. Use a global <code>ValidationPipe</code> with <code>whitelist</code> and <code>transform</code>, DTO classes with <code>class-validator</code>, and <code>Parse*Pipe</code> for params.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="guards">
+  <div class="topic-head"><span class="num">9</span><h2>Guards</h2></div>
+  <p class="tagline">route protection and custom guards</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A guard is the <em>bouncer at a club door</em>. It looks at the visitor (the request) and the room they want to enter (the route), and answers one question: <strong>yes or no?</strong> "Do you have a valid wristband (JWT)? Is your name on the VIP list (role = admin)?" If the answer is no, the visitor never gets inside. A guard doesn't change the request's data or the response; it only decides.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the interface.</strong> A guard implements <code>CanActivate</code>. Its <code>canActivate()</code> method returns <code>true</code> (continue) or <code>false</code> (Nest throws <code>ForbiddenException</code>, 403). It may return a boolean, a <code>Promise</code> or an <code>Observable</code>. It can also throw its own exception, e.g. <code>UnauthorizedException</code> (401).</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/guards/api-key.guard.ts">
+    import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+    import { ConfigService } from '@nestjs/config';
+    import type { Request } from 'express';
+
+    @Injectable()
+    export class ApiKeyGuard implements CanActivate {
+      constructor(private readonly config: ConfigService) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<Request>();
+        const key = req.headers['x-api-key'];
+        if (key !== this.config.getOrThrow<string>('INTERNAL_API_KEY')) {
+          throw new UnauthorizedException('Invalid API key');   // 401 with a clear message
+        }
+        return true;
+      }
+    }
+
+    // usage
+    @UseGuards(ApiKeyGuard)
+    @Controller('internal/reports')
+    export class ReportsController {}
+  </script>
+
+  <p><strong>Step 2: <code>ExecutionContext</code>.</strong> This is what makes guards smarter than middleware. Besides the request, it tells you <em>which</em> handler and controller will run:</p>
+  <script type="text/x-code" data-lang="typescript">
+    context.getHandler();   // the method, e.g. OrdersController.prototype.remove
+    context.getClass();     // the controller class, e.g. OrdersController
+    context.getType();      // 'http' | 'ws' | 'rpc'
+  </script>
+  <p>With the handler and class you can read <strong>metadata</strong> that decorators attached, for example the roles a route requires.</p>
+
+  <p><strong>Step 3: a JWT authentication guard.</strong> Using <code>@nestjs/jwt</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/jwt-auth.guard.ts">
+    import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+    import { JwtService } from '@nestjs/jwt';
+    import type { Request } from 'express';
+
+    export interface JwtPayload { sub: number; email: string; role: 'USER' | 'ADMIN'; }
+
+    @Injectable()
+    export class JwtAuthGuard implements CanActivate {
+      constructor(private readonly jwt: JwtService) {}
+
+      async canActivate(context: ExecutionContext): Promise<boolean> {
+        const req = context.switchToHttp().getRequest<Request & { user?: JwtPayload }>();
+        const [type, token] = req.headers.authorization?.split(' ') ?? [];
+        if (type !== 'Bearer' || !token) throw new UnauthorizedException();
+
+        try {
+          req.user = await this.jwt.verifyAsync<JwtPayload>(token);  // secret from JwtModule config
+        } catch {
+          throw new UnauthorizedException('Invalid or expired token');
+        }
+        return true;   // later layers can now read req.user
+      }
+    }
+  </script>
+  <p>(Many projects use <code>@nestjs/passport</code> with <code>AuthGuard('jwt')</code> instead. It does the same thing behind a strategy class. Writing it by hand first helps you understand what Passport does for you.)</p>
+
+  <p><strong>Step 4: a roles guard using metadata.</strong> First a decorator that stores the required roles, then a guard that reads them with <code>Reflector</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/roles.decorator.ts">
+    import { SetMetadata } from '@nestjs/common';
+
+    export const ROLES_KEY = 'roles';
+    export const Roles = (...roles: Array<'USER' | 'ADMIN'>) => SetMetadata(ROLES_KEY, roles);
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/roles.guard.ts">
+    import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+    import { Reflector } from '@nestjs/core';
+    import { ROLES_KEY } from './roles.decorator';
+
+    @Injectable()
+    export class RolesGuard implements CanActivate {
+      constructor(private readonly reflector: Reflector) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        // method-level metadata overrides class-level metadata
+        const required = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+        if (!required || required.length === 0) return true;   // no @Roles → open to any logged-in user
+
+        const { user } = context.switchToHttp().getRequest();
+        if (!user || !required.includes(user.role)) {
+          throw new ForbiddenException('Insufficient role');
+        }
+        return true;
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="products.controller.ts">
+    @Controller('products')
+    @UseGuards(JwtAuthGuard, RolesGuard)    // run in this order: authenticate, then authorize
+    export class ProductsController {
+      @Get()
+      findAll() {}                          // any logged-in user
+
+      @Delete(':id')
+      @Roles('ADMIN')                       // admins only
+      remove(@Param('id', ParseIntPipe) id: number) {}
+    }
+  </script>
+
+  <p><strong>401 vs 403.</strong> <code>401 Unauthorized</code> means "I don't know who you are" (no or bad token). <code>403 Forbidden</code> means "I know who you are, but you're not allowed". Authentication guards throw 401; authorization guards throw 403.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Most apps protect <em>everything</em> by default with a global guard and mark the few public routes with a <code>@Public()</code> decorator. It's safer: a new route is protected even if a developer forgets to add a guard.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/public.decorator.ts">
+      export const IS_PUBLIC_KEY = 'isPublic';
+      export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/jwt-auth.guard.ts (top of canActivate)">
+      const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
+      if (isPublic) return true;
+      // ...verify token as before
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts / auth.controller.ts">
+      providers: [
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
+      ]
+
+      @Public()
+      @Post('auth/login')
+      login(@Body() dto: LoginDto) {}
+    </script>
+    <p>For ownership rules ("a user may only see their own orders"), the guard usually isn't enough, because it would need to load the order. Do that check in the service with a Prisma query like <code>findFirst({ where: { id, userId } })</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Listing <code>RolesGuard</code> before <code>JwtAuthGuard</code>, so <code>request.user</code> is still empty when roles are checked.</li>
+      <li>Using <code>reflector.get()</code> with only the handler and missing roles set on the controller class. Use <code>getAllAndOverride</code> (or <code>getAllAndMerge</code>).</li>
+      <li>Returning <code>false</code> everywhere, so every failure is a 403. Throw <code>UnauthorizedException</code> when the user isn't authenticated.</li>
+      <li>Forgetting <code>@Public()</code> on login/register after adding a global guard, so nobody can log in.</li>
+      <li>Trusting the role from the request body instead of the verified token or database.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>VerifiedEmailGuard</code> that only lets users through if <code>request.user.emailVerified === true</code>, and throws <code>ForbiddenException('Please verify your email')</code> otherwise. Apply it to <code>POST /orders</code> only.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        @Injectable()
+        export class VerifiedEmailGuard implements CanActivate {
+          canActivate(context: ExecutionContext): boolean {
+            const { user } = context.switchToHttp().getRequest();
+            if (!user?.emailVerified) {
+              throw new ForbiddenException('Please verify your email');
+            }
+            return true;
+          }
+        }
+
+        @Controller('orders')
+        export class OrdersController {
+          @Post()
+          @UseGuards(VerifiedEmailGuard)   // runs after the global JwtAuthGuard
+          create(@Body() dto: CreateOrderDto) {}
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a guard and when does it run?</summary>
+      <p>A class implementing <code>CanActivate</code> that decides whether a request may reach the handler. It runs after middleware and before interceptors and pipes. Returning <code>false</code> results in 403; it can also throw a specific exception.</p></details>
+    <details><summary>How does a roles guard know which roles a route needs?</summary>
+      <p>A decorator like <code>@Roles('ADMIN')</code> stores metadata on the handler or class with <code>SetMetadata</code>. The guard reads it through <code>Reflector</code> using <code>context.getHandler()</code> and <code>context.getClass()</code>.</p></details>
+    <details><summary>Why make authentication global with a <code>@Public()</code> opt-out?</summary>
+      <p>It's secure by default: new routes are protected automatically, and only routes explicitly marked public are open. Opt-in protection risks forgetting a guard on a sensitive endpoint.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Guards answer "may this request continue?". Authenticate first (401), then authorize with metadata and <code>Reflector</code> (403), and prefer a global guard with a <code>@Public()</code> escape hatch.</div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="topic" id="interceptors">
+  <div class="topic-head"><span class="num">10</span><h2>Interceptors</h2></div>
+  <p class="tagline">logging and response transformation</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>An interceptor <em>wraps</em> your handler like a sandwich: it gets a slice of code <strong>before</strong> the handler runs and a slice <strong>after</strong>. Think of a delivery company: before the parcel leaves, they stamp the departure time; when it arrives, they stamp the arrival time and put it in a branded box. That's exactly what logging and response-wrapping interceptors do.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the shape.</strong> An interceptor implements <code>NestInterceptor</code>. <code>next.handle()</code> calls the rest of the chain (pipes + handler) and returns an RxJS <code>Observable</code> of the result. Everything before <code>next.handle()</code> is "before"; the operators in <code>.pipe()</code> run "after".</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/interceptors/logging.interceptor.ts">
+    import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+    import { Observable, tap } from 'rxjs';
+
+    @Injectable()
+    export class LoggingInterceptor implements NestInterceptor {
+      private readonly logger = new Logger('Timing');
+
+      intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+        const handler = `${context.getClass().name}.${context.getHandler().name}`;
+        const start = Date.now();                                  // BEFORE
+
+        return next.handle().pipe(
+          tap({
+            next: () => this.logger.log(`${handler} ✓ ${Date.now() - start}ms`),   // AFTER (success)
+            error: (err) => this.logger.warn(`${handler} ✗ ${err.message}`),     // AFTER (error)
+          }),
+        );
+      }
+    }
+  </script>
+  <p>Unlike middleware, the interceptor knows the handler name (<code>OrdersController.create</code>), because it receives an <code>ExecutionContext</code>.</p>
+
+  <p><strong>Step 2: a tiny bit of RxJS.</strong> You only need a few operators:</p>
+  <table>
+    <tr><th>Operator</th><th>Use</th></tr>
+    <tr><td><code>tap()</code></td><td>Do something with the result without changing it (logging, metrics)</td></tr>
+    <tr><td><code>map()</code></td><td>Replace the result with a new value (response wrapping, serialization)</td></tr>
+    <tr><td><code>catchError()</code></td><td>Turn an error into another error or a fallback value</td></tr>
+    <tr><td><code>timeout()</code></td><td>Fail if the handler takes too long</td></tr>
+  </table>
+  <p>If your handler is <code>async</code> and returns a <code>Promise</code>, Nest converts it to an Observable for you, so these operators work either way.</p>
+
+  <p><strong>Step 3: response transformation.</strong> Wrap every successful response in a consistent envelope:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/interceptors/transform.interceptor.ts">
+    import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+    import { map, Observable } from 'rxjs';
+
+    export interface ApiResponse<T> {
+      data: T;
+      timestamp: string;
+    }
+
+    @Injectable()
+    export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
+      intercept(context: ExecutionContext, next: CallHandler<T>): Observable<ApiResponse<T>> {
+        return next.handle().pipe(
+          map((data) => ({ data, timestamp: new Date().toISOString() })),
+        );
+      }
+    }
+    // GET /products/1 → { "data": { "id": 1, "name": "Keyboard" }, "timestamp": "2025-..." }
+  </script>
+
+  <p><strong>Step 4: timeouts and error mapping.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/interceptors/timeout.interceptor.ts">
+    import {
+      CallHandler, ExecutionContext, Injectable, NestInterceptor, RequestTimeoutException,
+    } from '@nestjs/common';
+    import { catchError, Observable, throwError, timeout, TimeoutError } from 'rxjs';
+
+    @Injectable()
+    export class TimeoutInterceptor implements NestInterceptor {
+      intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+        return next.handle().pipe(
+          timeout(5000),
+          catchError((err) =>
+            err instanceof TimeoutError
+              ? throwError(() => new RequestTimeoutException())   // 408
+              : throwError(() => err),
+          ),
+        );
+      }
+    }
+  </script>
+
+  <p><strong>Step 5: binding and order.</strong> Same three levels as guards: <code>@UseInterceptors()</code> on a route or controller, or globally with <code>APP_INTERCEPTOR</code>. "Before" parts run global → controller → route; "after" parts run in reverse (like layers of an onion).</p>
+
+  <p><strong>Step 6: the built-in <code>ClassSerializerInterceptor</code>.</strong> It runs <code>class-transformer</code> on your returned objects, so <code>@Exclude()</code> on a field hides it from the JSON. It only works on <em>class instances</em>, and Prisma returns plain objects, so you wrap them in an entity class:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { Exclude } from 'class-transformer';
+
+    export class UserEntity {
+      id!: number;
+      email!: string;
+      @Exclude() passwordHash!: string;          // never sent to the client
+
+      constructor(partial: Partial<UserEntity>) {
+        Object.assign(this, partial);
+      }
+    }
+
+    @UseInterceptors(ClassSerializerInterceptor)
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+      return new UserEntity(await this.usersService.findOne(id));
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma returns <code>BigInt</code> for <code>BigInt</code> columns, and <code>JSON.stringify</code> throws on BigInt values. A small global interceptor can convert them before serialization, alongside logging and the response envelope:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="common/interceptors/bigint.interceptor.ts">
+      function convertBigInt(value: unknown): unknown {
+        if (typeof value === 'bigint') return value.toString();
+        if (Array.isArray(value)) return value.map(convertBigInt);
+        if (value instanceof Date) return value;
+        if (value && typeof value === 'object') {
+          return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, convertBigInt(v)]));
+        }
+        return value;
+      }
+
+      @Injectable()
+      export class BigIntInterceptor implements NestInterceptor {
+        intercept(_ctx: ExecutionContext, next: CallHandler) {
+          return next.handle().pipe(map(convertBigInt));
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+      providers: [
+        { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+        { provide: APP_INTERCEPTOR, useClass: BigIntInterceptor },
+      ]
+    </script>
+    <p>(Prisma <code>Decimal</code> values, used for prices, are serialized to strings by their own <code>toJSON()</code>, so the frontend receives <code>"19.99"</code>. Decide on that format early and document it.)</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting to <code>return next.handle()</code>. If you don't call it, the handler never runs; if you don't return it, the request hangs.</li>
+      <li>Using <code>map()</code> when you meant <code>tap()</code>. A <code>map(() =&gt; console.log(...))</code> replaces the response body with <code>undefined</code>.</li>
+      <li>Expecting interceptors to work on routes that use <code>@Res()</code> without <code>passthrough</code>. You send the response yourself, so there's nothing to transform.</li>
+      <li>Wrapping responses in an envelope but forgetting that errors (from filters) won't be wrapped. Keep both formats consistent.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>SlowRequestInterceptor</code> that logs a warning with the handler name only when the handler took longer than 500 ms. Don't change the response.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        @Injectable()
+        export class SlowRequestInterceptor implements NestInterceptor {
+          private readonly logger = new Logger('Slow');
+
+          intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+            const start = Date.now();
+            const name = `${context.getClass().name}.${context.getHandler().name}`;
+            return next.handle().pipe(
+              tap(() => {
+                const ms = Date.now() - start;
+                if (ms > 500) this.logger.warn(`${name} took ${ms}ms`);
+              }),
+            );
+          }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What can an interceptor do that a guard or middleware cannot?</summary>
+      <p>It runs both before and after the handler and has access to the returned value as an Observable, so it can transform the response, measure total time including the handler, cache results, map errors or apply timeouts.</p></details>
+    <details><summary>What does <code>next.handle()</code> return?</summary>
+      <p>An RxJS <code>Observable</code> that emits the handler's result (Nest wraps Promises and plain values). You attach operators like <code>map</code>, <code>tap</code> or <code>catchError</code> to it and return it.</p></details>
+    <details><summary>How would you hide a password field from all responses?</summary>
+      <p>Prefer not to select it in the Prisma query (<code>select</code> / <code>omit</code>). As a second layer, return entity classes with <code>@Exclude()</code> and use <code>ClassSerializerInterceptor</code> globally.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Interceptors wrap the handler: code before <code>next.handle()</code> runs first, RxJS operators after it see the result. Use <code>tap</code> to observe, <code>map</code> to transform.</div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="topic" id="custom-decorators">
+  <div class="topic-head"><span class="num">11</span><h2>Custom decorators</h2></div>
+  <p class="tagline">param decorators and metadata</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Nest's built-in decorators (<code>@Body()</code>, <code>@Param()</code>, <code>@UseGuards()</code>) are just functions somebody wrote. You can write your own. There are two kinds you'll make all the time: <strong>param decorators</strong>, which are <em>shortcuts to grab something</em> from the request (like "give me the logged-in user"), and <strong>metadata decorators</strong>, which are <em>labels</em> you stick on a route ("admins only", "public") so a guard or interceptor can read them later.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the repetition problem.</strong> Without a custom decorator, every handler that needs the user digs into the raw request:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ repeated everywhere, untyped, and couples the handler to Express
+    @Get('me')
+    me(@Req() req: Request & { user: JwtPayload }) {
+      return this.usersService.findOne(req.user.sub);
+    }
+  </script>
+
+  <p><strong>Step 2: a param decorator with <code>createParamDecorator</code>.</strong> The factory receives an optional <code>data</code> argument (what you pass in the parentheses) and the <code>ExecutionContext</code>. Whatever it returns becomes the parameter's value.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/current-user.decorator.ts">
+    import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+    import type { JwtPayload } from './jwt-auth.guard';
+
+    export const CurrentUser = createParamDecorator(
+      (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const user: JwtPayload | undefined = request.user;   // set earlier by JwtAuthGuard
+        return data ? user?.[data] : user;
+      },
+    );
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+    @Get('me')
+    me(@CurrentUser() user: JwtPayload) {          // ✅ the whole payload
+      return this.usersService.findOne(user.sub);
+    }
+
+    @Get('me/orders')
+    myOrders(@CurrentUser('sub') userId: number) {  // ✅ just one field
+      return this.ordersService.findByUser(userId);
+    }
+  </script>
+  <p>Because guards run before the handler's parameters are resolved, <code>request.user</code> is already set when the decorator runs.</p>
+  <p><strong>Pipes work on custom param decorators too.</strong> Pass them after the data argument, and for the pipe to also validate custom decorators globally, set <code>validateCustomDecorators: true</code> on <code>ValidationPipe</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @Get()
+    list(@CurrentUser('sub', ParseIntPipe) userId: number) {}
+  </script>
+
+  <p><strong>Step 3: metadata decorators with <code>SetMetadata</code>.</strong> These don't do anything by themselves. They attach a key/value pair to the handler or class, and some other piece (usually a guard or interceptor) reads it with <code>Reflector</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { SetMetadata } from '@nestjs/common';
+
+    export const IS_PUBLIC_KEY = 'isPublic';
+    export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+    export const CACHE_TTL_KEY = 'cacheTtl';
+    export const CacheTtl = (seconds: number) => SetMetadata(CACHE_TTL_KEY, seconds);
+  </script>
+
+  <p><strong>Step 4: the typed alternative, <code>Reflector.createDecorator</code>.</strong> Since Nest 10 you can create a decorator and its metadata key in one go, with the value type built in. The same object is used to read it back:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/roles.decorator.ts">
+    import { Reflector } from '@nestjs/core';
+
+    export type Role = 'USER' | 'ADMIN';
+    export const Roles = Reflector.createDecorator<Role[]>();
+
+    // usage on a route
+    @Roles(['ADMIN'])
+    @Delete(':id')
+    remove() {}
+
+    // reading it in a guard
+    const roles = this.reflector.getAllAndOverride(Roles, [context.getHandler(), context.getClass()]);
+    //    ^? Role[] | undefined — typed automatically, no string key to mistype
+  </script>
+
+  <p><strong>Step 5: composing decorators with <code>applyDecorators</code>.</strong> When the same group of decorators repeats on many routes, bundle them into one:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/auth.decorator.ts">
+    import { applyDecorators, UseGuards } from '@nestjs/common';
+
+    export function AdminOnly() {
+      return applyDecorators(
+        Roles(['ADMIN']),
+        UseGuards(JwtAuthGuard, RolesGuard),
+        // with @nestjs/swagger you would also add ApiBearerAuth(), ApiForbiddenResponse()...
+      );
+    }
+
+    @AdminOnly()
+    @Patch(':id/status')
+    updateStatus() {}
+  </script>
+
+  <p><strong>Where metadata lives.</strong> <code>SetMetadata</code> uses <code>Reflect.defineMetadata</code> (from <code>reflect-metadata</code>, which you met in Lesson 1) to store values on the method function or the class. <code>Reflector</code> is just a convenient, injectable reader for it:</p>
+  <table>
+    <tr><th>Reflector method</th><th>Behaviour</th></tr>
+    <tr><td><code>get(key, target)</code></td><td>Read from one target (handler <em>or</em> class)</td></tr>
+    <tr><td><code>getAllAndOverride(key, [handler, class])</code></td><td>First defined value wins → method overrides class</td></tr>
+    <tr><td><code>getAllAndMerge(key, [handler, class])</code></td><td>Merges arrays/objects from both levels</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A common pair: <code>@CurrentUser()</code> for the authenticated user and <code>@Public()</code> to opt out of the global JWT guard. Together they keep controllers short and readable:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @Controller('orders')
+      export class OrdersController {
+        constructor(private readonly ordersService: OrdersService) {}
+
+        @Post()
+        create(@CurrentUser('sub') userId: number, @Body() dto: CreateOrderDto) {
+          return this.ordersService.create(userId, dto);   // user id comes from the token, not the body
+        }
+
+        @Get(':id')
+        findOne(@CurrentUser('sub') userId: number, @Param('id', ParseUUIDPipe) id: string) {
+          // ownership check in Prisma: only find the order if it belongs to this user
+          return this.ordersService.findOwned(userId, id);
+        }
+
+        @Public()
+        @Get('track/:trackingCode')
+        track(@Param('trackingCode') code: string) {
+          return this.ordersService.track(code);
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>@CurrentUser()</code> on a route without an auth guard. <code>request.user</code> is <code>undefined</code>.</li>
+      <li>Expecting a metadata decorator like <code>@Roles()</code> to protect a route by itself. Something (a guard) must read and enforce it.</li>
+      <li>Typing metadata keys as string literals in several files. Export a constant, or use <code>Reflector.createDecorator</code>.</li>
+      <li>Reading metadata with <code>reflector.get(key, context.getHandler())</code> only, and ignoring decorators placed on the controller class.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>@ClientIp()</code> param decorator that returns <code>request.ip</code>, and use it in <code>POST /auth/login</code> to pass the IP to <code>authService.login(dto, ip)</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export const ClientIp = createParamDecorator(
+          (_data: unknown, ctx: ExecutionContext): string | undefined =>
+            ctx.switchToHttp().getRequest<Request>().ip,
+        );
+
+        @Public()
+        @Post('login')
+        login(@Body() dto: LoginDto, @ClientIp() ip?: string) {
+          return this.authService.login(dto, ip);
+        }
+      </script>
+      <p>Behind a proxy or load balancer, enable Express's <code>trust proxy</code> setting so <code>req.ip</code> reflects the real client.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you create a custom parameter decorator?</summary>
+      <p>With <code>createParamDecorator((data, ctx) =&gt; ...)</code>. The function gets the decorator's argument and the <code>ExecutionContext</code>, and its return value is injected as the parameter. Pipes can be applied to it like any built-in param decorator.</p></details>
+    <details><summary>What is the difference between <code>SetMetadata</code> and <code>Reflector</code>?</summary>
+      <p><code>SetMetadata</code> writes metadata onto a class or method when the decorator runs. <code>Reflector</code> is an injectable helper that reads that metadata at request time, typically inside guards and interceptors.</p></details>
+    <details><summary>What does <code>applyDecorators</code> do?</summary>
+      <p>It combines several decorators into a single reusable one, so a recurring group (roles + guards + Swagger docs) is declared once and applied with one line.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Param decorators extract values from the request; metadata decorators label routes for guards and interceptors to read with <code>Reflector</code>. Bundle repeated groups with <code>applyDecorators</code>.</div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="topic" id="configuration">
+  <div class="topic-head"><span class="num">12</span><h2>Configuration</h2></div>
+  <p class="tagline">ConfigModule and environment variables</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Your app runs in several places: your laptop, a test server, production. The code is the same, but the <em>settings</em> differ: database URL, secret keys, port. <strong>Environment variables</strong> are like sticky notes the computer gives the app at start-up. <code>ConfigModule</code> is the assistant who reads those notes (and a local <code>.env</code> file), checks that nothing important is missing, and answers "what's the database URL?" whenever a service asks.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: the <code>.env</code> file.</strong> A simple <code>KEY=value</code> file in the project root for local development. It must <strong>never</strong> be committed; commit a <code>.env.example</code> with fake values instead.</p>
+  <script type="text/x-code" data-lang="ini" data-title=".env">
+    NODE_ENV=development
+    PORT=3000
+    DATABASE_URL="postgresql://shop:shop@localhost:5432/shop?schema=public"
+    JWT_SECRET=change-me-to-a-long-random-string
+    JWT_EXPIRES_IN=15m
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title=".gitignore">
+    .env
+    .env.*.local
+  </script>
+
+  <p><strong>Step 2: <code>ConfigModule.forRoot()</code>.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @nestjs/config
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { ConfigModule } from '@nestjs/config';
+
+    @Module({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,                          // ConfigService injectable everywhere without importing
+          envFilePath: ['.env.local', '.env'],     // first file wins for duplicate keys
+          cache: true,                             // faster repeated reads
+        }),
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <p>It loads the <code>.env</code> file into <code>process.env</code>. Real environment variables (set by Docker, your CI or your hosting provider) take precedence over values in the file, which is exactly what you want in production.</p>
+
+  <p><strong>Step 3: reading values with <code>ConfigService</code>.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    @Injectable()
+    export class AuthService {
+      constructor(private readonly config: ConfigService) {}
+
+      example() {
+        const port = this.config.get<number>('PORT');            // ⚠️ number | undefined, and still a STRING at runtime!
+        const secret = this.config.getOrThrow<string>('JWT_SECRET'); // ✅ throws if missing
+        const ttl = this.config.get<string>('JWT_EXPIRES_IN', '15m'); // with a default
+      }
+    }
+  </script>
+  <p>Environment variables are always strings. The generic <code>&lt;number&gt;</code> only changes the TypeScript type, not the value. To get real numbers and booleans, validate and transform the env at start-up.</p>
+
+  <p><strong>Step 4: validate at start-up (fail fast).</strong> It's much better to crash on boot with "JWT_SECRET is missing" than to crash at 3 a.m. when the first user logs in. You can pass a <code>validate</code> function. Here with <code>class-validator</code>, which you already use for DTOs:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="config/env.validation.ts">
+    import { plainToInstance } from 'class-transformer';
+    import { IsEnum, IsInt, IsString, Max, Min, MinLength, validateSync } from 'class-validator';
+
+    enum NodeEnv { Development = 'development', Production = 'production', Test = 'test' }
+
+    class EnvironmentVariables {
+      @IsEnum(NodeEnv)
+      NODE_ENV: NodeEnv = NodeEnv.Development;
+
+      @IsInt() @Min(1) @Max(65535)
+      PORT: number = 3000;
+
+      @IsString()
+      DATABASE_URL!: string;
+
+      @IsString() @MinLength(32)
+      JWT_SECRET!: string;
+    }
+
+    export function validate(config: Record<string, unknown>) {
+      const validated = plainToInstance(EnvironmentVariables, config, { enableImplicitConversion: true });
+      const errors = validateSync(validated, { skipMissingProperties: false });
+      if (errors.length > 0) {
+        throw new Error(errors.toString());     // app refuses to start
+      }
+      return validated;                         // PORT is now a real number
+    }
+
+    // app.module.ts → ConfigModule.forRoot({ isGlobal: true, validate })
+  </script>
+  <p>(Many projects use Joi via <code>validationSchema</code>, or Zod, instead. The idea is identical.)</p>
+
+  <p><strong>Step 5: namespaced config with <code>registerAs</code>.</strong> For bigger apps, group related settings into typed objects instead of reading raw keys everywhere:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="config/jwt.config.ts">
+    import { registerAs } from '@nestjs/config';
+
+    export default registerAs('jwt', () => ({
+      secret: process.env.JWT_SECRET!,
+      expiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+    }));
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    import { ConfigType } from '@nestjs/config';
+    import jwtConfig from './config/jwt.config';
+
+    // app.module.ts
+    ConfigModule.forRoot({ isGlobal: true, load: [jwtConfig], validate });
+
+    // any service — fully typed, no string keys
+    @Injectable()
+    export class TokenService {
+      constructor(@Inject(jwtConfig.KEY) private readonly jwt: ConfigType<typeof jwtConfig>) {}
+
+      describe() {
+        return `tokens expire in ${this.jwt.expiresIn}`;
+      }
+    }
+  </script>
+
+  <p><strong>Step 6: config for other modules (<code>forRootAsync</code>).</strong> Modules that need settings at import time offer an async variant that can inject <code>ConfigService</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth.module.ts">
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '15m') },
+      }),
+    })
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma reads <code>DATABASE_URL</code> itself from the environment (see <code>schema.prisma</code>), so it must be present both for the app and for CLI commands like <code>prisma migrate</code>. Nest uses the same variable, validated at start-up:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      datasource db {
+        provider = "postgresql"
+        url      = env("DATABASE_URL")
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+      async function bootstrap() {
+        const app = await NestFactory.create(AppModule);
+        const config = app.get(ConfigService);              // read config outside a class
+        app.enableCors({ origin: config.get<string>('CORS_ORIGIN')?.split(',') });
+        await app.listen(config.get<number>('PORT') ?? 3000);
+      }
+      bootstrap();
+    </script>
+    <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml (excerpt)">
+      services:
+        api:
+          build: .
+          environment:
+            NODE_ENV: production
+            DATABASE_URL: postgresql://shop:secret@db:5432/shop
+            JWT_SECRET: ${JWT_SECRET}      # injected from the host / CI secrets, not hard-coded
+          depends_on: [db]
+        db:
+          image: postgres:16
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Committing <code>.env</code> with real secrets to Git. Rotate any secret that was ever pushed.</li>
+      <li>Reading <code>process.env.X</code> all over the code. It's untyped, unvalidated and hard to mock in tests. Use <code>ConfigService</code>.</li>
+      <li>Assuming <code>config.get&lt;number&gt;('PORT')</code> returns a number. Without validation/transformation it's a string.</li>
+      <li>Forgetting <code>isGlobal: true</code> and getting "ConfigService is not available in the XModule context".</li>
+      <li>Reading <code>process.env</code> at the top level of a file (outside a function) before <code>ConfigModule</code> has loaded <code>.env</code>, so the value is <code>undefined</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add a <code>MAIL_FROM</code> variable that must be a valid email, and a <code>MAIL_ENABLED</code> boolean defaulting to <code>false</code>. Add them to the validation class and read them in a <code>MailService</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // env.validation.ts
+        @IsEmail()
+        MAIL_FROM!: string;
+
+        @IsBoolean()
+        @Transform(({ obj }) => obj.MAIL_ENABLED === true || obj.MAIL_ENABLED === 'true')   // read the raw value: 'true' → true, else false
+        MAIL_ENABLED: boolean = false;
+
+        // mail.service.ts
+        @Injectable()
+        export class MailService {
+          constructor(private readonly config: ConfigService) {}
+
+          async send(to: string, subject: string) {
+            if (!this.config.get<boolean>('MAIL_ENABLED')) return;   // validated → real boolean
+            const from = this.config.getOrThrow<string>('MAIL_FROM');
+            // ...send with your mail provider
+          }
+        }
+      </script>
+      <p>Note: <code>enableImplicitConversion</code> would turn the string <code>'false'</code> into <code>true</code> (any non-empty string is truthy), which is why an explicit <code>@Transform</code> is safer for booleans. <code>Transform</code> comes from <code>class-transformer</code>.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why validate environment variables at start-up?</summary>
+      <p>To fail fast with a clear message when configuration is missing or wrong, instead of failing later at runtime in a random request. It also converts values to the correct types (numbers, booleans).</p></details>
+    <details><summary>What is the difference between <code>get</code> and <code>getOrThrow</code>?</summary>
+      <p><code>get</code> returns <code>undefined</code> (or a default you pass) when the key is missing. <code>getOrThrow</code> throws an error, which is right for required settings like secrets and connection strings.</p></details>
+    <details><summary>How do you configure a module like <code>JwtModule</code> from <code>ConfigService</code>?</summary>
+      <p>Use its async registration, e.g. <code>JwtModule.registerAsync({ inject: [ConfigService], useFactory: (config) =&gt; ({ ... }) })</code>, so the options are built after config has loaded.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Keep settings in environment variables, never commit secrets, load them with <code>ConfigModule.forRoot({ isGlobal: true, validate })</code>, and read them through <code>ConfigService</code>.</div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section class="topic" id="circular-dependencies">
+  <div class="topic-head"><span class="num">13</span><h2>Circular dependencies</h2></div>
+  <p class="tagline">forwardRef and module design</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A circular dependency is a <em>chicken-and-egg</em> problem. <code>UsersService</code> needs <code>OrdersService</code> to be built first, but <code>OrdersService</code> needs <code>UsersService</code> to be built first. Nest can't decide where to start, so it stops. <code>forwardRef()</code> is a way to say "start anyway, I'll fill in the other one later". But usually the real fix is to <strong>redesign</strong> so the two don't need each other.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: how a cycle appears.</strong> It happens naturally as features grow:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // users.service.ts — deleting a user must cancel their open orders
+    @Injectable()
+    export class UsersService {
+      constructor(private readonly ordersService: OrdersService) {}
+    }
+
+    // orders.service.ts — creating an order must check the user exists
+    @Injectable()
+    export class OrdersService {
+      constructor(private readonly usersService: UsersService) {}
+    }
+
+    // users.module.ts  → imports: [OrdersModule]
+    // orders.module.ts → imports: [UsersModule]      🔁 cycle
+  </script>
+
+  <p><strong>Step 2: the errors you'll see.</strong> At start-up Nest prints something like:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Nest cannot create the UsersModule instance.
+    The module at index [0] of the UsersModule "imports" array is undefined.
+
+    Potential causes:
+    - A circular dependency between modules. Use forwardRef() to avoid it.
+    - The module at index [0] is of type "undefined". Check your import statements and the type of the module.
+  </script>
+  <p>Why "undefined"? It's a JavaScript problem, not only a Nest one. When <code>users.module.ts</code> imports <code>orders.module.ts</code>, which imports <code>users.module.ts</code> again, Node gives back the half-loaded file, where <code>UsersModule</code> is not defined yet. The decorator then receives <code>undefined</code>. The same can happen between two service files, and even through a barrel <code>index.ts</code> file.</p>
+
+  <p><strong>Step 3: <code>forwardRef()</code>, the quick fix.</strong> It wraps the reference in a function, so it's only evaluated later, when both files have finished loading. You need it on <strong>both sides</strong>, at both levels (modules and providers):</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.module.ts / orders.module.ts">
+    @Module({
+      imports: [forwardRef(() => OrdersModule)],
+      providers: [UsersService],
+      exports: [UsersService],
+    })
+    export class UsersModule {}
+
+    @Module({
+      imports: [forwardRef(() => UsersModule)],
+      providers: [OrdersService],
+      exports: [OrdersService],
+    })
+    export class OrdersModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="users.service.ts / orders.service.ts">
+    import { forwardRef, Inject, Injectable } from '@nestjs/common';
+
+    @Injectable()
+    export class UsersService {
+      constructor(
+        @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
+      ) {}
+    }
+
+    @Injectable()
+    export class OrdersService {
+      constructor(
+        @Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
+      ) {}
+    }
+  </script>
+  <p>Downsides: the order in which the two are created is not guaranteed, so you must not use the other service inside the constructor (only in methods), it doesn't work well with request-scoped providers, and it hides a design smell.</p>
+
+  <p><strong>Step 4: better fixes through module design.</strong></p>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>Example</th></tr>
+    <tr><td>Use the data layer directly</td><td>Often one side only needs a simple query. Use <code>PrismaService</code> instead of the other service.</td><td><code>OrdersService</code> checks the user with <code>prisma.user.findUnique</code>, no <code>UsersService</code> needed</td></tr>
+    <tr><td>Extract a third module</td><td>Move the shared logic into a new service that both depend on (or that depends on both)</td><td><code>AccountClosureService</code> in an <code>AccountModule</code> that imports Users and Orders</td></tr>
+    <tr><td>Events</td><td>One side publishes an event, the other listens; no direct reference</td><td><code>user.deleted</code> event → orders listener cancels orders</td></tr>
+    <tr><td>Clear direction</td><td>Decide which feature is "lower level". Lower never imports higher.</td><td>Orders may depend on Users and Products; never the reverse</td></tr>
+  </table>
+
+  <p><strong>Example: breaking the cycle with events.</strong> Using <code>@nestjs/event-emitter</code>, <code>UsersService</code> no longer knows that orders exist:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+    import { EventEmitter2 } from '@nestjs/event-emitter';
+
+    @Injectable()
+    export class UsersService {
+      constructor(
+        private readonly prisma: PrismaService,
+        private readonly events: EventEmitter2,
+      ) {}
+
+      async remove(id: number) {
+        await this.prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
+        this.events.emit('user.deleted', { userId: id });    // ✅ no import of OrdersService
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/listeners/user-deleted.listener.ts">
+    import { OnEvent } from '@nestjs/event-emitter';
+
+    @Injectable()
+    export class UserDeletedListener {
+      constructor(private readonly prisma: PrismaService) {}
+
+      @OnEvent('user.deleted')
+      async cancelOpenOrders({ userId }: { userId: number }) {
+        await this.prisma.order.updateMany({
+          where: { userId, status: 'PENDING' },
+          data: { status: 'CANCELLED' },
+        });
+      }
+    }
+    // app.module.ts → imports: [EventEmitterModule.forRoot(), ...]
+  </script>
+  <p>Now the dependency only goes one way: <code>OrdersModule</code> knows about users; <code>UsersModule</code> knows nothing about orders.</p>
+  <p>(Trade-off: in-process events are not part of the same database transaction, and the listener runs separately. For critical consistency you'd do both updates in one Prisma <code>$transaction</code> in a higher-level service.)</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A healthy NestJS + Prisma app has a dependency graph that flows <em>downwards</em>:</p>
+    <script type="text/x-code" data-lang="plaintext">
+      AuthModule ──► UsersModule ──► PrismaModule (global)
+      OrdersModule ──► UsersModule, ProductsModule ──► PrismaModule
+      PaymentsModule ──► OrdersModule
+      (nothing points back up)
+    </script>
+    <p>A useful habit: when you're about to add <code>forwardRef</code>, stop and ask "which of these two is the lower-level concept?". Tools like <code>madge</code> can detect file-level cycles in CI:</p>
+    <script type="text/x-code" data-lang="bash">
+      npx madge --circular --extensions ts src/
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Adding <code>forwardRef</code> on only one side of the cycle. Both the module imports and both <code>@Inject()</code>s need it.</li>
+      <li>Using the forward-referenced service in a constructor. It may not be ready yet; use it only inside methods.</li>
+      <li>Creating cycles through barrel files (<code>index.ts</code> re-exporting everything). Import directly from the file instead.</li>
+      <li>Treating <code>forwardRef</code> as the final solution. It's a patch; the design problem stays.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p><code>ProductsService.remove()</code> calls <code>ReviewsService.deleteByProduct()</code>, and <code>ReviewsService.create()</code> calls <code>ProductsService.findOne()</code> to check the product exists. Remove the cycle without <code>forwardRef</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Make the direction one-way: Reviews depends on Products, never the reverse. Deleting reviews when a product is deleted can be handled by the database itself:</p>
+      <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+        model Review {
+          id        Int     @id @default(autoincrement())
+          productId Int
+          product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+          rating    Int
+        }
+      </script>
+      <p>Now <code>ProductsService.remove()</code> only deletes the product (PostgreSQL removes the reviews via <code>ON DELETE CASCADE</code>), and <code>ReviewsModule</code> imports <code>ProductsModule</code>. Alternatively, emit a <code>product.deleted</code> event that a reviews listener handles.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a circular dependency in NestJS and how do you resolve it?</summary>
+      <p>Two providers or modules that depend on each other, so neither can be created first. The quick fix is <code>forwardRef(() =&gt; X)</code> in both module <code>imports</code> and both <code>@Inject()</code>s. The better fix is to restructure: extract shared logic, use events, or query the data layer directly.</p></details>
+    <details><summary>Why do circular imports produce <code>undefined</code>?</summary>
+      <p>Node's module loader returns a partially initialized module when a cycle is detected, so a class exported later in that file is still <code>undefined</code> when the other file reads it. <code>forwardRef</code> defers reading it until both files are fully loaded.</p></details>
+    <details><summary>What are the limitations of <code>forwardRef</code>?</summary>
+      <p>Creation order is not guaranteed, so the injected instance must not be used in a constructor. It is problematic with request-scoped providers, and it hides tight coupling that makes code harder to test and reason about.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>forwardRef</code> is a patch, not a design. Keep the module graph flowing in one direction, and break cycles with a third module, events, or direct Prisma queries.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="TypeScript-Mastery.html">← Prev: 1. TypeScript Mastery</a>
+  <a href="PostgreSQL-Fundamentals.html">Next: 3. PostgreSQL Fundamentals →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

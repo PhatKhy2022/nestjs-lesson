@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Performance &amp; Debugging</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 9 of 12</span>
+  </nav>
+  <h1>9. Performance &amp; Debugging</h1>
+  <p class="goal"><strong>Goal:</strong> Find the real cause of problems instead of guessing.</p>
+  <p class="howto">How to use this page: read each point top to bottom, run the examples against a local NestJS + Prisma + PostgreSQL project (turn on Prisma query logging so you can <em>see</em> the queries), do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud. In this lesson, always measure before and after a change. A "fix" you did not measure is a guess.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#query-optimization">Query optimization</a></li>
+      <li><a href="#indexing-strategy">Indexing strategy</a></li>
+      <li><a href="#connection-pooling">Connection pooling</a></li>
+      <li><a href="#caching">Caching</a></li>
+      <li><a href="#rate-limiting">Rate limiting</a></li>
+      <li><a href="#logging">Logging</a></li>
+      <li><a href="#debugging-process">Debugging process</a></li>
+      <li><a href="#profiling">Profiling</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="query-optimization">
+  <div class="topic-head"><span class="num">1</span><h2>Query optimization</h2></div>
+  <p class="tagline">avoid N+1 with include/select</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine you need 100 books from a library. You can walk to the desk, ask for one book, walk back, and repeat that 100 times. Or you can hand the librarian a list once and get all 100 books together. The first way is the <strong>N+1 problem</strong>: 1 query to get a list, then N more queries (one per item) to get related data. Each trip to the database is small, but 101 trips add up. Query optimization means asking for <em>what you need</em>, in <em>as few trips as possible</em>, and <em>only the columns you need</em>.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: make queries visible.</strong> You cannot fix what you cannot see. Turn on Prisma's query log in development so every SQL statement is printed with its duration:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
+    import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+    import { Prisma, PrismaClient } from '@prisma/client';
+
+    @Injectable()
+    export class PrismaService
+      extends PrismaClient<Prisma.PrismaClientOptions, 'query'>
+      implements OnModuleInit
+    {
+      private readonly logger = new Logger('SQL');
+      public queryCount = 0; // handy for measuring in dev and tests
+
+      constructor() {
+        super({ log: [{ emit: 'event', level: 'query' }] });
+      }
+
+      async onModuleInit() {
+        this.$on('query', (e: Prisma.QueryEvent) => {
+          this.queryCount++;
+          this.logger.debug(`${e.duration}ms  ${e.query}`);
+        });
+        await this.$connect();
+      }
+    }
+  </script>
+
+  <p><strong>Step 2: recognise N+1.</strong> Here is a typical "list users with their orders" endpoint written the naive way. It looks innocent because the loop hides the queries:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+    // ❌ N+1: 1 query for users + 1 query PER user for orders
+    async listUsersWithOrders() {
+      const users = await this.prisma.user.findMany({ take: 100 });  // 1 query
+
+      const result = [];
+      for (const user of users) {
+        const orders = await this.prisma.order.findMany({              // 100 queries
+          where: { userId: user.id },
+        });
+        result.push({ ...user, orders });
+      }
+      return result;
+    }
+  </script>
+  <p>With query logging on, one request prints this:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    [SQL] 2ms  SELECT "public"."User"."id", "public"."User"."email", ... FROM "public"."User" LIMIT $1 OFFSET $2
+    [SQL] 1ms  SELECT "public"."Order"."id", ... FROM "public"."Order" WHERE "public"."Order"."userId" = $1 ...
+    [SQL] 1ms  SELECT "public"."Order"."id", ... FROM "public"."Order" WHERE "public"."Order"."userId" = $1 ...
+    ... (98 more lines like this)
+    Queries for this request: 101    Total time: 412ms
+  </script>
+  <p>Each query only takes ~1ms inside PostgreSQL, but every query also pays a network round trip, a connection checkout and Prisma's own processing. That overhead (often 2–5ms per query) is what makes the endpoint slow. With 1,000 users it becomes 1,001 queries.</p>
+
+  <p><strong>Step 3: fix it with <code>include</code>.</strong> Tell Prisma about the relation up front. Prisma loads all the related rows in <em>one</em> extra query using <code>WHERE "userId" IN (...)</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+    // ✅ 2 queries total, no matter how many users
+    async listUsersWithOrders() {
+      return this.prisma.user.findMany({
+        take: 100,
+        include: { orders: true },
+      });
+    }
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    [SQL] 2ms  SELECT "public"."User"."id", ... FROM "public"."User" LIMIT $1 OFFSET $2
+    [SQL] 4ms  SELECT "public"."Order"."id", ... FROM "public"."Order" WHERE "public"."Order"."userId" IN ($1,$2,...,$100)
+    Queries for this request: 2    Total time: 9ms
+  </script>
+
+  <table>
+    <tr><th>Version</th><th>Queries (100 users)</th><th>Queries (1,000 users)</th><th>Response time (local)</th></tr>
+    <tr><td>❌ Loop with <code>await</code> inside</td><td>101</td><td>1,001</td><td>~410ms / ~4s</td></tr>
+    <tr><td>✅ <code>include</code></td><td>2</td><td>2</td><td>~9ms / ~45ms</td></tr>
+  </table>
+
+  <p><strong>Step 4: fetch only what you need with <code>select</code>.</strong> <code>include</code> returns <em>every</em> column of both tables. If the screen only shows the email and the order totals, that is wasted data (and possibly leaked data, like <code>passwordHash</code>). <code>select</code> lets you pick columns, including nested ones:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ✅ Only the columns the client actually uses
+    return this.prisma.user.findMany({
+      take: 100,
+      select: {
+        id: true,
+        email: true,
+        orders: {
+          select: { id: true, total: true, status: true },
+          where: { status: 'PAID' },        // filter the relation too
+          orderBy: { createdAt: 'desc' },
+          take: 5,                          // only the 5 latest orders per user
+        },
+      },
+    });
+    // The return type is inferred: { id: number; email: string; orders: {...}[] }[]
+  </script>
+  <p>You cannot use <code>include</code> and <code>select</code> at the same level of the same query, but you can nest one inside the other.</p>
+
+  <p><strong>Step 5: count and aggregate in the database, not in JavaScript.</strong> Another common waste is loading rows only to count or sum them:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Loads every order row into Node just to count them
+    const user = await this.prisma.user.findUnique({ where: { id }, include: { orders: true } });
+    const orderCount = user?.orders.length;
+
+    // ✅ The database counts; only a number travels over the network
+    const withCount = await this.prisma.user.findUnique({
+      where: { id },
+      select: { email: true, _count: { select: { orders: true } } },
+    });
+    // withCount._count.orders → 342
+
+    // ✅ Sums with aggregate
+    const revenue = await this.prisma.order.aggregate({
+      where: { userId: id, status: 'PAID' },
+      _sum: { total: true },
+    });
+  </script>
+
+  <p><strong>Step 6: when you really need a loop, batch it.</strong> Sometimes the IDs come from somewhere else (a cache, another service). Collect them and run one <code>IN</code> query instead of one query per ID:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ One query per product
+    const products = await Promise.all(ids.map((id) => this.prisma.product.findFirst({ where: { id } })));
+
+    // ✅ One query, then build a lookup map
+    const rows = await this.prisma.product.findMany({ where: { id: { in: ids } } });
+    const byId = new Map(rows.map((p) => [p.id, p]));
+    const ordered = ids.map((id) => byId.get(id)); // keep the caller's order
+  </script>
+  <p>Good to know: Prisma automatically batches several <code>findUnique()</code> calls that happen in the same tick into one query (this is how it avoids N+1 in GraphQL resolvers). That does <em>not</em> apply to <code>findFirst</code> or <code>findMany</code>, and you should not rely on it as your main strategy.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A useful habit is to <strong>assert the query count in an e2e test</strong> for important list endpoints. If someone later adds a loop that causes N+1, the test fails instead of production slowing down:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/orders.e2e-spec.ts">
+      it('GET /orders uses a constant number of queries', async () => {
+        const prisma = app.get(PrismaService);
+        await seedOrders(prisma, { users: 50, ordersPerUser: 3 });
+
+        prisma.queryCount = 0;
+        await request(app.getHttpServer())
+          .get('/orders?limit=50')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(prisma.queryCount).toBeLessThanOrEqual(3); // was 51 before the fix
+      });
+    </script>
+    <p>Also watch <strong>mappers and serializers</strong>. N+1 often hides in a mapper that calls a repository for each item (<code>toDto(order)</code> loading <code>order.customer</code>). Load relations in the repository, and keep mappers pure (no database calls).</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>await</code> inside a <code>for</code> loop over database results. That is the classic N+1 shape.</li>
+      <li>Replacing the loop with <code>Promise.all(ids.map(...))</code> and calling it fixed. It is still N queries, just in parallel, and it can now empty your connection pool in one request.</li>
+      <li>Using <code>include</code> everywhere "just in case". Deep includes load huge amounts of data. Use <code>select</code> for API responses.</li>
+      <li>Returning Prisma models directly, which exposes columns like <code>passwordHash</code>. <code>select</code> fixes performance <em>and</em> security.</li>
+      <li>Optimizing without measuring. Count queries and time the request before and after.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>This endpoint returns the 20 newest products with their category name and the number of reviews. It sends 41 queries. Rewrite it to use 2–3 queries and return only <code>id</code>, <code>name</code>, <code>price</code>, the category name and the review count.</p>
+    <script type="text/x-code" data-lang="typescript">
+      const products = await this.prisma.product.findMany({ orderBy: { createdAt: 'desc' }, take: 20 });
+      for (const p of products) {
+        (p as any).category = await this.prisma.category.findUnique({ where: { id: p.categoryId } });
+        (p as any).reviewCount = (await this.prisma.review.findMany({ where: { productId: p.id } })).length;
+      }
+      return products;
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        return this.prisma.product.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            category: { select: { name: true } },
+            _count: { select: { reviews: true } },
+          },
+        });
+        // 41 queries → 3 (products, categories IN (...), review counts),
+        // the review rows are never loaded, and no 'as any' is needed.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the N+1 query problem and how do you detect it?</summary>
+      <p>You run 1 query to load a list, then 1 more query for each item to load related data, so N items cause N+1 queries. You detect it by logging queries (Prisma <code>log: ['query']</code>), counting queries per request, or seeing many identical queries with different parameters in APM tools or <code>pg_stat_statements</code>.</p></details>
+    <details><summary>What is the difference between <code>include</code> and <code>select</code> in Prisma?</summary>
+      <p><code>include</code> returns all scalar fields of the model <em>plus</em> the listed relations. <code>select</code> returns <em>only</em> the listed fields and relations. <code>select</code> is better for API responses because it transfers less data and never leaks columns by accident.</p></details>
+    <details><summary>Is <code>Promise.all</code> a fix for N+1?</summary>
+      <p>No. It makes the N queries run in parallel, which may be faster, but the database still does N times the work and the request can hold many pool connections at once. The real fix is one batched query (<code>include</code>, <code>select</code> or <code>where: { id: { in: ids } }</code>).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Log your queries, count them per request, and load related data with <code>include</code>/<code>select</code> or an <code>IN</code> query, never with a query inside a loop.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="indexing-strategy">
+  <div class="topic-head"><span class="num">2</span><h2>Indexing strategy</h2></div>
+  <p class="tagline">match indexes to real query patterns</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>An index is like the index at the back of a textbook. Without it, to find "transactions" you read every page (a <strong>sequential scan</strong>). With it, you jump straight to page 212. But an index only helps if it is sorted by the thing you search for: a textbook index sorted by topic is useless if you search by page colour. So you do not add indexes "everywhere". You look at the queries your app <em>actually runs</em> and build indexes that match them.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Start from the query, not the table.</strong> Suppose the "My orders" page runs this query thousands of times a minute:</p>
+  <script type="text/x-code" data-lang="typescript">
+    this.prisma.order.findMany({
+      where: { userId, status: 'PAID' },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  </script>
+  <p>Ask PostgreSQL how it executes it, with <code>EXPLAIN ANALYZE</code> (it really runs the query and reports real timings). Copy the SQL from the Prisma log and run it in <code>psql</code>:</p>
+  <script type="text/x-code" data-lang="sql">
+    EXPLAIN ANALYZE
+    SELECT id, total, status, "createdAt"
+    FROM "Order"
+    WHERE "userId" = 42 AND status = 'PAID'
+    ORDER BY "createdAt" DESC
+    LIMIT 20;
+  </script>
+  <p>Output <strong>before</strong> any index (table with 1,000,000 orders):</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Limit  (cost=21842.51..21842.56 rows=20 width=29) (actual time=96.104..96.110 rows=20 loops=1)
+      ->  Sort  (cost=21842.51..21842.83 rows=128 width=29) (actual time=96.102..96.106 rows=20 loops=1)
+            Sort Key: "createdAt" DESC
+            Sort Method: top-N heapsort  Memory: 27kB
+            ->  Seq Scan on "Order"  (cost=0.00..21839.00 rows=128 width=29) (actual time=0.031..95.912 rows=131 loops=1)
+                  Filter: (("userId" = 42) AND (status = 'PAID'::"OrderStatus"))
+                  Rows Removed by Filter: 999869
+    Planning Time: 0.140 ms
+    Execution Time: 96.142 ms
+  </script>
+  <p>How to read it, from the most indented line up:</p>
+  <ul>
+    <li><code>Seq Scan on "Order"</code>: PostgreSQL read <em>every</em> row of the table.</li>
+    <li><code>Rows Removed by Filter: 999869</code>: it threw away almost all of them. That is the red flag.</li>
+    <li><code>Sort</code>: it then sorted the 131 matches in memory.</li>
+    <li><code>actual time=...96.1</code> and <code>Execution Time: 96.142 ms</code>: the real cost. <code>cost=</code> numbers are the planner's estimates, in arbitrary units.</li>
+  </ul>
+
+  <p><strong>Design the index to match the query.</strong> The rule of thumb for a composite (multi-column) B-tree index: <em>equality columns first, then the sort / range column</em>. Here: <code>userId</code> and <code>status</code> (equality), then <code>createdAt</code> (sort).</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    model Order {
+      id        Int         @id @default(autoincrement())
+      userId    Int
+      status    OrderStatus @default(PENDING)
+      total     Decimal     @db.Decimal(10, 2)
+      createdAt DateTime    @default(now())
+      user      User        @relation(fields: [userId], references: [id])
+
+      // ✅ matches: WHERE userId = ? AND status = ? ORDER BY createdAt DESC
+      @@index([userId, status, createdAt(sort: Desc)])
+    }
+  </script>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate dev --name order_user_status_created_idx
+  </script>
+  <p>Output <strong>after</strong>:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Limit  (cost=0.43..75.02 rows=20 width=29) (actual time=0.028..0.061 rows=20 loops=1)
+      ->  Index Scan using "Order_userId_status_createdAt_idx" on "Order"  (cost=0.43..477.81 rows=128 width=29) (actual time=0.027..0.057 rows=20 loops=1)
+            Index Cond: (("userId" = 42) AND (status = 'PAID'::"OrderStatus"))
+    Planning Time: 0.210 ms
+    Execution Time: 0.083 ms
+  </script>
+  <p>96ms → 0.08ms, more than 1000× faster. Notice the <code>Sort</code> step disappeared: the index is already sorted by <code>createdAt DESC</code>, so PostgreSQL reads the first 20 entries and stops.</p>
+
+  <p><strong>Column order matters (the "leftmost prefix" rule).</strong> A B-tree index on <code>(userId, status, createdAt)</code> is sorted first by <code>userId</code>, then by <code>status</code> inside each user, and so on, like a phone book sorted by last name, then first name.</p>
+  <table>
+    <tr><th>Query filter</th><th>Can it use <code>(userId, status, createdAt)</code>?</th></tr>
+    <tr><td><code>WHERE userId = 42</code></td><td>✅ Yes, leftmost column</td></tr>
+    <tr><td><code>WHERE userId = 42 AND status = 'PAID'</code></td><td>✅ Yes</td></tr>
+    <tr><td><code>WHERE userId = 42 ORDER BY createdAt DESC</code></td><td>⚠️ Partly: finds the user fast, but must sort (status sits in between)</td></tr>
+    <tr><td><code>WHERE status = 'PAID'</code></td><td>❌ Usually not: skips the first column</td></tr>
+    <tr><td><code>WHERE createdAt &gt; now() - interval '1 day'</code></td><td>❌ No</td></tr>
+  </table>
+
+  <p><strong>Foreign keys are not indexed automatically in PostgreSQL.</strong> Prisma creates the foreign key constraint, but PostgreSQL does not add an index on <code>Order.userId</code> for you. Every <code>include: { orders: true }</code> filters on that column, so add <code>@@index([userId])</code> (or a composite index that starts with it) on almost every relation field.</p>
+
+  <p><strong>Other index types you will meet:</strong></p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id    Int    @id @default(autoincrement())
+      email String @unique          // a UNIQUE constraint is also an index
+    }
+
+    model Product {
+      id   Int      @id @default(autoincrement())
+      name String
+      tags String[]
+
+      @@index([tags], type: Gin)    // GIN: for arrays / JSONB: WHERE tags @> ARRAY['sale']
+    }
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="migration.sql (created with --create-only, then edited)">
+    -- Partial index: only index the rows the hot query touches (small and fast)
+    CREATE INDEX "Order_pending_createdAt_idx"
+      ON "Order" ("createdAt") WHERE status = 'PENDING';
+
+    -- Case-insensitive email lookup: WHERE lower(email) = lower($1)
+    CREATE INDEX "User_email_lower_idx" ON "User" (lower(email));
+  </script>
+  <p>For index kinds that Prisma's schema cannot express, run <code>npx prisma migrate dev --create-only</code>, add the SQL by hand to the generated migration file, then apply it. On a big production table, use <code>CREATE INDEX CONCURRENTLY</code> so writes are not blocked while it builds (it cannot run inside a transaction, so put it in its own migration).</p>
+
+  <p><strong>Indexes are not free.</strong> Every <code>INSERT</code>/<code>UPDATE</code> must also update every index, and indexes use disk and memory. Find unused ones:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT relname AS table, indexrelname AS index, idx_scan AS times_used,
+           pg_size_pretty(pg_relation_size(indexrelid)) AS size
+    FROM pg_stat_user_indexes
+    ORDER BY idx_scan ASC, pg_relation_size(indexrelid) DESC
+    LIMIT 10;
+    -- an index with times_used = 0 after weeks in production is a candidate to drop
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A good workflow when you add a new endpoint: (1) write the Prisma query, (2) copy the SQL from the query log, (3) run <code>EXPLAIN ANALYZE</code> on a database with realistic data (seed 100k+ rows: a 50-row dev table always looks fast), (4) add the matching <code>@@index</code> in the same pull request. Typical indexes in a shop API:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+      model Order {
+        // ...
+        @@index([userId, createdAt(sort: Desc)])  // "my orders" page
+        @@index([status, createdAt])               // admin: pending orders, oldest first
+      }
+
+      model RefreshToken {
+        // ...
+        tokenHash String   @unique                 // lookup on every refresh
+        userId    Int
+        expiresAt DateTime
+        @@index([userId])                           // revoke all tokens for a user
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Indexing every column "to be safe". Writes get slower and most indexes are never used.</li>
+      <li>Creating single-column indexes on <code>userId</code> and <code>createdAt</code> separately and expecting them to serve <code>WHERE userId ORDER BY createdAt</code> as well as one composite index.</li>
+      <li>Wrong column order in a composite index (range/sort column first, equality columns after).</li>
+      <li>Testing <code>EXPLAIN</code> on a tiny dev table. With 50 rows PostgreSQL correctly prefers a Seq Scan, so you learn nothing.</li>
+      <li>Wrapping the column in a function (<code>WHERE lower(email) = ...</code>, Prisma's <code>mode: 'insensitive'</code>) and expecting a plain index on <code>email</code> to be used. You need an expression index.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The admin dashboard runs: <em>"products in category X that are in stock, cheapest first, 50 per page"</em>. In Prisma: <code>where: { categoryId, stock: { gt: 0 } }, orderBy: { price: 'asc' }, take: 50</code>. Write the best <code>@@index</code> and explain the column order. Bonus: what partial index could be even smaller?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="prisma">
+        model Product {
+          // ...
+          @@index([categoryId, price])
+        }
+      </script>
+      <p><code>categoryId</code> is an equality filter, so it goes first. <code>price</code> is the sort column, so the index returns rows already sorted cheapest first. <code>stock &gt; 0</code> is a range filter: putting it before <code>price</code> would break the ordering, so PostgreSQL checks it on each row it reads instead. Bonus, written by hand in the migration:</p>
+      <script type="text/x-code" data-lang="sql">
+        CREATE INDEX "Product_inStock_category_price_idx"
+          ON "Product" ("categoryId", price) WHERE stock > 0;
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you decide which indexes to create?</summary>
+      <p>From real query patterns: the <code>WHERE</code>, <code>JOIN</code> and <code>ORDER BY</code> columns of frequent or slow queries (found with query logs or <code>pg_stat_statements</code>). Put equality columns first and the sort/range column last, check the plan with <code>EXPLAIN ANALYZE</code>, and remove indexes that are never used.</p></details>
+    <details><summary>Why might PostgreSQL ignore an index that exists?</summary>
+      <p>The table is small, so a sequential scan is cheaper. Or the query matches a large fraction of the rows. Or the query does not use the leftmost column. Or the column is wrapped in a function or cast. Or the statistics are out of date (run <code>ANALYZE</code>).</p></details>
+    <details><summary>What is the cost of an index?</summary>
+      <p>Slower writes (every insert/update/delete must update each index), extra disk and memory, and longer vacuum and backups. That is why you index for real queries, not for every column.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Indexes serve queries: read the plan with <code>EXPLAIN ANALYZE</code>, build composite indexes as "equality columns, then sort column", and always index your foreign keys.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="connection-pooling">
+  <div class="topic-head"><span class="num">3</span><h2>Connection pooling</h2></div>
+  <p class="tagline">understand Prisma connection limits</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Opening a database connection is like opening a phone line to PostgreSQL: it takes time (TCP, TLS, authentication) and every open line costs PostgreSQL memory (one process per connection). So instead of opening a new line for every query, Prisma keeps a small set of open lines ready: the <strong>connection pool</strong>. A query borrows a connection, uses it, and gives it back. If all connections are busy, the next query <em>waits in line</em>. Most "the API is randomly slow under load" problems are really "requests are waiting for a free connection".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Prisma's default pool size.</strong> Prisma's query engine creates a pool when the client connects. Its default size is:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    connection_limit = (number of physical CPUs × 2) + 1
+    e.g. 2 CPUs → 5 connections,  4 CPUs → 9 connections
+  </script>
+  <p>You configure it in the connection string, together with <code>pool_timeout</code> (how many seconds a query waits for a free connection, default 10):</p>
+  <script type="text/x-code" data-lang="ini" data-title=".env">
+    DATABASE_URL="postgresql://app:secret@db.internal:5432/shop?schema=public&connection_limit=10&pool_timeout=10"
+  </script>
+
+  <p><strong>The maths that matters.</strong> PostgreSQL has a hard limit, <code>max_connections</code> (default 100, and a few are reserved for superusers). Every <em>process</em> that runs a PrismaClient has its own pool. So the total is:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    total connections = instances × PrismaClient per instance × connection_limit
+
+    ✅ 4 API pods × 1 client × 10 = 40   (fits in 100, leaves room for migrations, psql, workers)
+    ❌ 10 API pods × 1 client × 9  = 90   + 3 worker pods × 9 = 117  → "too many clients already"
+  </script>
+  <script type="text/x-code" data-lang="sql">
+    -- See who is connected right now, and what they are doing
+    SHOW max_connections;
+    SELECT application_name, state, count(*)
+    FROM pg_stat_activity
+    WHERE datname = 'shop'
+    GROUP BY 1, 2 ORDER BY 3 DESC;
+  </script>
+
+  <p><strong>What pool exhaustion looks like.</strong> When every connection is busy for longer than <code>pool_timeout</code>, Prisma throws error <code>P2024</code>:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    PrismaClientKnownRequestError:
+    Timed out fetching a new connection from the connection pool.
+    (Current connection pool timeout: 10, connection limit: 5)
+    code: 'P2024'
+  </script>
+  <p>The fix is rarely "make the pool bigger". First find <em>why connections are held for so long</em>. The usual causes:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ 1. Slow external call INSIDE an interactive transaction.
+    //       The connection is locked for the whole HTTP call (could be seconds).
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({ data: dto });
+      await this.paymentGateway.charge(order.total);   // 2s network call holding a DB connection
+      await tx.order.update({ where: { id: order.id }, data: { status: 'PAID' } });
+    });
+
+    // ✅ Keep transactions short: do the slow work outside, then write.
+    const order = await this.prisma.order.create({ data: { ...dto, status: 'PENDING' } });
+    const charge = await this.paymentGateway.charge(order.total);
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'PAID', paymentId: charge.id },
+    });
+
+    // ❌ 2. Unbounded parallelism: 5,000 queries fired at once on a pool of 5
+    await Promise.all(userIds.map((id) => this.prisma.user.update({ where: { id }, data: { flagged: true } })));
+
+    // ✅ One set-based query instead
+    await this.prisma.user.updateMany({ where: { id: { in: userIds } }, data: { flagged: true } });
+  </script>
+  <p>Interactive transactions also have their own limits: <code>maxWait</code> (time to get a connection, default 2s) and <code>timeout</code> (max run time, default 5s). If you need to raise them, that is often a sign the transaction does too much.</p>
+
+  <p><strong>One PrismaClient per process.</strong> Each <code>new PrismaClient()</code> creates a <em>new pool</em>. Creating one per request or per service multiplies your connection count:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Each service gets its own pool → 5 services × 9 connections = 45 per pod
+    @Injectable()
+    export class ProductsService {
+      private prisma = new PrismaClient();
+    }
+
+    // ✅ One PrismaService provider, shared through DI (a singleton by default)
+    @Injectable()
+    export class ProductsService {
+      constructor(private readonly prisma: PrismaService) {}
+    }
+  </script>
+
+  <p><strong>External poolers (PgBouncer, RDS Proxy, Supabase/Neon poolers).</strong> When you have many app instances or serverless functions, put a pooler between the app and PostgreSQL. Hundreds of client connections share a few real database connections. In <em>transaction mode</em>, tell Prisma with <code>pgbouncer=true</code>, and give migrations a direct connection, because they need session features:</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    datasource db {
+      provider  = "postgresql"
+      url       = env("DATABASE_URL")   // through PgBouncer: ...:6432/shop?pgbouncer=true&connection_limit=5
+      directUrl = env("DIRECT_URL")     // straight to PostgreSQL: used by prisma migrate
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Configure the pool per environment and make it visible. A small health check that reports pool usage is very helpful during incidents. Prisma's <code>metrics</code> preview feature exposes pool counters; a simpler option is to watch <code>pg_stat_activity</code> and the P2024 error rate. Also close the pool cleanly on shutdown, so rolling deployments don't leave connections hanging:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
+      @Injectable()
+      export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+        async onModuleInit() {
+          await this.$connect();      // fail fast at boot if the DB is unreachable
+        }
+        async onModuleDestroy() {
+          await this.$disconnect();   // return connections on SIGTERM
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+      const app = await NestFactory.create(AppModule);
+      app.enableShutdownHooks(); // makes onModuleDestroy run on SIGTERM/SIGINT
+      await app.listen(3000);
+    </script>
+    <p>Load test before you change the pool. Example with 4 CPUs (default limit 9) and an endpoint holding each connection ~40ms: about 9 / 0.04 = 225 requests per second before requests start queuing. If you need more, first make the query faster (an index often turns 40ms into 2ms, i.e. 20× the capacity), and only then raise the limit within PostgreSQL's budget.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Calling <code>new PrismaClient()</code> in many places, or on every request. Use one shared <code>PrismaService</code>.</li>
+      <li>Raising <code>connection_limit</code> to 100 on every pod and hitting PostgreSQL's <code>max_connections</code>.</li>
+      <li>Making HTTP calls, sending emails or waiting on queues inside <code>$transaction</code>.</li>
+      <li>Using <code>Promise.all</code> over thousands of items, which floods the pool. Use set-based queries or process in chunks.</li>
+      <li>Using PgBouncer in transaction mode without <code>pgbouncer=true</code> and without a <code>directUrl</code> for migrations.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your API runs on 6 pods with 2 CPUs each. A nightly worker runs on 2 pods with 4 CPUs. PostgreSQL has <code>max_connections = 100</code>. (1) How many connections can the app open with Prisma's defaults? (2) Choose explicit <code>connection_limit</code> values that leave at least 20 connections free for admin tools and migrations.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="plaintext">
+        (1) Defaults:
+            API:    2 CPUs → 2×2+1 = 5  per pod × 6 pods = 30
+            Worker: 4 CPUs → 4×2+1 = 9  per pod × 2 pods = 18
+            Total = 48 → fits today, but autoscaling to 20 API pods → 100 + 18 = 118 ❌
+
+        (2) Budget = 100 − 20 reserved = 80
+            API:    connection_limit=10 × 6 pods = 60   (max pods must be capped, or add PgBouncer)
+            Worker: connection_limit=10 × 2 pods = 20
+            Total = 80 ✅
+      </script>
+      <p>The key insight: the limit is <em>per process</em>, so the autoscaler's max replica count must be part of the calculation. If you need many replicas, put PgBouncer in front.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a connection pool and why do we need one?</summary>
+      <p>A set of database connections that are opened once and reused. Opening connections is slow (TCP, TLS, auth) and each one costs PostgreSQL memory and a process, so reusing a limited number keeps latency low and protects the database.</p></details>
+    <details><summary>What does Prisma error P2024 mean and how would you investigate it?</summary>
+      <p>A query waited longer than <code>pool_timeout</code> for a free connection. Check what holds connections: long or slow queries, transactions containing external calls, unbounded <code>Promise.all</code>, too many PrismaClient instances. Only after that, consider tuning <code>connection_limit</code> within the database's <code>max_connections</code> budget.</p></details>
+    <details><summary>When would you add PgBouncer?</summary>
+      <p>When many processes (lots of pods, serverless functions) need connections and their total pool sizes would exceed what PostgreSQL can handle. PgBouncer multiplexes many client connections over a few server connections.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Total connections = instances × pool size. Keep one PrismaClient per process, keep transactions short, and fix slow queries before making the pool bigger.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="caching">
+  <div class="topic-head"><span class="num">4</span><h2>Caching</h2></div>
+  <p class="tagline">Redis for hot or expensive data</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A cache is a sticky note on your desk. If people keep asking "what's today's exchange rate?", you look it up once, write it on a sticky note, and read the note for the next hour instead of calling the bank every time. <strong>Redis</strong> is a very fast in-memory store that all your app instances can share, like a sticky note on the office wall. The hard part is not storing the note. It is knowing <em>when the note is out of date</em> and throwing it away.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What is worth caching?</strong> Data that is <em>read often, changes rarely, and is expensive to compute</em>. Measure first: cache what actually shows up as hot or slow.</p>
+  <table>
+    <tr><th>Good candidates ✅</th><th>Bad candidates ❌</th></tr>
+    <tr><td>Product catalogue, category tree</td><td>Account balance, stock count at checkout</td></tr>
+    <tr><td>Dashboard stats computed from millions of rows</td><td>Data that must be correct the instant it changes</td></tr>
+    <tr><td>Third-party API responses (exchange rates, geo lookups)</td><td>Per-user data read once</td></tr>
+    <tr><td>Feature flags, settings</td><td>Anything that is already a fast primary-key lookup (often)</td></tr>
+  </table>
+
+  <p><strong>The cache-aside pattern</strong> (also called "lazy loading") is the one you will use 90% of the time:</p>
+  <ol>
+    <li>Look in the cache.</li>
+    <li>Hit: return the cached value.</li>
+    <li>Miss: load from the database, store it in the cache with a TTL (time to live), return it.</li>
+    <li>When the data changes: <strong>delete</strong> the cache key (invalidate).</li>
+  </ol>
+  <script type="text/x-code" data-lang="typescript" data-title="redis.module.ts">
+    import { Global, Module } from '@nestjs/common';
+    import { ConfigService } from '@nestjs/config';
+    import Redis from 'ioredis';
+
+    export const REDIS = Symbol('REDIS');
+
+    @Global()
+    @Module({
+      providers: [
+        {
+          provide: REDIS,
+          inject: [ConfigService],
+          useFactory: (config: ConfigService) =>
+            new Redis(config.getOrThrow<string>('REDIS_URL')), // redis://localhost:6379
+        },
+      ],
+      exports: [REDIS],
+    })
+    export class RedisModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="products.service.ts">
+    @Injectable()
+    export class ProductsService {
+      private static readonly TTL_SECONDS = 300; // 5 minutes
+
+      constructor(
+        private readonly prisma: PrismaService,
+        @Inject(REDIS) private readonly redis: Redis,
+      ) {}
+
+      private key(id: number) {
+        return `product:v1:${id}`;   // namespaced + versioned key
+      }
+
+      async findOne(id: number) {
+        const cached = await this.redis.get(this.key(id));
+        if (cached) return JSON.parse(cached) as ProductDto;        // cache hit
+
+        const product = await this.prisma.product.findUnique({      // cache miss
+          where: { id },
+          select: { id: true, name: true, price: true, category: { select: { name: true } } },
+        });
+        if (!product) throw new NotFoundException(`Product ${id} not found`);
+
+        const dto: ProductDto = { ...product, price: product.price.toString() }; // Decimal → string
+        await this.redis.set(this.key(id), JSON.stringify(dto), 'EX', ProductsService.TTL_SECONDS);
+        return dto;
+      }
+
+      async update(id: number, data: UpdateProductDto) {
+        const updated = await this.prisma.product.update({ where: { id }, data });
+        await this.redis.del(this.key(id));   // ✅ invalidate AFTER the write succeeds
+        return updated;
+      }
+    }
+  </script>
+  <p>Notice the details: the key has a prefix and a version (<code>v1</code>) so you can change the cached shape later without reading old data; the value is a DTO (not a raw Prisma model, whose <code>Decimal</code> and <code>Date</code> fields don't survive <code>JSON.stringify</code> unchanged); and the TTL is a safety net in case an invalidation is ever missed.</p>
+
+  <p><strong>Before/after numbers</strong> (product details endpoint, local load test, 50 concurrent users):</p>
+  <table>
+    <tr><th></th><th>No cache</th><th>Redis cache-aside (95% hit rate)</th></tr>
+    <tr><td>p50 latency</td><td>38 ms</td><td>3 ms</td></tr>
+    <tr><td>p95 latency</td><td>180 ms</td><td>9 ms</td></tr>
+    <tr><td>DB queries / second</td><td>~1,300</td><td>~65 (only the misses)</td></tr>
+  </table>
+  <p>Track your <strong>hit rate</strong> (hits ÷ total lookups). A cache with a 20% hit rate adds a network hop to 80% of requests and may make things <em>slower</em>.</p>
+
+  <p><strong>Cache stampede.</strong> When a popular key expires, hundreds of requests miss at the same moment and all hit the database together. Simple protections:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // 1. Add jitter to the TTL so keys don't all expire at the same second
+    const ttl = 300 + Math.floor(Math.random() * 60);   // 300–359s
+
+    // 2. Share one in-flight load per key inside this process
+    private inflight = new Map<string, Promise<ProductDto>>();
+
+    async getOrLoad(key: string, load: () => Promise<ProductDto>): Promise<ProductDto> {
+      const existing = this.inflight.get(key);
+      if (existing) return existing;                 // join the request already loading it
+      const p = load().finally(() => this.inflight.delete(key));
+      this.inflight.set(key, p);
+      return p;
+    }
+  </script>
+
+  <p><strong>Using Nest's built-in cache module.</strong> <code>@nestjs/cache-manager</code> gives you an injectable cache and a <code>CacheInterceptor</code> that caches whole GET responses. In current versions (cache-manager v6+, built on Keyv), TTLs are in <strong>milliseconds</strong>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { CacheModule } from '@nestjs/cache-manager';
+    import { createKeyv } from '@keyv/redis';
+
+    @Module({
+      imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: () => ({
+            stores: [createKeyv('redis://localhost:6379')],
+            ttl: 60_000, // 60 seconds, in ms
+          }),
+        }),
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="categories.controller.ts">
+    import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+
+    @Controller('categories')
+    export class CategoriesController {
+      @Get()
+      @UseInterceptors(CacheInterceptor)  // ✅ public, identical for every user
+      @CacheTTL(600_000)                  // 10 minutes
+      findAll() {
+        return this.categoriesService.findTree();
+      }
+    }
+  </script>
+  <p>Be careful: <code>CacheInterceptor</code> keys by URL. Never put it on endpoints whose response depends on the logged-in user (<code>/me</code>, <code>/orders</code>), or user A may receive user B's data.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Keep caching out of controllers and inside the service or repository layer, behind a small helper, so the rest of the code doesn't care whether data came from Redis or PostgreSQL. Make the cache <strong>optional</strong>: if Redis is down, log a warning and read from the database instead of failing the request.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="cache.service.ts">
+      @Injectable()
+      export class CacheService {
+        private readonly logger = new Logger(CacheService.name);
+        constructor(@Inject(REDIS) private readonly redis: Redis) {}
+
+        async wrap<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T> {
+          try {
+            const hit = await this.redis.get(key);
+            if (hit) return JSON.parse(hit) as T;
+          } catch (err) {
+            this.logger.warn({ err, key }, 'Redis read failed, falling back to DB');
+          }
+          const value = await load();
+          this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
+            .catch((err) => this.logger.warn({ err, key }, 'Redis write failed'));
+          return value;
+        }
+
+        async invalidate(...keys: string[]) {
+          if (keys.length) await this.redis.del(...keys);
+        }
+      }
+
+      // usage
+      return this.cache.wrap(`category-tree:v1`, 600, () => this.loadCategoryTree());
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Caching before measuring. Caching a 2ms primary-key lookup adds complexity for no gain; fix slow queries with indexes first.</li>
+      <li>Forgetting to invalidate on update/delete, so users see stale prices for the whole TTL. Or no TTL at all, so stale data lives forever.</li>
+      <li>Caching per-user responses under a shared key (e.g. <code>CacheInterceptor</code> on <code>/me</code>). This is a data leak.</li>
+      <li>Using the in-memory store with several app instances: each pod has a different cache and invalidation only reaches one of them. Use Redis.</li>
+      <li>Mixing up units: <code>@nestjs/cache-manager</code> v5+ uses milliseconds, Redis <code>EX</code> uses seconds.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The <code>GET /stats/sales-today</code> endpoint runs an aggregate over the <code>Order</code> table that takes 1.2s. The business is fine with numbers up to 1 minute old. Write the service method using the <code>CacheService.wrap</code> helper above, and say what you would do when a new order is created.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        async salesToday() {
+          const day = new Date().toISOString().slice(0, 10);       // "2026-10-05"
+          return this.cache.wrap(`stats:sales:v1:${day}`, 60, async () => {
+            const start = new Date(`${day}T00:00:00.000Z`);
+            const agg = await this.prisma.order.aggregate({
+              where: { status: 'PAID', createdAt: { gte: start } },
+              _sum: { total: true },
+              _count: true,
+            });
+            return { day, orders: agg._count, revenue: agg._sum.total?.toString() ?? '0' };
+          });
+        }
+      </script>
+      <p>On new orders: nothing. A 60-second TTL is the agreed freshness, and invalidating on every order would make the cache almost useless at peak time. The date in the key means a new day automatically gets a new key.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Explain the cache-aside pattern.</summary>
+      <p>The application reads from the cache first. On a miss it loads from the database, writes the value into the cache with a TTL, and returns it. On writes, it updates the database and then deletes the cache key, so the next read reloads fresh data.</p></details>
+    <details><summary>What is a cache stampede and how do you prevent it?</summary>
+      <p>When a hot key expires, many concurrent requests miss and all hit the database at once. You prevent it with TTL jitter, request coalescing (one loader per key), a short lock in Redis, or refreshing the value in the background before it expires.</p></details>
+    <details><summary>Why delete the key on update instead of writing the new value into the cache?</summary>
+      <p>Deleting is simpler and safer under concurrency. Two concurrent updates could write their cache values in the opposite order from their database writes, leaving the cache with old data. After a delete, the next read always loads the current database state.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Cache data that is hot, expensive and allowed to be slightly stale; always set a TTL, invalidate on writes, and measure the hit rate.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="rate-limiting">
+  <div class="topic-head"><span class="num">5</span><h2>Rate limiting</h2></div>
+  <p class="tagline">@nestjs/throttler</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A rate limit is the "maximum 6 items per customer" sign at a shop counter. It doesn't stop normal customers, but it stops one person from emptying the shelves so nobody else gets served. In an API, rate limiting says "each client may make at most N requests per time window". Above that, the server answers <code>429 Too Many Requests</code> quickly and cheaply instead of letting one noisy client (a buggy script, a retry loop, a scraper) slow down everyone else.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Install and register.</strong> <code>@nestjs/throttler</code> counts requests per client in a time window. Since v5, <code>ttl</code> is in <strong>milliseconds</strong>, and you can define several named limits at once:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @nestjs/throttler
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { APP_GUARD } from '@nestjs/core';
+    import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
+    @Module({
+      imports: [
+        ThrottlerModule.forRoot([
+          { name: 'short', ttl: 1_000, limit: 10 },    // max 10 requests per second (bursts)
+          { name: 'long', ttl: 60_000, limit: 200 },   // max 200 requests per minute
+        ]),
+      ],
+      providers: [
+        { provide: APP_GUARD, useClass: ThrottlerGuard }, // apply to every route
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <p>Every request is now checked against <em>both</em> limits. The guard adds headers so well-behaved clients can slow down by themselves, and returns 429 with <code>Retry-After</code> when a limit is exceeded:</p>
+  <script type="text/x-code" data-lang="http">
+    HTTP/1.1 429 Too Many Requests
+    Retry-After-long: 37
+    X-RateLimit-Limit-long: 200
+    X-RateLimit-Remaining-long: 0
+    X-RateLimit-Reset-long: 37
+    Content-Type: application/json
+
+    {"statusCode":429,"message":"ThrottlerException: Too Many Requests"}
+  </script>
+  <p>(Headers carry the throttler name as a suffix when you use named throttlers; with a single unnamed throttler they are just <code>X-RateLimit-Limit</code>, <code>Retry-After</code>, etc.)</p>
+
+  <p><strong>Per-route overrides.</strong> Expensive or sensitive endpoints get stricter limits; health checks and webhooks skip throttling:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { SkipThrottle, Throttle } from '@nestjs/throttler';
+
+    @Controller('reports')
+    export class ReportsController {
+      @Post('export')
+      @Throttle({ long: { limit: 5, ttl: 60_000 } })   // CSV export is heavy: 5 per minute
+      export(@Body() dto: ExportDto) { /* ... */ }
+    }
+
+    @SkipThrottle()                                     // whole controller skipped
+    @Controller('health')
+    export class HealthController {
+      @Get() check() { return { status: 'ok' }; }
+    }
+  </script>
+
+  <p><strong>Who is "the client"?</strong> By default the throttler tracks by IP address (<code>req.ip</code>). Two traps:</p>
+  <ul>
+    <li><strong>Behind a proxy or load balancer</strong>, every request appears to come from the proxy's IP, so all users share one counter. Tell Express to trust the proxy so <code>req.ip</code> is the real client IP taken from <code>X-Forwarded-For</code>.</li>
+    <li><strong>For logged-in users</strong>, tracking by user ID is fairer: an office of 200 people behind one IP should not share a limit.</li>
+  </ul>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { NestExpressApplication } from '@nestjs/platform-express';
+
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    app.set('trust proxy', 1); // ✅ trust exactly one proxy hop (your load balancer)
+    // ❌ app.set('trust proxy', true) trusts ANY X-Forwarded-For header, so a client
+    //    could send a fake one and get a fresh counter on every request.
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="user-throttler.guard.ts">
+    import { Injectable } from '@nestjs/common';
+    import { ThrottlerGuard } from '@nestjs/throttler';
+
+    @Injectable()
+    export class UserThrottlerGuard extends ThrottlerGuard {
+      protected async getTracker(req: Record<string, any>): Promise<string> {
+        // logged in → limit per user; anonymous → limit per IP
+        return req.user?.id ? `user:${req.user.id}` : `ip:${req.ip}`;
+      }
+    }
+  </script>
+  <p>Note that guards run in the order they are registered. For <code>req.user</code> to exist, your auth guard must run before this one, so apply <code>UserThrottlerGuard</code> after the JWT guard (for example with <code>@UseGuards(JwtAuthGuard, UserThrottlerGuard)</code>), or register the JWT guard first in the <code>APP_GUARD</code> list.</p>
+
+  <p><strong>Storage: memory vs Redis.</strong> The default storage is an in-memory map inside each Node process. With 4 pods, a client effectively gets 4× the limit, because each pod counts separately (and counters reset when a pod restarts). In production with more than one instance, use shared storage:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+    import Redis from 'ioredis';
+
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [{ name: 'long', ttl: 60_000, limit: 200 }],
+        storage: new ThrottlerStorageRedisService(new Redis(config.getOrThrow('REDIS_URL'))),
+      }),
+    }),
+  </script>
+
+  <table>
+    <tr><th>Setup</th><th>Real limit for one client with 4 pods</th></tr>
+    <tr><td>In-memory storage, limit 200/min</td><td>up to 800/min (depends on load balancing)</td></tr>
+    <tr><td>Redis storage, limit 200/min</td><td>200/min ✅</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A typical setup is a generous global limit (it protects against bugs and scrapers, and normal users never notice it), stricter limits on expensive endpoints (search, exports, file uploads) and on sensitive endpoints (login, password reset, which Lesson 10 covers in detail), Redis storage, and <code>@SkipThrottle()</code> for health checks and signed webhooks. Rate limiting in the app is a second layer: large traffic floods should be stopped earlier, at the CDN, WAF or API gateway, before they reach Node.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/throttle.e2e-spec.ts">
+      it('returns 429 after the export limit', async () => {
+        for (let i = 0; i < 5; i++) {
+          await request(app.getHttpServer()).post('/reports/export').send(dto).expect(201);
+        }
+        const res = await request(app.getHttpServer()).post('/reports/export').send(dto);
+        expect(res.status).toBe(429);
+        expect(res.headers['retry-after-long']).toBeDefined();
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Writing <code>ttl: 60</code> thinking it means 60 seconds. Since v5 it is 60 <em>milliseconds</em>; use <code>60_000</code>.</li>
+      <li>Forgetting <code>trust proxy</code> behind a load balancer, so every user shares one counter and real users get 429s.</li>
+      <li>Setting <code>trust proxy</code> to <code>true</code>, which lets clients fake their IP with an <code>X-Forwarded-For</code> header.</li>
+      <li>Using in-memory storage with several instances and wondering why limits look higher than configured.</li>
+      <li>Throttling health checks, so the orchestrator thinks the app is down and restarts it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Configure: a global limit of 100 requests per minute; <code>GET /search</code> limited to 20 per minute; <code>GET /health</code> not throttled. Logged-in users should be tracked by user ID.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // app.module.ts
+        ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+        // providers: JwtAuthGuard (optional auth that sets req.user if a token is present) first,
+        // then { provide: APP_GUARD, useClass: UserThrottlerGuard }
+
+        // search.controller.ts
+        @Get('search')
+        @Throttle({ default: { limit: 20, ttl: 60_000 } }) // unnamed throttler is called 'default'
+        search(@Query() q: SearchDto) { return this.searchService.search(q); }
+
+        // health.controller.ts
+        @SkipThrottle()
+        @Controller('health')
+        export class HealthController { /* ... */ }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why rate limit an API?</summary>
+      <p>To protect shared resources (CPU, database, connection pool) from one client's excessive traffic, to make abuse such as scraping and brute force expensive, and to control cost. It keeps the service fair and available for everyone.</p></details>
+    <details><summary>What problems appear when rate limiting across multiple instances?</summary>
+      <p>Each instance keeps its own counter, so the effective limit is multiplied by the number of instances, and counters are lost on restart. The fix is shared storage such as Redis. Behind a proxy you must also configure <code>trust proxy</code> correctly so you track the real client IP.</p></details>
+    <details><summary>Should rate limiting be done in the app or in the infrastructure?</summary>
+      <p>Both. The edge (CDN, WAF, gateway) stops large floods before they cost you anything. The app can apply smarter, business-aware limits: per user, per endpoint, per plan.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use a generous global limit plus strict per-route limits, use milliseconds for <code>ttl</code>, Redis storage for multiple instances, and the real client identity (correct proxy settings or user ID).</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="logging">
+  <div class="topic-head"><span class="num">6</span><h2>Logging</h2></div>
+  <p class="tagline">structured logs and correlation IDs</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Logs are the black box recorder of your app. When something breaks at 3 a.m., they are often the only witness. <strong>Structured logs</strong> are written as JSON objects (<code>{"level":"error","orderId":42}</code>) instead of free text, so a log tool can search and filter them like a database. A <strong>correlation ID</strong> is a sticker with a unique number put on each request when it arrives. Every log line written while handling that request carries the same sticker, so you can pull out the whole story of one request from millions of lines.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Text logs vs structured logs.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Text log: easy to write, hard to search
+    console.log('Order ' + order.id + ' failed for user ' + user.email + ': ' + err);
+    // → Order 1042 failed for user an@shop.com: Error: card_declined
+    //   How do you find "all failures for user 7 in the last hour"? With fragile regexes.
+
+    // ✅ Structured log: a message + fields
+    this.logger.error({ orderId: order.id, userId: user.id, reason: err.code }, 'Payment failed');
+    // → {"level":50,"time":1759650000000,"reqId":"7f3c...","context":"OrdersService",
+    //    "orderId":1042,"userId":7,"reason":"card_declined","msg":"Payment failed"}
+  </script>
+  <p>Now your log tool (Loki, Elasticsearch, CloudWatch, Datadog…) can answer <code>reason = "card_declined" AND userId = 7</code> instantly, count errors per hour, and alert on them.</p>
+
+  <p><strong>Log levels</strong> tell you how important a line is. Production usually runs at <code>info</code>; you switch to <code>debug</code> temporarily when investigating.</p>
+  <table>
+    <tr><th>Level</th><th>Use it for</th><th>Example</th></tr>
+    <tr><td><code>error</code></td><td>Something failed and needs attention</td><td>Payment provider returned 500</td></tr>
+    <tr><td><code>warn</code></td><td>Unexpected but handled</td><td>Redis down, fell back to DB</td></tr>
+    <tr><td><code>info</code></td><td>Important business events</td><td>Order 1042 placed, user registered</td></tr>
+    <tr><td><code>debug</code></td><td>Details for developers</td><td>SQL queries, cache hit/miss</td></tr>
+  </table>
+
+  <p><strong>Setting up pino in NestJS.</strong> <code>nestjs-pino</code> is the most common choice: very fast JSON logging, automatic request/response logs, and a request ID attached to every log line through Node's <code>AsyncLocalStorage</code>:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i nestjs-pino pino-http
+    npm i -D pino-pretty     # readable colored output in development only
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { randomUUID } from 'node:crypto';
+    import { LoggerModule } from 'nestjs-pino';
+
+    @Module({
+      imports: [
+        LoggerModule.forRoot({
+          pinoHttp: {
+            level: process.env.LOG_LEVEL ?? 'info',
+            // Correlation ID: reuse the caller's ID if present, otherwise create one
+            genReqId: (req, res) => {
+              const incoming = req.headers['x-request-id'];
+              const id = typeof incoming === 'string' && incoming.length <= 64 ? incoming : randomUUID();
+              res.setHeader('x-request-id', id); // return it so clients can report it
+              return id;
+            },
+            // Never log secrets (Lesson 10 covers this in depth)
+            redact: ['req.headers.authorization', 'req.headers.cookie', '*.password'],
+            transport:
+              process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+          },
+        }),
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { Logger } from 'nestjs-pino';
+
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
+    app.useLogger(app.get(Logger)); // Nest's own logs (bootstrap, routes) now go through pino too
+    await app.listen(3000);
+  </script>
+  <p>You keep using Nest's normal <code>Logger</code> class in services. It is now routed to pino, and each line automatically gets the <code>reqId</code> of the current request:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+    import { Injectable, Logger } from '@nestjs/common';
+
+    @Injectable()
+    export class OrdersService {
+      private readonly logger = new Logger(OrdersService.name);
+
+      async place(userId: number, dto: CreateOrderDto) {
+        const order = await this.ordersRepo.create(userId, dto);
+        this.logger.log({ orderId: order.id, userId, total: order.total.toString() }, 'Order placed');
+        return order;
+      }
+    }
+  </script>
+
+  <p><strong>Following one request.</strong> A user reports "checkout failed". They (or your frontend's error screen) give you the <code>x-request-id</code> from the response. One search shows the whole story, in order:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    reqId="7f3c9a1e"
+    10:02:11.120 info  request received   POST /orders  userId=7
+    10:02:11.135 info  Order placed        orderId=1042 total=59.90
+    10:02:13.140 error Payment failed      orderId=1042 reason=gateway_timeout durationMs=2001
+    10:02:13.143 info  request completed   statusCode=502 responseTime=2023
+  </script>
+  <p>If your API calls other services, <strong>forward the same ID</strong> in the <code>x-request-id</code> header of outgoing HTTP calls and queue messages. Then the ID connects logs across services. (Full distributed tracing with OpenTelemetry builds on the same idea.)</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Log errors once, in one place, with context: a global exception filter is the natural spot. Log the full error with stack trace on the server, and return only a safe message plus the request ID to the client:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="all-exceptions.filter.ts">
+      @Catch()
+      export class AllExceptionsFilter implements ExceptionFilter {
+        private readonly logger = new Logger('Exceptions');
+
+        catch(exception: unknown, host: ArgumentsHost) {
+          const ctx = host.switchToHttp();
+          const req = ctx.getRequest<Request & { id?: string }>();
+          const res = ctx.getResponse<Response>();
+          const status = exception instanceof HttpException ? exception.getStatus() : 500;
+
+          if (status >= 500) {
+            // full details in the logs (pino serializes the err object with its stack)
+            this.logger.error({ err: exception, path: req.url }, 'Unhandled error');
+          }
+
+          res.status(status).json({
+            statusCode: status,
+            message: status >= 500 ? 'Internal server error' : (exception as HttpException).message,
+            requestId: req.id, // user can quote this to support
+          });
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>console.log</code> with string concatenation in production. It has no levels, no structure and no request ID.</li>
+      <li>Logging the same error at every layer (repository, service, controller). One failure becomes 3 lines and the noise hides real problems.</li>
+      <li>Logging passwords, tokens, full card numbers or whole request bodies. Use <code>redact</code> (more in Lesson 10).</li>
+      <li>Logging inside hot loops at <code>info</code> level. Log volume costs money and slows the app.</li>
+      <li>Using <code>pino-pretty</code> in production. It is slow and produces text, not JSON.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Rewrite this log line as a structured log with a proper level, and explain what is wrong with it:</p>
+    <script type="text/x-code" data-lang="typescript">
+      console.log(`User ${user.email} logged in with password ${dto.password} at ${new Date()}`);
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        this.logger.log({ userId: user.id, method: 'password' }, 'User logged in');
+      </script>
+      <p>Problems with the original: it logs the <strong>plain-text password</strong> (a serious security incident), it logs the email (personal data, so use the ID), it uses <code>console.log</code> (no level, no request ID), and it adds a timestamp by hand (the logger already adds one). The structured version can be searched by <code>userId</code> and counted by event.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a correlation ID and why is it useful?</summary>
+      <p>A unique ID assigned to each request (or reused from an incoming <code>x-request-id</code> header), attached to every log line produced while handling it and forwarded to downstream services. It lets you reconstruct everything that happened during one request across many log lines and services.</p></details>
+    <details><summary>How does nestjs-pino attach the request ID to logs written in a service that doesn't receive the request?</summary>
+      <p>It uses Node's <code>AsyncLocalStorage</code>: the request context is stored when the request starts and stays available through all the async calls made for that request, so the logger can read it without you passing it around.</p></details>
+    <details><summary>Why structured (JSON) logs instead of plain text?</summary>
+      <p>Log platforms can index the fields, so you can filter (<code>userId=7</code>), aggregate (errors per minute) and alert reliably, without fragile text parsing.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Log JSON with levels and useful fields, give every request a correlation ID and return it to the client, log each error once, and never log secrets.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="debugging-process">
+  <div class="topic-head"><span class="num">7</span><h2>Debugging process</h2></div>
+  <p class="tagline">reproduce → hypothesize → test → fix → verify</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Good debugging is like a doctor's diagnosis, not a guessing game. A doctor doesn't prescribe random pills; they <strong>reproduce</strong> the symptom ("does it hurt when I press here?"), form a <strong>hypothesis</strong> ("maybe it's the knee ligament"), run a <strong>test</strong> (an X-ray) that can prove it wrong, apply a <strong>fix</strong>, and <strong>verify</strong> at the follow-up visit that the patient is really better. Changing code until the error disappears is not debugging. It often just moves the bug somewhere else.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>Let's walk through a realistic bug. <em>Bug report: "Sometimes customers are charged the wrong total. It happened 3 times this week."</em></p>
+
+  <p><strong>Step 1: Reproduce.</strong> Collect facts before touching code: which orders, which request IDs, which version was deployed, what the logs say. Then make the bug happen on <em>your</em> machine, ideally in an automated test, because a bug you can reproduce on demand is half fixed.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Search logs for the 3 orders → all three:
+      - had a discount code applied
+      - had a quantity > 1 for a product priced like 12.45
+      - total was 0.01 lower than expected
+    → Reproduction: order 3 × 12.45 with code SAVE10
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="pricing.service.spec.ts">
+    it('computes total for 3 × 12.45 with 10% discount', () => {
+      const total = pricing.computeTotal([{ unitPrice: '12.45', quantity: 3 }], { percentOff: 10 });
+      expect(total).toBe('33.62'); // 37.35 − 10% = 33.615 → rounds half-up to 33.62
+    });
+    // ❌ Received: "33.61"   ← reproduced, reliably, in 20ms
+  </script>
+
+  <p><strong>Step 2: Hypothesize.</strong> Write down a specific, testable explanation, not "something with money". Look at the code with the failing input in mind:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="pricing.service.ts (buggy)">
+    computeTotal(items: CartItem[], discount?: Discount): string {
+      let total = 0;
+      for (const i of items) total += Number(i.unitPrice) * i.quantity;  // floating point!
+      if (discount) total = total * (1 - discount.percentOff / 100);
+      return (Math.round(total * 100) / 100).toFixed(2);
+    }
+  </script>
+  <p>Hypothesis: <em>"JavaScript floating-point arithmetic turns 33.615 into something like 33.6149999…, so rounding goes down instead of up."</em> Good hypotheses predict something you can check.</p>
+
+  <p><strong>Step 3: Test the hypothesis.</strong> Check it with the smallest possible experiment, using the debugger or a quick log. Don't fix yet.</p>
+  <script type="text/x-code" data-lang="javascript">
+    // Node REPL
+    > 12.45 * 3
+    37.349999999999994
+    > 12.45 * 3 * 0.9
+    33.614999999999995      // not 33.615 → Math.round(3361.4999…) = 3361
+    > 0.1 + 0.2
+    0.30000000000000004
+  </script>
+  <p>Floating-point values are indeed imprecise. To see what happens inside the real code path, use the debugger instead of adding <code>console.log</code> everywhere:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm run start:debug          # runs "nest start --debug --watch" → inspector on port 9229
+  </script>
+  <script type="text/x-code" data-lang="json" data-title=".vscode/launch.json">
+    {
+      "version": "0.2.0",
+      "configurations": [
+        {
+          "type": "node",
+          "request": "attach",
+          "name": "Attach to Nest",
+          "port": 9229,
+          "restart": true
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "Debug current Jest test",
+          "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+          "args": ["${relativeFile}", "--runInBand"],
+          "console": "integratedTerminal"
+        }
+      ]
+    }
+  </script>
+  <p>Set a breakpoint on the <code>return</code> line, run the failing test with "Debug current Jest test", and inspect <code>total</code> in the Variables panel. You can also add a <em>conditional breakpoint</em> (right-click the line, e.g. <code>discount !== undefined</code>) or a <em>logpoint</em>, which prints a value without editing the code. If the hypothesis is wrong, you go back to step 2 with new information. That is normal, not failure.</p>
+
+  <p><strong>Step 4: Fix the root cause, not the symptom.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Symptom patch: "subtract 0.01 when there's a discount"
+    // ❌ Symptom patch: change Math.round to Math.floor (breaks other cases)
+
+    // ✅ Root cause: never do money maths with JS floats.
+    //    Prisma returns Decimal columns as Prisma.Decimal (decimal.js), so stay in Decimal.
+    import { Prisma } from '@prisma/client';
+
+    computeTotal(items: CartItem[], discount?: Discount): string {
+      let total = new Prisma.Decimal(0);
+      for (const i of items) total = total.plus(new Prisma.Decimal(i.unitPrice).times(i.quantity));
+      if (discount) total = total.times(new Prisma.Decimal(100).minus(discount.percentOff)).div(100);
+      return total.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toFixed(2);
+    }
+  </script>
+
+  <p><strong>Step 5: Verify.</strong> The failing test now passes. Then go further:</p>
+  <ul>
+    <li>Run the <strong>whole</strong> test suite: did you break anything else?</li>
+    <li>Add more cases around the edge (0 items, 100% discount, many items).</li>
+    <li>Keep the test forever as a <strong>regression test</strong>.</li>
+    <li>After deploying, check the logs/metrics that revealed the bug: no new wrong totals.</li>
+    <li>Ask "where else could this happen?" (search for <code>Number(</code> on prices across the codebase).</li>
+  </ul>
+
+  <p><strong>When you don't know where the bug came from:</strong> <code>git bisect</code> does a binary search through history. With 200 commits since the last good release, it finds the bad commit in about 8 steps:</p>
+  <script type="text/x-code" data-lang="bash">
+    git bisect start
+    git bisect bad                 # current commit has the bug
+    git bisect good v1.4.0         # this release was fine
+    git bisect run npx jest pricing.service.spec.ts   # git tests each step automatically
+    # → "a1b2c3d is the first bad commit"
+    git bisect reset
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Many Nest bugs are about the framework's wiring rather than your logic. Learn to read the error messages that point at the cause:</p>
+    <table>
+      <tr><th>Symptom</th><th>Usual root cause</th></tr>
+      <tr><td><code>Nest can't resolve dependencies of the OrdersService (?, PrismaService)</code></td><td>The provider at position <code>?</code> is not in this module's providers and not exported/imported from another module</td></tr>
+      <tr><td>Validation decorators are ignored, body has extra fields</td><td><code>ValidationPipe</code> not registered globally, or the DTO is an interface instead of a class</td></tr>
+      <tr><td><code>req.user</code> is undefined in a guard</td><td>Guard order: your guard runs before the auth guard</td></tr>
+      <tr><td>Works locally, 500 in production</td><td>Missing env variable: use <code>ConfigService.getOrThrow</code> and validate config at boot</td></tr>
+    </table>
+    <p>For production-only bugs, rely on the request ID and structured logs from the previous point to reproduce: find the exact input, then copy it into a test.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Changing code before reproducing the bug, so you can never be sure the change fixed it.</li>
+      <li>Changing several things at once. If it works, you don't know which change mattered; if it doesn't, you don't know which one made it worse.</li>
+      <li>Patching the symptom (a special-case <code>if</code>) instead of fixing the cause.</li>
+      <li>Not writing a regression test, so the same bug comes back six months later.</li>
+      <li>Assuming ("the database must be slow") instead of checking with data.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Bug report: <em>"<code>GET /users/:id</code> sometimes returns 500."</em> Logs show <code>TypeError: Cannot read properties of null (reading 'email')</code> in <code>UsersService.findOne</code>. Write the five steps you would take, with a concrete action for each.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ol>
+        <li><strong>Reproduce:</strong> find the failing request IDs and their <code>:id</code> values. Notice they are IDs that don't exist (or soft-deleted users). Write a test: <code>GET /users/999999</code> expects 404, gets 500.</li>
+        <li><strong>Hypothesize:</strong> "<code>findUnique</code> returns <code>null</code> for unknown IDs and the code reads <code>user.email</code> without checking."</li>
+        <li><strong>Test:</strong> set a breakpoint after <code>findUnique</code> with ID 999999 and confirm <code>user === null</code>.</li>
+        <li><strong>Fix:</strong> <code>if (!user) throw new NotFoundException(...)</code>. Also enable <code>strictNullChecks</code> if it is off, since the compiler would have caught this.</li>
+        <li><strong>Verify:</strong> the test passes (404), the full suite passes, and after the deploy there are no new 500s on this route in the logs.</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Walk me through how you debug a production issue.</summary>
+      <p>Gather facts first: logs by request ID, metrics, the recent deploy, which users are affected. Reproduce it locally or in a test with the same input. Form a specific hypothesis and test it with the debugger or targeted logs. Fix the root cause with a regression test, run the full suite, deploy, and confirm in production metrics that the problem is gone.</p></details>
+    <details><summary>Why is reproducing the bug first so important?</summary>
+      <p>Without a reproduction you cannot tell whether your change fixed the bug or the bug just didn't happen this time. A reproducible test case is also the regression test that stops it from coming back.</p></details>
+    <details><summary>What is <code>git bisect</code>?</summary>
+      <p>A Git command that binary-searches the commit history between a known good and a known bad commit to find the commit that introduced a bug. With <code>git bisect run</code> it can run a test automatically at each step.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Reproduce first, change one thing at a time, fix the root cause, and leave a regression test behind. Evidence beats guessing.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="profiling">
+  <div class="topic-head"><span class="num">8</span><h2>Profiling</h2></div>
+  <p class="tagline">find slow queries and slow endpoints</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Profiling is putting a stopwatch on every part of your system to find where the time actually goes. It's like a slow restaurant: before hiring more cooks, you time each step and discover the kitchen is fast, but there's only one waiter. Developers' guesses about what is slow are wrong surprisingly often. Profiling replaces "I think the JSON serialization is slow" with "92% of the time is one SQL query".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>Work from the outside in: <strong>which endpoint</strong> is slow → <strong>which part</strong> of it (database, external API, CPU in Node) → <strong>which line or query</strong>.</p>
+
+  <p><strong>Level 1: time every endpoint.</strong> A small interceptor logs the duration of each request. Look at percentiles (p95, p99), not averages: an average of 50ms can hide 5% of users waiting 3 seconds.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="timing.interceptor.ts">
+    import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+    import { performance } from 'node:perf_hooks';
+    import { Observable, tap } from 'rxjs';
+
+    @Injectable()
+    export class TimingInterceptor implements NestInterceptor {
+      private readonly logger = new Logger('Timing');
+
+      intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
+        const start = performance.now();
+        const req = ctx.switchToHttp().getRequest();
+        const route = `${req.method} ${req.route?.path ?? req.url}`; // "/orders/:id", not "/orders/42"
+
+        return next.handle().pipe(
+          tap({
+            finalize: () => {
+              const ms = Math.round(performance.now() - start);
+              if (ms > 500) this.logger.warn({ route, ms }, 'Slow endpoint');
+              else this.logger.debug({ route, ms }, 'Endpoint timing');
+            },
+          }),
+        );
+      }
+    }
+  </script>
+  <p>(With <code>nestjs-pino</code>, every request log already contains <code>responseTime</code>; in production a metrics tool such as Prometheus or an APM like Datadog/New Relic/Sentry Performance draws the percentile charts for you.)</p>
+
+  <p><strong>Level 2: find slow queries.</strong> Inside the app, use Prisma's query events to log any query above a threshold:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
+    this.$on('query', (e) => {
+      if (e.duration > 100) {
+        this.logger.warn({ ms: e.duration, query: e.query }, 'Slow query');
+        // note: e.params contains user data; log it only in development
+      }
+    });
+  </script>
+  <p>On the database side, <code>pg_stat_statements</code> is the most valuable tool: PostgreSQL records statistics for every query shape (parameters replaced by <code>$1</code>), across <em>all</em> clients:</p>
+  <script type="text/x-code" data-lang="sql">
+    -- once: needs shared_preload_libraries = 'pg_stat_statements' in postgresql.conf
+    -- (enabled by default on most managed services: RDS, Cloud SQL, Supabase…)
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+    SELECT round(total_exec_time)        AS total_ms,
+           calls,
+           round(mean_exec_time::numeric, 2) AS mean_ms,
+           rows,
+           left(query, 80)               AS query
+    FROM pg_stat_statements
+    ORDER BY total_exec_time DESC
+    LIMIT 5;
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+     total_ms |  calls  | mean_ms |  rows   | query
+    ----------+---------+---------+---------+----------------------------------------------------------
+       812340 |   9120  |   89.07 |  182400 | SELECT "public"."Order"."id", ... WHERE "public"."Order"."status" = $1 ORDER BY ...
+       201775 | 4483900 |    0.05 | 4483900 | SELECT "public"."User"."id", ... WHERE "public"."User"."id" = $1 LIMIT $2
+        96410 |   12044 |    8.00 |   12044 | UPDATE "public"."Product" SET "stock" = ... WHERE ...
+  </script>
+  <p>Read this carefully: row 1 is slow per call (89ms): run <code>EXPLAIN ANALYZE</code> on it, it probably needs an index. Row 2 is fast per call (0.05ms) but called 4.5 million times: that smells like an N+1 (point 1), and the fix is fewer calls, not a faster query. Sorting by <code>total_exec_time</code> shows you where the database spends its time overall.</p>
+
+  <p><strong>Level 3: load test to measure before/after.</strong> <code>autocannon</code> (written in Node) sends many concurrent requests and prints percentiles:</p>
+  <script type="text/x-code" data-lang="bash">
+    npx autocannon -c 50 -d 20 http://localhost:3000/orders?status=PAID
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    BEFORE (no index on status, createdAt)
+    ┌─────────┬────────┬────────┬────────┬────────┐
+    │ Stat    │ 2.5%   │ 50%    │ 97.5%  │ 99%    │
+    │ Latency │ 310 ms │ 540 ms │ 1210ms │ 1490ms │
+    └─────────┴────────┴────────┴────────┴────────┘
+    Req/Sec average: 91
+
+    AFTER (@@index([status, createdAt]))
+    │ Latency │ 6 ms   │ 11 ms  │ 29 ms  │ 41 ms  │
+    Req/Sec average: 4,310
+  </script>
+
+  <p><strong>Level 4: profile CPU in Node.</strong> If the database is fast but the endpoint is still slow, or CPU usage is high, the time is spent in JavaScript. Remember that Node runs your code on <em>one</em> thread (the event loop): one slow synchronous function blocks <em>every</em> request.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Blocks the event loop for ~250ms per call; all other requests wait
+    const hash = bcrypt.hashSync(dto.password, 12);
+    const report = JSON.parse(fs.readFileSync('big-export.json', 'utf8'));
+
+    // ✅ Async versions run the work off the main thread (libuv thread pool) or without blocking
+    const hash = await bcrypt.hash(dto.password, 12);
+    const report = JSON.parse(await fs.promises.readFile('big-export.json', 'utf8'));
+  </script>
+  <p>To find the hot function, record a CPU profile while a load test runs:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm run build
+    node --cpu-prof --cpu-prof-dir=./profiles dist/main.js
+    # in another terminal: npx autocannon -c 50 -d 20 http://localhost:3000/reports/summary
+    # stop the app with Ctrl+C → a .cpuprofile file appears in ./profiles
+    # open it: Chrome DevTools → Performance tab → "Load profile", or drag it into VS Code
+  </script>
+  <p>The flame chart shows which functions consume the most time ("self time"). Alternatively, start with <code>node --inspect dist/main.js</code>, open <code>chrome://inspect</code>, and record live in the Profiler tab. You can also measure event-loop delay directly:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { monitorEventLoopDelay } from 'node:perf_hooks';
+
+    const h = monitorEventLoopDelay({ resolution: 20 });
+    h.enable();
+    setInterval(() => {
+      logger.log({ p99ms: Math.round(h.percentile(99) / 1e6) }, 'event loop delay'); // ns → ms
+      h.reset();
+    }, 10_000);
+    // healthy: a few ms. Hundreds of ms = something is blocking the loop.
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A practical profiling routine for a slow endpoint report:</p>
+    <ol>
+      <li>Confirm with numbers: p95 of the route from logs/APM.</li>
+      <li>Count and time the queries for one request (Prisma query log). Many queries → N+1. One slow query → <code>EXPLAIN ANALYZE</code> + index.</li>
+      <li>Check external calls (payment, email, other services): log their duration, add timeouts.</li>
+      <li>If DB + external calls don't add up to the total, CPU-profile the Node process.</li>
+      <li>Fix one thing, re-run the same <code>autocannon</code> command, and compare numbers in the PR description.</li>
+    </ol>
+    <script type="text/x-code" data-lang="plaintext" data-title="PR description">
+      Perf: GET /orders?status=PAID
+      - Cause: Seq Scan on "Order" (1.2M rows), found via pg_stat_statements (mean 89ms, top total time)
+      - Fix:   @@index([status, createdAt])
+      - Result (autocannon -c 50 -d 20): p50 540ms → 11ms, p99 1490ms → 41ms, 91 → 4,310 req/s
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Optimizing code that "looks slow" without measuring. Most of the time goes somewhere else.</li>
+      <li>Looking only at averages. Use p95/p99, which show what your slowest users experience.</li>
+      <li>Load testing against a tiny dev database. Results mean nothing without realistic data volumes.</li>
+      <li>Using synchronous APIs (<code>*Sync</code>, heavy loops, huge <code>JSON.parse</code>) in request handlers, which block the event loop for everyone.</li>
+      <li>Leaving <code>--inspect</code> open on a public port in production. The debugger allows running arbitrary code.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p><code>GET /dashboard</code> has a p95 of 2.4s. The Prisma log for one request shows 4 queries totalling 60ms, plus one call to an exchange-rate API. Event-loop delay is normal. Where is the time most likely going, how would you confirm it, and what are two possible fixes?</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>The database only accounts for 60ms and the event loop isn't blocked, so the external exchange-rate API is the prime suspect. Confirm by timing the call:</p>
+      <script type="text/x-code" data-lang="typescript">
+        const t = performance.now();
+        const rates = await this.ratesClient.getLatest();
+        this.logger.log({ ms: Math.round(performance.now() - t) }, 'exchange-rate call');
+        // → {"ms":2310,"msg":"exchange-rate call"}  ✅ confirmed
+      </script>
+      <p>Fixes: (1) cache the rates in Redis with a TTL of a few minutes (point 4), since rates don't need to be real-time for a dashboard; (2) set a timeout (e.g. 1s) with a fallback to the last known value, so a slow provider can never make your endpoint slow.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you find the slowest queries in a PostgreSQL database?</summary>
+      <p>Enable <code>pg_stat_statements</code> and sort by <code>total_exec_time</code> (overall load) and <code>mean_exec_time</code> (slow per call). Then run <code>EXPLAIN ANALYZE</code> on the top ones. From the app side, log Prisma queries above a duration threshold.</p></details>
+    <details><summary>Why are p95/p99 latencies more useful than the average?</summary>
+      <p>Averages hide the tail. A few very slow requests barely move the average but represent real users having a bad experience, and they are often the first sign of contention (locks, pool exhaustion, GC pauses).</p></details>
+    <details><summary>What does "blocking the event loop" mean in Node.js?</summary>
+      <p>Node runs JavaScript on a single thread. A long synchronous operation (CPU-heavy loop, <code>*Sync</code> file or crypto call, parsing huge JSON) prevents the event loop from handling any other request until it finishes, so latency rises for every user. You find it with event-loop delay metrics and CPU profiles.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Measure from the outside in (endpoint → database/external calls/CPU → line), use percentiles, and prove every optimization with before/after numbers.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Testing.html">← Prev: 8. Testing</a>
+  <a href="Security.html">Next: 10. Security →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

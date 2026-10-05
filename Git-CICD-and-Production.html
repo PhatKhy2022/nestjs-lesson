@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Git, CI/CD &amp; Production</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 11 of 12</span>
+  </nav>
+  <h1>11. Git, CI/CD &amp; Production</h1>
+  <p class="goal"><strong>Goal:</strong> Deliver and maintain production applications.</p>
+  <p class="howto">How to use this page: read each point top to bottom, run the commands yourself in a small NestJS + Prisma practice repo (push it to a free GitHub repository so you can try Actions too), do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#git-branching">Git branching</a></li>
+      <li><a href="#code-review">Code review</a></li>
+      <li><a href="#pull-requests">Pull requests</a></li>
+      <li><a href="#docker">Docker</a></li>
+      <li><a href="#ci">CI</a></li>
+      <li><a href="#cd">CD</a></li>
+      <li><a href="#production-migrations">Production migrations</a></li>
+      <li><a href="#environment-configs">Environment configs</a></li>
+      <li><a href="#monitoring">Monitoring</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="git-branching">
+  <div class="topic-head"><span class="num">1</span><h2>Git branching</h2></div>
+  <p class="tagline">branch, merge, rebase and conflict resolution</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of your project as a shared notebook. A <strong>branch</strong> is a photocopy of the notebook where you can scribble freely without disturbing anyone. When your work is ready, you bring your pages back into the main notebook. <strong>Merge</strong> glues your pages in and adds a note saying "joined here". <strong>Rebase</strong> rewrites your pages as if you had started from the latest version of the notebook. A <strong>conflict</strong> happens when you and a teammate changed the same line in different ways, and Git asks a human to decide which version is right.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>A branch is just a pointer.</strong> Every commit in Git is a snapshot with an ID (a hash like <code>a1b2c3d</code>) and a link to its parent commit. A branch is only a small label that points to one commit. Creating a branch is instant and free, because Git copies nothing. That is why teams create a new branch for every feature or bug fix.</p>
+  <script type="text/x-code" data-lang="bash">
+    # Always start from an up-to-date main
+    git switch main
+    git pull origin main
+
+    # Create a branch and move onto it (modern command; same as "git checkout -b")
+    git switch -c feat/order-cancellation
+
+    # ...edit files...
+    git status                      # what changed?
+    git add src/orders              # stage the changes you want in this commit
+    git commit -m "feat(orders): allow customers to cancel unpaid orders"
+
+    git push -u origin feat/order-cancellation   # -u remembers the remote branch
+    git log --oneline --graph --all              # see the branch "tree"
+  </script>
+
+  <p><strong>Branch naming and commit messages.</strong> Clear names help everyone. A common convention is <code>type/short-description</code>, and many teams use <em>Conventional Commits</em> for messages. These messages can later be used to generate changelogs automatically.</p>
+  <table>
+    <tr><th>Prefix</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>feat</code></td><td>New feature</td><td><code>feat(auth): add refresh token rotation</code></td></tr>
+    <tr><td><code>fix</code></td><td>Bug fix</td><td><code>fix(orders): prevent negative quantity</code></td></tr>
+    <tr><td><code>refactor</code></td><td>Code change, same behavior</td><td><code>refactor(users): extract password hashing</code></td></tr>
+    <tr><td><code>chore</code> / <code>ci</code> / <code>docs</code> / <code>test</code></td><td>Tooling, pipeline, docs, tests</td><td><code>ci: cache npm in GitHub Actions</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="bash">
+    # ❌ Bad: says nothing about what or why
+    git commit -m "fix"
+    git commit -m "update stuff"
+
+    # ✅ Good: subject line (what) + body (why)
+    git commit -m "fix(orders): reject cancellation of shipped orders" \
+               -m "Customers could cancel after shipment, which created refunds for goods already sent."
+  </script>
+
+  <p><strong>Merge.</strong> When <code>main</code> has not moved since you branched, Git can do a <em>fast-forward</em>: it simply moves the <code>main</code> label forward to your last commit. When <code>main</code> <em>has</em> new commits, Git creates a <em>merge commit</em> with two parents. History stays 100% true, but it can get noisy.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Before:          A---B---C  main
+                          \
+                           D---E  feat/order-cancellation
+
+    After merge:     A---B---C-------M  main      (M = merge commit, parents C and E)
+                          \         /
+                           D-------E
+
+    After rebase:    A---B---C---D'---E'  feat/order-cancellation  (D', E' are NEW commits)
+  </script>
+
+  <p><strong>Rebase</strong> takes your commits and replays them on top of the latest <code>main</code>. The result is a straight, readable history. The price: rebase creates <em>new</em> commits (new hashes), so you are rewriting history.</p>
+  <script type="text/x-code" data-lang="bash">
+    # Bring the latest main into your feature branch — option 1: merge
+    git switch feat/order-cancellation
+    git fetch origin
+    git merge origin/main            # safe, adds a merge commit
+
+    # Option 2: rebase (cleaner history)
+    git rebase origin/main           # replay my commits on top of latest main
+    git push --force-with-lease      # needed because hashes changed
+
+    # Clean up messy commits before opening a PR ("wip", "fix typo", ...)
+    git rebase -i origin/main        # mark commits as "squash"/"fixup" in the editor
+  </script>
+  <p>The golden rule of rebase: <strong>never rebase a branch that other people are working on</strong> (like <code>main</code>). Rebasing your own feature branch is fine. Always use <code>--force-with-lease</code> instead of <code>--force</code>: it refuses to push if someone else pushed to the branch since you last fetched, so you can't wipe out their work by accident.</p>
+
+  <p><strong>Conflict resolution.</strong> A conflict is not an error, it is a question. Git marks the conflicting area in the file:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/orders/orders.service.ts (during a conflict)">
+    async cancel(orderId: number, userId: number) {
+    <<<<<<< HEAD
+        const order = await this.findOwnedOrder(orderId, userId);
+        if (order.status !== OrderStatus.PENDING) {
+    =======
+        const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+        if (order.status === OrderStatus.SHIPPED || order.status === OrderStatus.DELIVERED) {
+    >>>>>>> feat/order-cancellation
+          throw new BadRequestException('Order can no longer be cancelled');
+        }
+  </script>
+  <p>The part between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>=======</code> is what is already on the target branch, and the part below is your change. You must <em>understand both intentions</em>, write the correct combined code, delete the markers, then continue:</p>
+  <script type="text/x-code" data-lang="bash">
+    git status                       # lists "both modified" files
+    # edit each file, remove <<<<<<< ======= >>>>>>> markers, keep the right logic
+    npm run build && npm test        # ✅ ALWAYS verify after resolving
+    git add src/orders/orders.service.ts
+    git rebase --continue            # or "git commit" if you were merging
+    # Panic button: go back to before the rebase/merge started
+    git rebase --abort               # or: git merge --abort
+  </script>
+  <p>Here the correct answer is probably to keep the ownership check from <code>HEAD</code> <em>and</em> the stricter status rule from the feature, so neither change is lost. Choosing "accept mine" blindly is how security checks silently disappear.</p>
+
+  <p><strong>Branching strategies.</strong> Most modern teams use <em>trunk-based development</em> (or GitHub Flow): short-lived branches (1–3 days) off <code>main</code>, merged through pull requests, with <code>main</code> always deployable. Long-lived branches like <code>develop</code> or feature branches open for weeks (Git Flow) create huge, painful conflicts. Small and frequent beats big and rare.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Two files cause most conflicts in a Nest + Prisma repo: <code>package-lock.json</code> and Prisma migrations. Don't hand-edit them. Regenerate them instead:</p>
+    <script type="text/x-code" data-lang="bash">
+      # Lockfile conflict: take main's version, then re-install your new packages
+      # (careful: during a rebase "ours" = main and "theirs" = YOUR commit — confusing!
+      #  so name the source explicitly instead)
+      git checkout origin/main -- package-lock.json
+      npm install                                 # re-adds your dependencies on top
+      git add package-lock.json
+
+      # Two branches both added a migration and schema.prisma conflicts:
+      # 1. resolve schema.prisma by hand (keep both models/fields)
+      # 2. delete YOUR unmerged migration folder, then regenerate it on top of main's
+      rm -rf prisma/migrations/20261001120000_add_order_cancel_reason
+      npx prisma migrate dev --name add_order_cancel_reason
+    </script>
+    <p>Regenerating your migration makes sure it is ordered <em>after</em> the ones already merged to <code>main</code>, and that its SQL matches the real final schema. Never edit a migration that has already been applied in staging or production.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Rebasing or force-pushing a shared branch (<code>main</code>, <code>develop</code>). Teammates' histories break. Only rewrite your own branches.</li>
+      <li>Using <code>git push --force</code> instead of <code>--force-with-lease</code>, and deleting a teammate's commits.</li>
+      <li>Resolving conflicts by picking "mine" or "theirs" for the whole file without reading. Always merge the <em>intentions</em> and run tests afterwards.</li>
+      <li>Long-lived branches that drift from <code>main</code> for weeks. Merge <code>main</code> into them (or rebase) often, or better, keep branches small.</li>
+      <li>Committing secrets (<code>.env</code>) or build output (<code>dist/</code>). Add them to <code>.gitignore</code> from day one.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You are on <code>feat/product-search</code> with 3 commits: "add search endpoint", "wip", "fix typo". Meanwhile <code>main</code> got 2 new commits. Write the commands to (1) update your branch on top of the latest <code>main</code>, (2) squash "wip" and "fix typo" into the first commit, (3) push safely.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="bash">
+        git switch feat/product-search
+        git fetch origin
+        git rebase -i origin/main
+        # In the editor:
+        #   pick   1a2b3c4 add search endpoint
+        #   fixup  5d6e7f8 wip
+        #   fixup  9a0b1c2 fix typo
+        # Save and close. Resolve conflicts if any, then:
+        npm test
+        git push --force-with-lease
+      </script>
+      <p><code>fixup</code> merges the commit into the previous one and drops its message (<code>squash</code> would let you edit the combined message). Force push is needed because the hashes changed, and <code>--force-with-lease</code> protects you if someone else pushed in the meantime.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between merge and rebase?</summary>
+      <p>Merge joins two histories with a merge commit and keeps every original commit unchanged. Rebase replays your commits on top of another base, creating new commits and a linear history. Merge is safe for shared branches. Rebase gives cleaner history but rewrites commits, so use it only on branches that you alone own.</p></details>
+    <details><summary>Why use <code>--force-with-lease</code> instead of <code>--force</code>?</summary>
+      <p><code>--force</code> overwrites the remote branch no matter what. <code>--force-with-lease</code> only overwrites it if the remote is still at the commit you last saw. If a teammate pushed in between, it refuses, so you don't erase their work.</p></details>
+    <details><summary>How do you resolve a merge conflict safely?</summary>
+      <p>Read both sides and understand what each change was trying to do. Write code that keeps both intentions, remove the conflict markers, then build and run the tests before continuing the merge or rebase. If it gets messy, <code>git merge --abort</code> / <code>git rebase --abort</code> and try again, or ask the author of the other change.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Keep branches short-lived, rebase only your own branches, push with <code>--force-with-lease</code>, and treat every conflict as "merge two intentions, then run the tests".</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="code-review">
+  <div class="topic-head"><span class="num">2</span><h2>Code review</h2></div>
+  <p class="tagline">review for correctness, maintainability and risk</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Code review is a second pair of eyes before code reaches real users, like a co-pilot reading the checklist before take-off. The reviewer is not there to show they are smarter. They ask three questions: <strong>Does it work?</strong> (correctness) <strong>Will we understand and change it easily in 6 months?</strong> (maintainability) <strong>What could go badly wrong in production?</strong> (risk). Reviews also spread knowledge: after a review, two people understand the code instead of one.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>A review checklist.</strong> Good reviewers look at things in order of importance. Formatting comes last, because tools (Prettier, ESLint) should handle it automatically.</p>
+  <table>
+    <tr><th>Area</th><th>Questions to ask</th></tr>
+    <tr><td>Correctness</td><td>Does it do what the ticket asks? Edge cases: empty list, <code>null</code>, duplicates, very large input, concurrent requests?</td></tr>
+    <tr><td>Security</td><td>Is the input validated? Is the user allowed to touch <em>this</em> record (ownership)? Are secrets or passwords logged or returned?</td></tr>
+    <tr><td>Data &amp; performance</td><td>N+1 queries? Missing index? Multi-step writes without a transaction? Unbounded <code>findMany</code>?</td></tr>
+    <tr><td>Risk</td><td>Is the migration backwards compatible? Can this be rolled back? Is there a feature flag? What breaks if it fails?</td></tr>
+    <tr><td>Maintainability</td><td>Clear names? Logic in the right layer (controller vs service)? Duplicated code? Will a newcomer understand it?</td></tr>
+    <tr><td>Tests</td><td>Are the important paths and failure cases tested? Would the tests fail if the code were wrong?</td></tr>
+  </table>
+
+  <p><strong>A real example.</strong> Here is a pull request that "works on my machine". Read it and try to spot problems before reading the comments.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts (under review)">
+    async create(userId: number, dto: CreateOrderDto) {
+      let total = 0;
+      for (const item of dto.items) {
+        const product = await this.prisma.product.findUnique({ where: { id: item.productId } });
+        total += product.price * item.quantity;
+        await this.prisma.product.update({
+          where: { id: item.productId },
+          data: { stock: product.stock - item.quantity },
+        });
+      }
+      const order = await this.prisma.order.create({
+        data: { userId, total, items: { create: dto.items } },
+      });
+      console.log('order created', order, dto);
+      return order;
+    }
+  </script>
+  <p>And here are review comments, written the way a senior engineer would write them. Notice the labels (<em>blocking</em>, <em>suggestion</em>, <em>nit</em>) so the author knows what must change and what is optional:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title="review comments">
+    🔴 blocking (correctness): `product` can be null if the id doesn't exist → TypeError → 500.
+       Use findUniqueOrThrow or check and throw NotFoundException.
+
+    🔴 blocking (data integrity): stock updates and order creation are separate queries.
+       If order.create fails, stock is already reduced. Please wrap everything in
+       this.prisma.$transaction(async (tx) => { ... }).
+
+    🔴 blocking (race condition): two customers buying the last item at the same time can
+       both read stock=1 and both write 0 → we oversell. Suggest an atomic conditional update:
+       tx.product.updateMany({ where: { id, stock: { gte: qty } }, data: { stock: { decrement: qty } } })
+       and throw if count === 0.
+
+    🟡 suggestion (performance): one query per item (N+1). Load all products with
+       findMany({ where: { id: { in: ids } } }) first.
+
+    🟡 suggestion (money): price is a Float in the schema, so totals get rounding errors
+       (0.1 + 0.2 = 0.30000000000000004). Money should be integer cents or Decimal
+       (then use product.price.mul(item.quantity)). Can we open a follow-up ticket?
+
+    🟢 nit: replace console.log with this.logger.log and don't log the full DTO/order
+       (may contain addresses = personal data).
+  </script>
+
+  <p><strong>How to write good comments.</strong> Comment on the code, not the person. Explain <em>why</em>. Suggest a fix. Ask questions when you are not sure.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    ❌ "This is wrong."
+    ❌ "Why would you do it like this??"
+    ❌ "Use a transaction."                       (what? why? where?)
+
+    ✅ "If the second query fails, the first one is already committed, so stock and orders
+        go out of sync. Could we wrap both in prisma.$transaction? Example: ..."
+    ✅ "Question: what should happen if the same coupon is applied twice concurrently?
+        I might be missing a unique constraint somewhere."
+    ✅ "Nice extraction of the pricing logic, this is much easier to test now 👍"
+  </script>
+
+  <p><strong>Being reviewed.</strong> The author has a job too: keep the PR small (under ~400 changed lines is a good target, because review quality drops sharply after that), review your own diff first, explain the context in the description, and answer every comment (either change the code or explain why not). Don't take comments personally; the goal is the same for everyone: safe, good code in production.</p>
+
+  <p><strong>Use the GitHub CLI to review from the terminal:</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    gh pr list                         # open PRs
+    gh pr checkout 128                 # check out PR #128 locally to run it
+    npm ci && npm test                 # run it yourself for risky changes
+    gh pr diff 128                     # read the diff
+    gh pr review 128 --request-changes -b "Two blocking issues, see inline comments."
+    gh pr review 128 --approve -b "LGTM, thanks for adding the race-condition test!"
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>NestJS-specific things worth checking in every review: missing guards, missing DTO validation, returning Prisma models with sensitive fields, and business logic leaking into controllers.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+      // ❌ Review: no auth guard, body is a plain object (no validation),
+      //    and the full User (with passwordHash) is returned to the client.
+      @Patch(':id')
+      update(@Param('id') id: string, @Body() body: any) {
+        return this.prisma.user.update({ where: { id: +id }, data: body });
+      }
+
+      // ✅ After review
+      @UseGuards(JwtAuthGuard)
+      @Patch(':id')
+      update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateUserDto,                 // whitelisted, validated fields only
+        @CurrentUser() user: JwtPayload,
+      ): Promise<UserResponseDto> {
+        return this.usersService.update(id, dto, user); // service checks ownership, omits passwordHash
+      }
+    </script>
+    <p>Many teams add a <code>CODEOWNERS</code> file so the right people are requested automatically, e.g. <code>/prisma/ @backend-leads</code> means every schema change is reviewed by someone who knows the database.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Spending the review on style (spaces, quotes) while missing a security hole. Automate style; review logic.</li>
+      <li>"LGTM" (looks good to me) on a 2,000-line PR after 3 minutes. If a PR is too large to review, ask for it to be split.</li>
+      <li>Comments without a reason ("change this"). The author learns nothing and may disagree silently.</li>
+      <li>Not marking severity, so the author can't tell a blocking bug from a personal preference.</li>
+      <li>Reviewing only the diff and never the surrounding code or the migration that comes with it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Review this endpoint and write at least three comments with a severity label.</p>
+    <script type="text/x-code" data-lang="typescript">
+      @Get('orders')
+      async myOrders(@Query('userId') userId: string) {
+        const orders = await this.prisma.order.findMany({ where: { userId: Number(userId) } });
+        for (const o of orders) {
+          (o as any).items = await this.prisma.orderItem.findMany({ where: { orderId: o.id } });
+        }
+        return orders;
+      }
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li>🔴 <strong>blocking (security):</strong> the user id comes from the query string, so anyone can read anyone's orders (IDOR). Take the id from the authenticated user (<code>@CurrentUser()</code>) behind a guard.</li>
+        <li>🔴 <strong>blocking (performance):</strong> no pagination, so a customer with 10,000 orders returns everything. Add <code>take</code>/<code>skip</code> or cursor pagination with a max limit.</li>
+        <li>🟡 <strong>suggestion (performance):</strong> N+1 queries for items. Use <code>include: { items: true }</code> in one query.</li>
+        <li>🟡 <strong>suggestion (types):</strong> <code>as any</code> hides the shape. With <code>include</code>, Prisma types it correctly.</li>
+        <li>🟢 <strong>nit:</strong> move the query into <code>OrdersService</code>; controllers should stay thin.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What do you look for first when reviewing code?</summary>
+      <p>Correctness and risk first: does it do what's required, does it handle failure and edge cases, is it secure (auth, ownership, validation), can it corrupt data (transactions, race conditions, migrations)? Then maintainability and tests. Style last, and ideally only via automated tools.</p></details>
+    <details><summary>How do you handle disagreement in a code review?</summary>
+      <p>Explain the reasoning with concrete risks or examples, and listen to the other side. If it's a preference, not a problem, let the author decide. If it's important and you still disagree, talk synchronously (a short call) or ask a third person, then record the decision so it isn't argued again.</p></details>
+    <details><summary>Why are small pull requests important?</summary>
+      <p>Reviewers find far more issues in small diffs. Small PRs are reviewed faster, conflict less, are easier to roll back and make it clear what caused a bug. Large PRs tend to get a rubber-stamp approval.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Review in order: correctness → security → data/risk → maintainability → tests → style. Be kind, label severity, and always explain why.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="pull-requests">
+  <div class="topic-head"><span class="num">3</span><h2>Pull requests</h2></div>
+  <p class="tagline">write clear PR descriptions</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A pull request (PR) is a request saying "please pull my branch into <code>main</code>". The description is a <em>cover letter</em> for your code. The reviewer was not in your head while you worked for two days. A good description tells them <strong>why</strong> the change exists, <strong>what</strong> changed, <strong>how to test it</strong> and <strong>what could go wrong</strong>, so they can review in 15 minutes instead of an hour. It also becomes documentation: a year later, someone running <code>git blame</code> will land on your PR to understand why the code looks this way.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Bad vs good description.</strong></p>
+  <script type="text/x-code" data-lang="markdown" data-title="❌ bad PR">
+    Title: fixes
+
+    updated orders stuff
+  </script>
+  <script type="text/x-code" data-lang="markdown" data-title="✅ good PR">
+    Title: feat(orders): let customers cancel unpaid orders
+
+    ## Why
+    Support receives ~40 tickets/week asking to cancel orders that were never paid.
+    Closes #412.
+
+    ## What changed
+    - New endpoint `POST /orders/:id/cancel` (customer must own the order)
+    - Only `PENDING` orders can be cancelled; others return 409 Conflict
+    - Reserved stock is released in the same DB transaction
+    - Migration: adds nullable `cancelledAt` and `cancelReason` columns to `Order`
+
+    ## How to test
+    1. `npm run test -- orders` (unit) and `npm run test:e2e -- orders` (e2e)
+    2. Manually: create an order, then `curl -X POST localhost:3000/orders/1/cancel -H "Authorization: Bearer <token>"`
+
+    ## Risk & rollout
+    - Migration is additive (nullable columns) → safe to run before deploy, safe to roll back code
+    - No change to payment flow
+
+    ## Screenshots / API examples
+    Response 200: `{ "id": 1, "status": "CANCELLED", "cancelledAt": "2026-10-05T09:00:00Z" }`
+  </script>
+  <p>Notice what makes the good one useful: the reviewer knows the <em>business reason</em>, which files matter, the rules (only <code>PENDING</code>), how to check it, and that the migration is safe. A reviewer can now ask smart questions, like "what about orders in <code>PAYMENT_PROCESSING</code>?"</p>
+
+  <p><strong>The title</strong> should follow the same style as commit messages (<code>type(scope): summary</code>). If your team uses "squash and merge", the PR title becomes the single commit on <code>main</code>, so it matters.</p>
+
+  <p><strong>A PR template</strong> puts this structure into every new PR automatically. Create this file in your repo:</p>
+  <script type="text/x-code" data-lang="markdown" data-title=".github/pull_request_template.md">
+    ## Why
+    <!-- What problem does this solve? Link the ticket: Closes #123 -->
+
+    ## What changed
+    <!-- Bullet list of the important changes -->
+
+    ## How to test
+    <!-- Steps a reviewer can follow -->
+
+    ## Risk & rollout
+    - [ ] Database migration included (is it backwards compatible?)
+    - [ ] New environment variables (added to .env.example and to staging/prod?)
+    - [ ] Breaking API change (frontend/mobile informed?)
+
+    ## Checklist
+    - [ ] Tests added/updated
+    - [ ] No secrets or personal data in logs
+  </script>
+
+  <p><strong>Creating a PR from the terminal</strong> with the GitHub CLI:</p>
+  <script type="text/x-code" data-lang="bash">
+    git push -u origin feat/order-cancellation
+
+    # Opens a PR; uses the template, lets you edit in your editor
+    gh pr create --base main --title "feat(orders): let customers cancel unpaid orders"
+
+    # Draft PR: "not ready yet, but early feedback welcome"
+    gh pr create --draft --fill
+
+    gh pr view --web          # open it in the browser
+    gh pr checks              # see CI status
+    gh pr merge --squash --delete-branch   # after approval and green CI
+  </script>
+
+  <p><strong>Keep PRs small and focused.</strong> One PR = one logical change. If you find an unrelated bug while working, fix it in a separate PR. A useful trick for big features is <em>stacking</em>: PR 1 adds the migration and the service, PR 2 adds the endpoint, PR 3 adds the frontend flag. Each one is reviewable and safe to deploy alone.</p>
+  <table>
+    <tr><th>Size</th><th>Typical review result</th></tr>
+    <tr><td>&lt; 200 lines</td><td>Reviewed same day, real feedback</td></tr>
+    <tr><td>200–400 lines</td><td>Fine if focused</td></tr>
+    <tr><td>&gt; 1,000 lines</td><td>Delayed, skimmed, "LGTM", bugs slip through</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>In an API project, reviewers especially want to know about <strong>contract changes</strong> (the frontend depends on them), <strong>migrations</strong> and <strong>new env vars</strong>. Include request/response examples. If you use <code>@nestjs/swagger</code>, mention which DTOs changed:</p>
+    <script type="text/x-code" data-lang="markdown" data-title="PR description excerpt">
+      ## API changes
+      `GET /products` now supports cursor pagination.
+
+      | Param   | Type   | Notes                        |
+      |---------|--------|------------------------------|
+      | cursor  | number | optional, id of last item    |
+      | limit   | number | default 20, max 100          |
+
+      ⚠️ Response shape changed from `Product[]` to `{ items: Product[], nextCursor: number | null }`.
+      Frontend PR: org/shop-web#233 must be merged first. Swagger updated (ProductPageDto).
+
+      ## Config
+      New env var `PRODUCTS_MAX_PAGE_SIZE` (default 100) — added to .env.example and ConfigModule validation.
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>An empty description, or only "see ticket". Tickets describe the problem, not your solution or the risks.</li>
+      <li>Mixing a refactor, a feature and a formatting change in one PR. The reviewer can't see the real change.</li>
+      <li>Not reviewing your own diff first, so leftover <code>console.log</code>s and commented-out code reach the reviewer.</li>
+      <li>Forgetting to mention breaking API changes or new environment variables. The deploy then fails or the frontend breaks.</li>
+      <li>Opening a PR while CI is red and asking for review anyway. Make it green first (or mark it draft).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>You added rate limiting (<code>@nestjs/throttler</code>) to <code>POST /auth/login</code>: 5 attempts per minute per IP. Write the PR title and a description with Why / What / How to test / Risk.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="markdown">
+        Title: feat(auth): rate limit login to 5 attempts per minute per IP
+
+        ## Why
+        We saw credential-stuffing traffic on /auth/login (≈3k req/min from a few IPs on 2026-09-30).
+        Closes #501.
+
+        ## What changed
+        - Added ThrottlerModule (global default 100 req/min)
+        - `@Throttle({ default: { limit: 5, ttl: 60_000 } })` on POST /auth/login
+        - Returns 429 Too Many Requests with Retry-After header
+        - app.set('trust proxy', 1) so the real client IP is used behind the load balancer
+
+        ## How to test
+        - `npm run test:e2e -- auth` (new test: 6th attempt → 429)
+        - Manually: run `for i in $(seq 1 6); do curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:3000/auth/login -H 'Content-Type: application/json' -d '{"email":"a@b.c","password":"x"}'; done`
+
+        ## Risk & rollout
+        - In-memory storage: limits are per instance. With 3 replicas the effective limit is 15/min.
+          Follow-up ticket #502 to move storage to Redis.
+        - Users behind one office NAT share an IP; 5/min should still be enough for humans.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What makes a good pull request?</summary>
+      <p>It is small and focused on one change, has a clear title, explains why and what, gives testing steps, calls out risks (migrations, breaking changes, config), includes tests, and has green CI before review is requested.</p></details>
+    <details><summary>Squash merge vs merge commit vs rebase merge?</summary>
+      <p>Squash turns the whole PR into one commit on <code>main</code>: clean history, easy to revert, but loses the individual commits. A merge commit keeps all commits plus a merge point. Rebase-merge puts the PR's commits on <code>main</code> linearly. Many teams choose squash for simplicity and one-commit-per-PR reverts.</p></details>
+    <details><summary>How would you split a large feature into several PRs?</summary>
+      <p>Split by layers that are safe to ship alone: first an additive migration, then the service with tests, then the endpoint (maybe behind a feature flag), then the cleanup. Each PR is deployable and reviewable on its own, and nothing is user-visible until the flag is turned on.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A PR description answers Why, What, How to test, and What could go wrong. Small, focused PRs get better reviews and safer deploys.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="docker">
+  <div class="topic-head"><span class="num">4</span><h2>Docker</h2></div>
+  <p class="tagline">containerizing a NestJS + PostgreSQL app</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>"It works on my machine" happens because every machine is different: another Node version, a missing library, a different OS. Docker packs your app <em>together with everything it needs</em> (Node, <code>node_modules</code>, system libraries) into a sealed box called an <strong>image</strong>. A running copy of that image is a <strong>container</strong>. The same image runs on your laptop, in CI and in production, like a shipping container that fits on any ship, train or truck. <strong>Docker Compose</strong> is a recipe that starts several containers together (your API + PostgreSQL) with one command.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Vocabulary.</strong></p>
+  <table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>Dockerfile</td><td>The build instructions for an image (a recipe)</td></tr>
+    <tr><td>Image</td><td>The built, read-only package (the cake). Has a name and tag: <code>shop-api:1.4.0</code></td></tr>
+    <tr><td>Container</td><td>A running instance of an image (a slice being eaten). You can run many from one image</td></tr>
+    <tr><td>Layer</td><td>Each instruction creates a cached layer. Unchanged layers are reused, so build order matters</td></tr>
+    <tr><td>Volume</td><td>Storage that survives container restarts. Essential for database data</td></tr>
+    <tr><td>Registry</td><td>Where images are stored and shared (Docker Hub, GitHub Container Registry, AWS ECR)</td></tr>
+  </table>
+
+  <p><strong>Step 1: a naive Dockerfile (and why it is bad).</strong></p>
+  <script type="text/x-code" data-lang="dockerfile" data-title="❌ Dockerfile (naive)">
+    FROM node:22
+    WORKDIR /app
+    COPY . .                 # copies everything, including .env and node_modules from your laptop
+    RUN npm install          # re-runs on EVERY code change (no cache benefit)
+    RUN npm run build
+    CMD ["npm", "run", "start:prod"]
+  </script>
+  <p>Problems: the image is over 1 GB (full Debian, dev dependencies, TypeScript sources), any code change re-installs all packages, secrets may be copied in, it runs as <code>root</code>, and <code>npm</code> as the main process doesn't forward shutdown signals properly.</p>
+
+  <p><strong>Step 2: a production multi-stage Dockerfile.</strong> A multi-stage build uses one stage to <em>build</em> (with all the dev tools) and a separate, small stage to <em>run</em>. Only the final stage becomes the shipped image.</p>
+  <script type="text/x-code" data-lang="dockerfile" data-title="Dockerfile">
+    # syntax=docker/dockerfile:1
+
+    # ---------- base: shared settings ----------
+    FROM node:22-alpine AS base
+    WORKDIR /app
+    # Prisma's query engine needs OpenSSL on Alpine
+    RUN apk add --no-cache openssl
+
+    # ---------- deps: ALL dependencies (needed to build) ----------
+    FROM base AS deps
+    COPY package.json package-lock.json ./
+    RUN npm ci                                  # exact versions from the lockfile
+
+    # ---------- build: compile TypeScript + generate Prisma client ----------
+    FROM deps AS build
+    COPY prisma ./prisma
+    RUN npx prisma generate                     # creates node_modules/.prisma/client
+    COPY tsconfig*.json nest-cli.json ./
+    COPY src ./src
+    RUN npm run build                           # outputs dist/
+
+    # ---------- prod-deps: only runtime dependencies ----------
+    FROM base AS prod-deps
+    COPY package.json package-lock.json ./
+    RUN npm ci --omit=dev && npm cache clean --force
+
+    # ---------- runtime: the small image we actually ship ----------
+    FROM base AS runtime
+    ENV NODE_ENV=production
+    COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
+    COPY --chown=node:node --from=build /app/node_modules/.prisma ./node_modules/.prisma
+    COPY --chown=node:node --from=build /app/dist ./dist
+    COPY --chown=node:node --from=build /app/prisma ./prisma
+    COPY --chown=node:node package.json ./
+    USER node                                   # ✅ never run as root
+    EXPOSE 3000
+    HEALTHCHECK --interval=30s --timeout=3s --start-period=20s \
+      CMD wget -qO- http://127.0.0.1:3000/health || exit 1
+    CMD ["node", "dist/main.js"]                # ✅ node is PID 1 → receives SIGTERM directly
+  </script>
+  <p>Why each choice matters:</p>
+  <ul>
+    <li><strong>Copy <code>package*.json</code> before the source code.</strong> Docker caches layers. If only <code>src/</code> changed, the <code>npm ci</code> layer is reused and the build takes seconds instead of minutes.</li>
+    <li><strong><code>npm ci</code>, not <code>npm install</code>.</strong> It installs exactly what the lockfile says and fails if <code>package.json</code> and the lockfile disagree. Reproducible builds.</li>
+    <li><strong>Separate <code>prod-deps</code> stage.</strong> The final image has no TypeScript, Jest or ESLint. The generated Prisma client lives in <code>node_modules/.prisma</code>, so we copy it explicitly from the build stage.</li>
+    <li><strong><code>USER node</code>.</strong> The official Node image ships a non-root <code>node</code> user. If someone exploits your app, they are not root inside the container.</li>
+    <li><strong><code>CMD ["node", ...]</code> in exec form.</strong> When the orchestrator stops the container, it sends <code>SIGTERM</code> to PID 1. With <code>npm</code> in between, the signal may not reach Node and the container gets killed hard after a timeout.</li>
+  </ul>
+
+  <p><strong>Step 3: <code>.dockerignore</code></strong> keeps junk and secrets out of the build context:</p>
+  <script type="text/x-code" data-lang="plaintext" data-title=".dockerignore">
+    node_modules
+    dist
+    coverage
+    .git
+    .env
+    .env.*
+    !.env.example
+    *.log
+    Dockerfile
+    docker-compose*.yml
+  </script>
+
+  <p><strong>Step 4: Docker Compose for NestJS + PostgreSQL 16.</strong> We also add a one-off <code>migrate</code> service. It builds the <code>build</code> stage (which still has the Prisma CLI), runs migrations, and exits. The API starts only after migrations succeed.</p>
+  <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml">
+    services:
+      db:
+        image: postgres:16-alpine
+        restart: unless-stopped
+        environment:
+          POSTGRES_USER: shop
+          POSTGRES_PASSWORD: shop_dev_password     # dev only! real secrets come from the platform
+          POSTGRES_DB: shop
+        ports:
+          - "5432:5432"                            # so you can connect with a GUI locally
+        volumes:
+          - pgdata:/var/lib/postgresql/data        # data survives "docker compose down"
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U shop -d shop"]
+          interval: 5s
+          timeout: 3s
+          retries: 10
+
+      migrate:
+        build:
+          context: .
+          target: build                            # stage that still contains the prisma CLI
+        command: npx prisma migrate deploy
+        environment:
+          DATABASE_URL: postgresql://shop:shop_dev_password@db:5432/shop?schema=public
+        depends_on:
+          db:
+            condition: service_healthy
+
+      api:
+        build:
+          context: .
+          target: runtime
+        restart: unless-stopped
+        ports:
+          - "3000:3000"
+        environment:
+          NODE_ENV: production
+          PORT: 3000
+          DATABASE_URL: postgresql://shop:shop_dev_password@db:5432/shop?schema=public
+          JWT_SECRET: change-me-in-real-envs
+        depends_on:
+          migrate:
+            condition: service_completed_successfully
+
+    volumes:
+      pgdata:
+  </script>
+  <p>Note the host name <code>db</code> in <code>DATABASE_URL</code>: inside the Compose network, each service is reachable by its service name. <code>localhost</code> inside the API container means "this container", not your laptop. This is the #1 beginner confusion.</p>
+
+  <p><strong>Step 5: everyday commands.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    docker compose up -d --build        # build images and start everything in the background
+    docker compose ps                   # status + health
+    docker compose logs -f api          # follow API logs
+    docker compose exec db psql -U shop -d shop     # SQL shell inside the db container
+    docker compose down                 # stop and remove containers (volume kept)
+    docker compose down -v              # ⚠️ also deletes the database volume
+
+    docker build -t shop-api:local --target runtime .
+    docker image ls shop-api            # check the size (aim for ~150–250 MB, not 1.2 GB)
+    docker run --rm -p 3000:3000 --env-file .env shop-api:local
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Many teams use Compose only for local <em>dependencies</em> (Postgres, Redis) and run Nest itself with <code>npm run start:dev</code> for fast hot reload. The production image is built in CI. Two Nest-side details make containers behave well:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
+      import { NestFactory } from '@nestjs/core';
+      import { AppModule } from './app.module';
+
+      async function bootstrap() {
+        const app = await NestFactory.create(AppModule);
+        app.enableShutdownHooks();        // run onModuleDestroy (e.g. prisma.$disconnect) on SIGTERM
+        const port = Number(process.env.PORT ?? 3000);
+        await app.listen(port, '0.0.0.0'); // listen on all interfaces, not only 127.0.0.1 inside the container
+      }
+      bootstrap();
+    </script>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      generator client {
+        provider      = "prisma-client-js"
+        // "native" for your laptop, linux-musl for the Alpine image (OpenSSL 3)
+        binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+      }
+    </script>
+    <p>Because <code>prisma generate</code> runs <em>inside</em> the Alpine build stage, Prisma usually detects the right engine on its own. Listing <code>binaryTargets</code> just makes it explicit and avoids "Query engine library not found" errors when the client is generated elsewhere.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Baking secrets into the image (<code>COPY .env</code> or <code>ENV JWT_SECRET=...</code>). Anyone who pulls the image can read them. Pass secrets at runtime.</li>
+      <li>Using <code>localhost</code> in <code>DATABASE_URL</code> inside a container. Use the service name (<code>db</code>).</li>
+      <li>Not using a volume for Postgres, then losing all data on <code>docker compose down</code>. Or using <code>down -v</code> without thinking.</li>
+      <li>Ordering the Dockerfile so that <code>COPY . .</code> comes before <code>npm ci</code>, which destroys layer caching.</li>
+      <li>Shipping a 1 GB image with dev dependencies, running as root, with <code>npm start</code> as PID 1.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your colleague's API container starts before Postgres is ready and crashes with <code>Can't reach database server at localhost:5432</code>. Find the two bugs in this Compose file and fix them.</p>
+    <script type="text/x-code" data-lang="yaml">
+      services:
+        db:
+          image: postgres:16-alpine
+          environment:
+            POSTGRES_PASSWORD: pw
+        api:
+          build: .
+          environment:
+            DATABASE_URL: postgresql://postgres:pw@localhost:5432/postgres
+          depends_on:
+            - db
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="yaml">
+        services:
+          db:
+            image: postgres:16-alpine
+            environment:
+              POSTGRES_PASSWORD: pw
+            volumes:
+              - pgdata:/var/lib/postgresql/data
+            healthcheck:
+              test: ["CMD-SHELL", "pg_isready -U postgres"]
+              interval: 5s
+              retries: 10
+          api:
+            build: .
+            environment:
+              DATABASE_URL: postgresql://postgres:pw@db:5432/postgres   # ✅ service name, not localhost
+            depends_on:
+              db:
+                condition: service_healthy                              # ✅ wait until Postgres accepts connections
+        volumes:
+          pgdata:
+      </script>
+      <p>A plain <code>depends_on: [db]</code> only waits until the container <em>starts</em>, not until Postgres is ready. The health check + <code>condition: service_healthy</code> fixes the race. The volume is a bonus so data survives restarts.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a multi-stage build and why use it?</summary>
+      <p>A Dockerfile with several <code>FROM</code> stages. Early stages contain build tools (TypeScript, dev dependencies), and the final stage copies only the compiled output and production dependencies. The result is a smaller, faster, more secure image with less attack surface.</p></details>
+    <details><summary>What is the difference between an image and a container?</summary>
+      <p>An image is an immutable template (filesystem + metadata). A container is a running process created from an image, with its own writable layer. You can start many containers from the same image.</p></details>
+    <details><summary>How do you make Docker builds fast?</summary>
+      <p>Order instructions from least to most frequently changing: copy the lockfile and install dependencies first, then copy the source. Use <code>.dockerignore</code> to keep the context small, and use CI layer caching (e.g. the GitHub Actions cache backend for BuildKit).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Multi-stage build, <code>npm ci</code>, lockfile copied first, non-root user, <code>node dist/main.js</code> as PID 1, secrets only at runtime, and use service names (not <code>localhost</code>) between containers.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="ci">
+  <div class="topic-head"><span class="num">5</span><h2>CI</h2></div>
+  <p class="tagline">automatically lint and test code</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Continuous Integration (CI) is a robot that checks every change automatically. Each time someone pushes code or opens a pull request, a fresh computer downloads the code, installs it, and runs the linter, the type checker and the tests. If anything fails, the PR shows a red ❌ and can't be merged. Humans forget to run tests. Robots never forget. CI turns "I think it works" into "it is proven to build and pass tests on a clean machine".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>GitHub Actions basics.</strong> A <em>workflow</em> is a YAML file in <code>.github/workflows/</code>. It is triggered by <em>events</em> (<code>push</code>, <code>pull_request</code>), contains <em>jobs</em> (which run in parallel by default on fresh virtual machines called <em>runners</em>), and each job has <em>steps</em> (shell commands or reusable <em>actions</em>).</p>
+  <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/hello.yml (smallest possible)">
+    name: Hello
+    on: [push]
+    jobs:
+      say-hello:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo "Hello from CI on commit $GITHUB_SHA"
+  </script>
+
+  <p><strong>Prepare scripts that CI can run.</strong> The default Nest <code>lint</code> script uses <code>--fix</code>, which silently changes files instead of failing. Add CI-friendly scripts:</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
+    {
+      "scripts": {
+        "build": "nest build",
+        "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+        "lint:ci": "eslint \"{src,apps,libs,test}/**/*.ts\" --max-warnings=0",
+        "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+        "typecheck": "tsc --noEmit",
+        "test": "jest",
+        "test:cov": "jest --coverage",
+        "test:e2e": "jest --config ./test/jest-e2e.json"
+      }
+    }
+  </script>
+
+  <p><strong>The real workflow.</strong> Two jobs: a fast <code>quality</code> job (lint, types, unit tests) and an <code>e2e</code> job with a real PostgreSQL 16 database as a <em>service container</em>.</p>
+  <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/ci.yml">
+    name: CI
+
+    on:
+      pull_request:
+      push:
+        branches: [main]
+
+    # Cancel older runs of the same PR when a new commit is pushed
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
+
+    permissions:
+      contents: read
+
+    jobs:
+      quality:
+        name: Lint, types & unit tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+          - uses: actions/checkout@v4
+
+          - uses: actions/setup-node@v4
+            with:
+              node-version: 22
+              cache: npm                     # caches ~/.npm keyed by package-lock.json
+
+          - run: npm ci
+          - run: npx prisma generate         # types for PrismaClient are needed to compile
+          - run: npm run format:check
+          - run: npm run lint:ci
+          - run: npm run typecheck
+          - run: npm run test:cov -- --ci
+          - run: npm run build
+
+      e2e:
+        name: E2E tests (PostgreSQL)
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        services:
+          postgres:
+            image: postgres:16-alpine
+            env:
+              POSTGRES_USER: test
+              POSTGRES_PASSWORD: test
+              POSTGRES_DB: shop_test
+            ports:
+              - 5432:5432
+            options: >-
+              --health-cmd "pg_isready -U test -d shop_test"
+              --health-interval 5s
+              --health-timeout 3s
+              --health-retries 10
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/shop_test?schema=public
+          JWT_SECRET: ci-only-secret
+          NODE_ENV: test
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: 22
+              cache: npm
+          - run: npm ci
+          - run: npx prisma migrate deploy   # also proves migrations apply cleanly on an empty DB
+          - run: npm run test:e2e -- --ci
+  </script>
+  <p>Some details explained:</p>
+  <ul>
+    <li><code>localhost</code> works here (unlike in Compose) because the job runs directly on the runner, and the service's port is mapped to the runner.</li>
+    <li><code>concurrency</code> saves minutes: if you push 3 commits quickly, only the newest run continues.</li>
+    <li><code>permissions: contents: read</code> follows least privilege. The workflow's token can't push code.</li>
+    <li><code>timeout-minutes</code> stops a hanging test (e.g. an open DB connection) from burning 6 hours of CI time.</li>
+    <li>Running <code>prisma migrate deploy</code> in CI catches broken migrations <em>before</em> they reach production.</li>
+  </ul>
+
+  <p><strong>Make CI mandatory.</strong> On GitHub: Settings → Branches → add a branch protection rule (or a ruleset) for <code>main</code>: "Require status checks to pass" (select <em>Lint, types &amp; unit tests</em> and <em>E2E tests</em>), "Require a pull request before merging", and "Require approvals: 1". Now nobody, not even admins if you choose so, can merge red code.</p>
+
+  <p><strong>Fast feedback locally too.</strong> A pre-commit hook runs cheap checks before code even leaves your laptop:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i -D husky lint-staged
+    npx husky init                                    # creates .husky/pre-commit
+    echo "npx lint-staged" > .husky/pre-commit
+    # package.json: "lint-staged": { "*.ts": ["eslint --max-warnings=0", "prettier --check"] }
+  </script>
+  <p>Hooks can be skipped by developers, so they are a convenience. CI is the real gate.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>E2E tests in Nest boot the real <code>AppModule</code> and hit it with Supertest. In CI they use the Postgres service above. Make sure the test app uses the same global setup as <code>main.ts</code> (pipes, prefixes), or tests pass while production behaves differently:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/orders.e2e-spec.ts">
+      import { INestApplication, ValidationPipe } from '@nestjs/common';
+      import { Test } from '@nestjs/testing';
+      import request from 'supertest';
+      import { AppModule } from '../src/app.module';
+      import { PrismaService } from '../src/prisma/prisma.service';
+
+      describe('Products (e2e)', () => {
+        let app: INestApplication;
+        let prisma: PrismaService;
+
+        beforeAll(async () => {
+          const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+          app = moduleRef.createNestApplication();
+          app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true })); // same as main.ts
+          await app.init();
+          prisma = app.get(PrismaService);
+        });
+
+        beforeEach(async () => {
+          // clean tables between tests (children first because of foreign keys)
+          await prisma.orderItem.deleteMany();
+          await prisma.order.deleteMany();
+          await prisma.product.deleteMany();
+        });
+
+        afterAll(async () => {
+          await app.close();               // ✅ closes Prisma too → Jest exits, CI doesn't hang
+        });
+
+        it('returns a page of products', async () => {
+          await prisma.product.create({ data: { name: 'Keyboard', price: 4900, stock: 10 } });
+          const res = await request(app.getHttpServer()).get('/products?limit=10').expect(200);
+          expect(res.body.items).toHaveLength(1);
+        });
+
+        it('rejects a non-numeric limit', () => {
+          return request(app.getHttpServer()).get('/products?limit=abc').expect(400); // ValidationPipe works
+        });
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Running <code>eslint --fix</code> in CI. It "fixes" the files on the runner and passes, while the repo stays unfixed. Use a check-only script.</li>
+      <li>Using <code>npm install</code> instead of <code>npm ci</code>, so CI may install different versions than the lockfile.</li>
+      <li>Flaky tests (random failures) that people "just re-run". Flakiness hides real bugs. Fix or quarantine them quickly.</li>
+      <li>CI that is not required by branch protection, so people merge on red "because it's probably fine".</li>
+      <li>Putting real production secrets in the CI test environment. CI should use throwaway values and a throwaway database.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your CI job takes 9 minutes. Unit tests take 1 minute, e2e takes 6, and <code>npm ci</code> takes 2 because nothing is cached. Change the plan so developers get lint/unit feedback in about 2 minutes, while e2e still runs. Which keys/structure would you use?</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li>Add <code>cache: npm</code> to <code>actions/setup-node@v4</code>, so <code>npm ci</code> reuses the downloaded packages (often 2 min → ~30 s).</li>
+        <li>Split into two jobs, <code>quality</code> and <code>e2e</code>. Jobs run <strong>in parallel</strong> by default, so the PR shows the lint/unit result after ~2 minutes while e2e continues.</li>
+        <li>Add <code>concurrency</code> with <code>cancel-in-progress: true</code> so outdated runs stop.</li>
+        <li>Optionally shard e2e with a matrix (<code>strategy.matrix.shard: [1, 2, 3]</code> and <code>jest --shard=${{ matrix.shard }}/3</code>; Jest 28+ supports <code>--shard</code>).</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is Continuous Integration?</summary>
+      <p>The practice of merging small changes into the main branch frequently, with every change automatically built and tested on a clean environment. It finds integration problems early, when they are cheap to fix.</p></details>
+    <details><summary>How do you run tests that need a database in CI?</summary>
+      <p>Start a real database as a service container (e.g. <code>postgres:16-alpine</code> in GitHub Actions) with a health check, apply migrations with <code>prisma migrate deploy</code>, run e2e tests against it, and clean data between tests. Using the same database engine as production avoids "works with SQLite, fails on Postgres" surprises.</p></details>
+    <details><summary>What should a CI pipeline check for a TypeScript backend?</summary>
+      <p>Formatting, lint (with zero warnings), type-check (<code>tsc --noEmit</code>), unit tests with coverage, a successful build, migrations applying to a clean DB, and e2e tests. Often also a dependency audit and a Docker build.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Every push and PR runs lint, type-check, tests and build on a clean machine, and branch protection makes a green CI mandatory for merging.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="cd">
+  <div class="topic-head"><span class="num">6</span><h2>CD</h2></div>
+  <p class="tagline">automatically build and deploy</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>CI answers "is this code good?". Continuous Delivery/Deployment (CD) answers "get the good code to users, the same way every time". Instead of someone SSH-ing into a server at 11 pm and typing commands from memory, a pipeline builds a Docker image, labels it with the commit, runs database migrations, deploys it, checks that it is healthy, and can roll back. <strong>Continuous Delivery</strong> means every merge is <em>ready</em> to deploy, with a human pressing "approve" for production. <strong>Continuous Deployment</strong> means it goes to production automatically.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The typical pipeline.</strong></p>
+  <script type="text/x-code" data-lang="plaintext">
+    merge to main
+       │
+       ▼
+    CI passes ──► build Docker image ──► push to registry (tag = git SHA)
+                                              │
+                                              ▼
+                              deploy to STAGING (automatic)
+                              run migrations → start new version → smoke test /health
+                                              │
+                                    manual approval ✋
+                                              ▼
+                              deploy to PRODUCTION (same image!)
+                              run migrations → rolling restart → health check → done
+                              (if unhealthy → roll back to previous SHA)
+  </script>
+  <p>The key idea: <strong>build once, deploy many times</strong>. The exact image tested in staging is promoted to production. You never rebuild for production, because a rebuild could pull different dependencies.</p>
+
+  <p><strong>Tagging images.</strong> Tag with the git commit SHA (<code>ghcr.io/acme/shop-api:3f9c2ab</code>). Tags like <code>latest</code> are moving targets, so you can never tell which code is running and you can't roll back reliably.</p>
+
+  <p><strong>The deploy workflow.</strong> It runs after CI succeeds on <code>main</code>, builds and pushes the image to GitHub Container Registry, then deploys to staging and production. Production uses a GitHub <em>Environment</em> with required reviewers, so it waits for a human approval.</p>
+  <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/deploy.yml">
+    name: Deploy
+
+    on:
+      workflow_run:
+        workflows: [CI]
+        types: [completed]
+        branches: [main]
+
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false          # never cancel a deploy halfway
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+
+    jobs:
+      build:
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          packages: write                 # allowed to push to GHCR
+        outputs:
+          tag: ${{ steps.vars.outputs.tag }}
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              ref: ${{ github.event.workflow_run.head_sha }}
+          - id: vars
+            run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          - uses: docker/setup-buildx-action@v3
+          - uses: docker/login-action@v3
+            with:
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+          - uses: docker/build-push-action@v6
+            with:
+              context: .
+              target: runtime
+              push: true
+              tags: ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
+              cache-from: type=gha
+              cache-to: type=gha,mode=max
+          # Second image: the "build" stage, which still has the Prisma CLI → used only to run migrations
+          - uses: docker/build-push-action@v6
+            with:
+              context: .
+              target: build
+              push: true
+              tags: ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}-migrate
+              cache-from: type=gha
+
+      deploy-staging:
+        needs: build
+        runs-on: ubuntu-latest
+        environment: staging
+        steps:
+          - name: Deploy over SSH
+            uses: appleboy/ssh-action@v1
+            with:
+              host: ${{ secrets.DEPLOY_HOST }}
+              username: deploy
+              key: ${{ secrets.DEPLOY_SSH_KEY }}
+              script: |
+                cd /srv/shop-api
+                export TAG=${{ needs.build.outputs.tag }}
+                docker compose pull
+                docker compose run --rm migrate      # prisma migrate deploy
+                docker compose up -d api
+          - name: Smoke test
+            run: curl --fail --retry 10 --retry-delay 5 --retry-all-errors https://staging-api.example.com/health
+
+      deploy-production:
+        needs: [build, deploy-staging]
+        runs-on: ubuntu-latest
+        environment: production            # ✋ requires approval (configured in repo Settings → Environments)
+        steps:
+          - name: Deploy over SSH
+            uses: appleboy/ssh-action@v1
+            with:
+              host: ${{ secrets.DEPLOY_HOST }}
+              username: deploy
+              key: ${{ secrets.DEPLOY_SSH_KEY }}
+              script: |
+                cd /srv/shop-api
+                echo "$(cat .current_tag 2>/dev/null)" > .previous_tag
+                export TAG=${{ needs.build.outputs.tag }}
+                docker compose pull
+                docker compose run --rm migrate
+                docker compose up -d api
+                echo "$TAG" > .current_tag
+          - name: Smoke test
+            run: curl --fail --retry 10 --retry-delay 5 --retry-all-errors https://api.example.com/health
+  </script>
+  <p>Secrets like <code>DEPLOY_SSH_KEY</code> are stored per <em>environment</em> in GitHub (Settings → Environments), so the staging job can't read production secrets. On the server, the Compose file uses images instead of <code>build:</code>: the <code>api</code> service has <code>image: ghcr.io/acme/shop-api:${TAG}</code>, and the <code>migrate</code> service has <code>image: ghcr.io/acme/shop-api:${TAG}-migrate</code> with <code>command: npx prisma migrate deploy</code>. (The small runtime image has no Prisma CLI, which is why migrations use the second image.) The same idea works for other platforms: on Kubernetes you would run <code>kubectl set image</code>; on AWS ECS, Fly.io, Render or Railway you call their CLI or API with the new image tag.</p>
+
+  <p><strong>Rollback.</strong> Because every image is tagged by SHA, rollback is "deploy the previous tag":</p>
+  <script type="text/x-code" data-lang="bash">
+    # On the server (or as a manual "workflow_dispatch" job)
+    cd /srv/shop-api
+    export TAG=$(cat .previous_tag)
+    docker compose up -d api
+    curl --fail https://api.example.com/health
+  </script>
+  <p>⚠️ Rolling back <em>code</em> is easy. Rolling back the <em>database</em> is not. That is why migrations must be backwards compatible (next point): the old code must still work with the new schema.</p>
+
+  <p><strong>Deployment strategies.</strong></p>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>Pros / cons</th></tr>
+    <tr><td>Recreate</td><td>Stop old, start new</td><td>Simple, but downtime</td></tr>
+    <tr><td>Rolling</td><td>Replace instances one by one</td><td>No downtime; old and new run together for a while (so both must work with the DB)</td></tr>
+    <tr><td>Blue-green</td><td>Start a full new copy, switch traffic at once</td><td>Instant switch and rollback; costs double resources during deploy</td></tr>
+    <tr><td>Canary</td><td>Send 5% of traffic to the new version, then increase</td><td>Limits damage of bugs; needs good monitoring and a smart load balancer</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Zero-downtime deploys require the app to shut down gracefully: stop accepting new requests, finish the ones in flight, close the DB pool. With <code>app.enableShutdownHooks()</code> (see the Docker point), Nest calls lifecycle hooks on <code>SIGTERM</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/prisma/prisma.service.ts">
+      import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+      import { PrismaClient } from '@prisma/client';
+
+      @Injectable()
+      export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+        private readonly logger = new Logger(PrismaService.name);
+
+        async onModuleInit() {
+          await this.$connect();
+        }
+
+        async onModuleDestroy() {
+          this.logger.log('Shutting down: closing database connections');
+          await this.$disconnect();   // ✅ no "too many connections" during rolling deploys
+        }
+      }
+    </script>
+    <p>Also expose the deployed version, so you can check what is live: e.g. pass <code>APP_VERSION=${TAG}</code> as an env var and return it from <code>/health</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Deploying the <code>latest</code> tag. You don't know what's running and can't roll back to a specific version.</li>
+      <li>Rebuilding the image separately for each environment. Production then runs something that was never tested.</li>
+      <li>Starting the new app before migrations run (code expects a column that doesn't exist yet → 500s).</li>
+      <li>No health check after deploy. The pipeline is green while users see errors.</li>
+      <li>Production secrets stored as repository-wide secrets that every workflow and branch can read. Use protected environments.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>At 16:05 you deploy commit <code>a1b2c3d</code>. At 16:10 error rates jump from 0.1% to 8%. The previous version was <code>9f8e7d6</code>. The deploy included an additive migration (new nullable column). What do you do, in order?</p>
+    <details>
+      <summary>Show answer</summary>
+      <ol>
+        <li><strong>Mitigate first, debug later:</strong> roll back the code to <code>9f8e7d6</code> (<code>TAG=9f8e7d6 docker compose up -d api</code>, or re-run the deploy job with that tag).</li>
+        <li><strong>Leave the migration in place.</strong> It only added a nullable column, so the old code ignores it. Rolling back the DB is riskier than leaving it.</li>
+        <li>Confirm recovery: error rate back to normal, <code>/health</code> OK.</li>
+        <li>Tell the team (incident channel), then investigate with logs and error tracking for <code>a1b2c3d</code>.</li>
+        <li>Fix forward in a new PR with a test that reproduces the bug, and write a short post-mortem.</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Continuous Delivery vs Continuous Deployment?</summary>
+      <p>Continuous Delivery: every change that passes the pipeline is releasable, but a human decides when to push to production. Continuous Deployment: every passing change goes to production automatically, with no manual step.</p></details>
+    <details><summary>Why tag images with the commit SHA?</summary>
+      <p>The tag is immutable and traceable: you know exactly which code runs, you can promote the same artifact from staging to production, and rollback means redeploying a known previous tag.</p></details>
+    <details><summary>How do you achieve zero-downtime deployments?</summary>
+      <p>Run several instances and replace them gradually (rolling or blue-green) behind a load balancer, use readiness checks so traffic only reaches healthy instances, shut down gracefully on <code>SIGTERM</code>, and keep database migrations backwards compatible so old and new versions work at the same time.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Build once, tag by SHA, promote the same image from staging to production, migrate before switching traffic, health-check after, and always have a one-command rollback.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="production-migrations">
+  <div class="topic-head"><span class="num">7</span><h2>Production migrations</h2></div>
+  <p class="tagline">safe database migration strategy</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Changing a production database is like renovating a shop <em>while customers are inside</em>. You can't close the doors, knock down a wall and hope nobody gets hurt. You put up the new shelf first, move the products over, and only then remove the old shelf. Code can be rolled back in seconds. A dropped column with a million rows of customer data cannot. So every migration must be planned so that the <em>old</em> code and the <em>new</em> code can both run against the database at the same time.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Prisma commands: which one where.</strong></p>
+  <table>
+    <tr><th>Command</th><th>Where</th><th>What it does</th></tr>
+    <tr><td><code>prisma migrate dev</code></td><td>Your laptop only</td><td>Creates a new migration from schema changes, applies it, may <strong>reset</strong> the dev DB</td></tr>
+    <tr><td><code>prisma migrate dev --create-only</code></td><td>Laptop</td><td>Generates the SQL file without applying it, so you can edit it</td></tr>
+    <tr><td><code>prisma migrate deploy</code></td><td>CI, staging, production</td><td>Applies pending migration files in order. Never generates or resets anything</td></tr>
+    <tr><td><code>prisma migrate status</code></td><td>Anywhere</td><td>Shows applied / pending / failed migrations</td></tr>
+    <tr><td><code>prisma migrate resolve</code></td><td>Production (incident)</td><td>Marks a failed migration as rolled back or applied after you fixed it by hand</td></tr>
+    <tr><td><code>prisma db push</code></td><td>Prototyping only</td><td>Syncs schema without migration history. ❌ Never in production</td></tr>
+  </table>
+
+  <p><strong>Always read the generated SQL.</strong> Prisma writes SQL for you, but it doesn't know your intent. The classic trap is renaming a field:</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma — you renamed name → fullName">
+    model User {
+      id       Int    @id @default(autoincrement())
+      fullName String // was: name
+    }
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="❌ generated migration.sql">
+    -- Prisma sees "name disappeared, fullName appeared":
+    ALTER TABLE "User" DROP COLUMN "name",
+    ADD COLUMN     "fullName" TEXT NOT NULL;
+    -- 💥 every user's name is deleted (and this fails anyway on a non-empty table: NOT NULL with no default)
+  </script>
+  <p>If you only want a nicer name in TypeScript, the cheapest fix is <code>@map</code>: the TypeScript field is <code>fullName</code>, the column stays <code>name</code>. No migration at all:</p>
+  <script type="text/x-code" data-lang="prisma">
+    model User {
+      id       Int    @id @default(autoincrement())
+      fullName String @map("name")   // ✅ code says fullName, database keeps "name"
+    }
+  </script>
+
+  <p><strong>The expand → migrate → contract pattern.</strong> For real structural changes, split one dangerous change into several safe deploys. Example: replace <code>User.name</code> with <code>firstName</code> + <code>lastName</code>.</p>
+  <table>
+    <tr><th>Step</th><th>Database</th><th>Code</th><th>Safe to roll back code?</th></tr>
+    <tr><td>1. Expand</td><td>Add nullable <code>firstName</code>, <code>lastName</code></td><td>Writes to <em>both</em> old and new columns, reads old</td><td>✅ old code ignores new columns</td></tr>
+    <tr><td>2. Migrate (backfill)</td><td>Copy data from <code>name</code> in batches</td><td>Same</td><td>✅</td></tr>
+    <tr><td>3. Switch reads</td><td>(none)</td><td>Reads new columns, still writes both</td><td>✅</td></tr>
+    <tr><td>4. Contract</td><td>Make new columns <code>NOT NULL</code>, drop <code>name</code></td><td>Uses only new columns</td><td>⚠️ only after a few days of stability</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="sql" data-title="prisma/migrations/20261005090000_expand_user_names/migration.sql">
+    -- Step 1: additive only. Instant on PostgreSQL (no table rewrite for nullable columns).
+    ALTER TABLE "User" ADD COLUMN "firstName" TEXT;
+    ALTER TABLE "User" ADD COLUMN "lastName"  TEXT;
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="scripts/backfill-user-names.ts (step 2, run once)">
+    import { PrismaClient } from '@prisma/client';
+
+    const prisma = new PrismaClient();
+    const BATCH = 1000;
+
+    async function main() {
+      let updated = 0;
+      while (true) {
+        // Small batches → short locks, no giant transaction, can be stopped and resumed
+        const count = await prisma.$executeRaw`
+          UPDATE "User"
+          SET "firstName" = split_part("name", ' ', 1),
+              "lastName"  = NULLIF(substr("name", length(split_part("name", ' ', 1)) + 2), '')
+          WHERE id IN (
+            SELECT id FROM "User" WHERE "firstName" IS NULL LIMIT ${BATCH}
+          )`;
+        if (count === 0) break;
+        updated += count;
+        console.log(`backfilled ${updated} users`);
+      }
+    }
+
+    main().finally(() => prisma.$disconnect());
+  </script>
+
+  <p><strong>Dangerous operations on big tables</strong> (PostgreSQL 16) and their safe alternatives:</p>
+  <table>
+    <tr><th>❌ Risky</th><th>Why</th><th>✅ Safer</th></tr>
+    <tr><td>Add a <code>NOT NULL</code> column without default to a filled table</td><td>Fails on existing rows</td><td>Add nullable → backfill → <code>SET NOT NULL</code> (or add with a constant <code>DEFAULT</code>, which is instant since PG 11)</td></tr>
+    <tr><td><code>CREATE INDEX</code></td><td>Blocks writes on the table until it finishes</td><td><code>CREATE INDEX CONCURRENTLY</code> (cannot run inside a transaction)</td></tr>
+    <tr><td>Change a column type (<code>INT</code> → <code>BIGINT</code>)</td><td>Rewrites the whole table under an exclusive lock</td><td>New column + backfill + switch (expand/contract)</td></tr>
+    <tr><td>Drop / rename a column used by running code</td><td>Old instances crash during a rolling deploy</td><td>Stop using it in code first, drop in a later release</td></tr>
+  </table>
+  <p>For an index on a large table, generate an empty migration and write the SQL yourself. Keep <code>CONCURRENTLY</code> as the <strong>only statement</strong> in its migration file, because PostgreSQL wraps multi-statement scripts in an implicit transaction, and <code>CONCURRENTLY</code> is not allowed inside one:</p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate dev --create-only --name add_order_created_at_index
+  </script>
+  <script type="text/x-code" data-lang="sql" data-title="prisma/migrations/20261005100000_add_order_created_at_index/migration.sql">
+    CREATE INDEX CONCURRENTLY IF NOT EXISTS "Order_createdAt_idx" ON "Order" ("createdAt");
+  </script>
+  <p>Then add <code>@@index([createdAt])</code> to the model so Prisma's schema and the database agree. Run <code>prisma migrate dev</code> again locally: it should report no changes.</p>
+
+  <p><strong>Running migrations in production.</strong> Run <code>prisma migrate deploy</code> as a separate step <em>before</em> the new code receives traffic (the CD pipeline's <code>migrate</code> job), once, not from every app instance at startup. Take a backup or confirm point-in-time recovery first. If a migration fails halfway:</p>
+  <script type="text/x-code" data-lang="bash">
+    npx prisma migrate status
+    # Fix the database by hand (or confirm nothing was applied), then tell Prisma what happened:
+    npx prisma migrate resolve --rolled-back 20261005090000_expand_user_names
+    # ...fix the migration file, then deploy again
+    npx prisma migrate deploy
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>During step 1 of expand/contract, the service writes both shapes so that old and new code stay compatible. A small comment with the plan helps the next developer:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.service.ts (during migration)">
+      async updateName(id: number, dto: UpdateNameDto) {
+        return this.prisma.user.update({
+          where: { id },
+          data: {
+            // TODO(#640): expand/contract in progress.
+            // Remove "name" after the contract migration (planned 2026-10-20).
+            name: `${dto.firstName} ${dto.lastName}`.trim(),
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+          },
+        });
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Running <code>prisma migrate dev</code> or <code>db push</code> against production. They can reset or drift the schema. Production uses only <code>migrate deploy</code>.</li>
+      <li>Merging a migration without reading its SQL, so a rename silently becomes DROP + ADD.</li>
+      <li>Editing a migration file that was already applied somewhere. Its checksum changes and environments disagree. Create a new migration instead.</li>
+      <li>Dropping a column in the same release that stops using it. During a rolling deploy, old instances still query it and crash.</li>
+      <li>One giant <code>UPDATE</code> on millions of rows inside a migration, locking the table for minutes. Backfill in batches, outside the migration.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The <code>Order</code> table has 20 million rows. Product wants a required <code>currency</code> column (values like <code>'USD'</code>). Today every order is in USD. Plan the migration(s) so there is no downtime.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Because every existing row has the same value, PostgreSQL 11+ can add a column with a <em>constant</em> default without rewriting the table. It is a metadata-only change, effectively instant:</p>
+      <script type="text/x-code" data-lang="sql">
+        ALTER TABLE "Order" ADD COLUMN "currency" VARCHAR(3) NOT NULL DEFAULT 'USD';
+      </script>
+      <script type="text/x-code" data-lang="prisma">
+        model Order {
+          // ...
+          currency String @default("USD") @db.VarChar(3)
+        }
+      </script>
+      <p>Old code doesn't know the column and keeps inserting rows; they get <code>'USD'</code> from the default. New code can set other currencies. If the value were <em>not</em> constant (e.g. derived from the customer's country), you would use expand/contract: add nullable → backfill in batches → <code>SET NOT NULL</code> in a later release.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the expand/contract pattern?</summary>
+      <p>A way to make breaking schema changes without downtime: first <em>expand</em> (add new structures, keep old ones), deploy code that works with both, backfill data, switch reads to the new structure, and only later <em>contract</em> (remove the old structures). Every step is backwards compatible.</p></details>
+    <details><summary>Why must migrations be backwards compatible?</summary>
+      <p>During a rolling deploy, old and new app versions run at the same time against the same database, and you may need to roll the code back. If the schema change breaks the old code, either situation causes errors in production.</p></details>
+    <details><summary>Difference between <code>prisma migrate dev</code> and <code>prisma migrate deploy</code>?</summary>
+      <p><code>migrate dev</code> is for development: it detects schema changes, creates new migrations, and may reset the database. <code>migrate deploy</code> only applies existing, committed migration files in order, which is safe and predictable for CI and production.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Read every generated SQL file, only add things in one release and remove them in a later one (expand → contract), backfill in batches, and use only <code>prisma migrate deploy</code> in production.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="environment-configs">
+  <div class="topic-head"><span class="num">8</span><h2>Environment configs</h2></div>
+  <p class="tagline">dev, staging and production</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Your app runs in several places: your laptop (<strong>development</strong>), a copy of production for final testing (<strong>staging</strong>), and the real thing (<strong>production</strong>). The <em>code</em> is the same everywhere. What changes is the <em>configuration</em>: which database, which API keys, how much logging. Think of an actor: the same actor, but a different costume for each stage. Configuration lives in <em>environment variables</em>, outside the code, and the app should refuse to start if an important setting is missing, instead of crashing at 3 am on the first request.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What usually differs per environment:</strong></p>
+  <table>
+    <tr><th>Setting</th><th>Development</th><th>Staging</th><th>Production</th></tr>
+    <tr><td>Database</td><td>Local Docker Postgres</td><td>Separate staging DB (anonymized data)</td><td>Managed Postgres with backups</td></tr>
+    <tr><td>Secrets</td><td><code>.env</code> file (fake values)</td><td>Secret manager / CI environment</td><td>Secret manager / CI environment</td></tr>
+    <tr><td>Log level</td><td><code>debug</code>, pretty</td><td><code>debug</code> or <code>info</code>, JSON</td><td><code>info</code>, JSON</td></tr>
+    <tr><td>CORS origins</td><td><code>http://localhost:5173</code></td><td><code>https://staging.shop.com</code></td><td><code>https://shop.com</code></td></tr>
+    <tr><td>Swagger docs</td><td>On</td><td>On</td><td>Off (or protected)</td></tr>
+    <tr><td>Payments / emails</td><td>Sandbox / fake mailer</td><td>Sandbox</td><td>Live</td></tr>
+  </table>
+
+  <p><strong>The principle (from the "12-factor app").</strong> Store config in environment variables. Never write <code>if (env === 'production')</code> all over your code. Instead, make each behavior a setting (<code>SWAGGER_ENABLED=true</code>), and let each environment set it. Then staging can really behave like production.</p>
+
+  <p><strong>Step 1: files.</strong> Commit an example file with every variable and fake values. Ignore the real ones.</p>
+  <script type="text/x-code" data-lang="ini" data-title=".env.example (committed)">
+    NODE_ENV=development
+    APP_ENV=local            # local | staging | production
+    PORT=3000
+    DATABASE_URL=postgresql://shop:shop_dev_password@localhost:5432/shop?schema=public
+    JWT_SECRET=replace-me-with-at-least-32-characters
+    JWT_EXPIRES_IN=15m
+    CORS_ORIGINS=http://localhost:5173
+    LOG_LEVEL=debug
+    SWAGGER_ENABLED=true
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title=".gitignore">
+    .env
+    .env.*
+    !.env.example
+  </script>
+
+  <p><strong>Step 2: validate at startup.</strong> With <code>@nestjs/config</code> you can pass a <code>validate</code> function. If anything is missing or wrong, Nest fails to boot with a clear message. A crash at deploy time is <em>much</em> better than a crash at the first login.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/config/env.validation.ts">
+    import { plainToInstance, Transform } from 'class-transformer';
+    import { IsBoolean, IsEnum, IsInt, IsString, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
+
+    enum AppEnv { Local = 'local', Staging = 'staging', Production = 'production' }
+
+    class EnvironmentVariables {
+      @IsEnum(AppEnv)
+      APP_ENV: AppEnv;
+
+      @IsInt() @Min(1) @Max(65535)
+      PORT: number = 3000;
+
+      @IsString()
+      @Matches(/^postgres(ql)?:\/\//, { message: 'DATABASE_URL must start with postgresql://' })
+      DATABASE_URL: string;
+
+      @IsString() @MinLength(32)            // a short JWT secret is a security bug
+      JWT_SECRET: string;
+
+      @IsString()
+      CORS_ORIGINS: string;
+
+      // read the ORIGINAL string: implicit conversion would turn "false" into true!
+      @Transform(({ obj }) => obj.SWAGGER_ENABLED === 'true')
+      @IsBoolean()
+      SWAGGER_ENABLED: boolean = false;      // safe default: off
+    }
+
+    export function validate(config: Record<string, unknown>) {
+      const validated = plainToInstance(EnvironmentVariables, config, {
+        enableImplicitConversion: true,      // "3000" → 3000
+      });
+      const errors = validateSync(validated, { skipMissingProperties: false });
+      if (errors.length > 0) {
+        // ✅ lists the variable NAMES that are wrong — never print their values (secrets!)
+        throw new Error(`Invalid environment config:\n${errors.map((e) => ` - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`).join('\n')}`);
+      }
+      return validated;
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { ConfigModule } from '@nestjs/config';
+    import { validate } from './config/env.validation';
+
+    @Module({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          validate,
+          // Locally we read .env; in containers the platform injects real env vars
+          // (real environment variables always win over the file).
+          envFilePath: ['.env.local', '.env'],
+          cache: true,
+        }),
+        // ...
+      ],
+    })
+    export class AppModule {}
+  </script>
+
+  <p><strong>Step 3: read config through a typed service, not <code>process.env</code>.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
+    import { NestFactory } from '@nestjs/core';
+    import { ConfigService } from '@nestjs/config';
+    import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+    import { AppModule } from './app.module';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      const config = app.get(ConfigService);
+
+      app.enableCors({
+        origin: config.getOrThrow<string>('CORS_ORIGINS').split(','), // ✅ per-environment list
+        credentials: true,
+      });
+
+      if (config.get<boolean>('SWAGGER_ENABLED')) {                    // ✅ a setting, not "if prod"
+        const doc = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('Shop API').build());
+        SwaggerModule.setup('docs', app, doc);
+      }
+
+      app.enableShutdownHooks();
+      await app.listen(config.get<number>('PORT', 3000), '0.0.0.0');
+    }
+    bootstrap();
+  </script>
+
+  <p><strong><code>NODE_ENV</code> vs <code>APP_ENV</code>.</strong> Many libraries (Express, some loggers) switch to slower debug behavior unless <code>NODE_ENV=production</code>. So set <code>NODE_ENV=production</code> in <em>both</em> staging and production (staging should behave like production), and use a separate <code>APP_ENV</code> to know <em>which</em> deployed environment you are in (for example, to tag errors in Sentry).</p>
+
+  <p><strong>Where do real secrets live?</strong> Not in Git and not in the Docker image. Use GitHub Environments secrets for the pipeline, and the platform's secret store at runtime (AWS Secrets Manager / SSM, GCP Secret Manager, Doppler, Vault, or your PaaS's env settings). Each environment has <em>different</em> secrets, so a leaked staging key can't touch production.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>As the app grows, group settings by feature with <code>registerAs</code> and inject a typed config object. No more string keys scattered around:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/config/auth.config.ts">
+      import { registerAs } from '@nestjs/config';
+
+      export const authConfig = registerAs('auth', () => ({
+        jwtSecret: process.env.JWT_SECRET!,          // already validated at startup
+        jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+      }));
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.service.ts">
+      import { Inject, Injectable } from '@nestjs/common';
+      import { ConfigType } from '@nestjs/config';
+      import { authConfig } from '../config/auth.config';
+
+      @Injectable()
+      export class AuthService {
+        constructor(
+          @Inject(authConfig.KEY) private readonly auth: ConfigType<typeof authConfig>,
+        ) {}
+
+        tokenTtl() {
+          return this.auth.jwtExpiresIn;   // ✅ typed: string — autocomplete, no typos
+        }
+      }
+    </script>
+    <p>Register it with <code>ConfigModule.forRoot({ load: [authConfig], ... })</code> (or <code>ConfigModule.forFeature(authConfig)</code> inside <code>AuthModule</code>).</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Committing <code>.env</code> to Git. Even if you delete it later, it stays in history. Rotate any secret that was ever committed.</li>
+      <li>Reading <code>process.env.X</code> everywhere with no validation, so a typo in a variable name shows up as <code>undefined</code> in production.</li>
+      <li>Code full of <code>if (NODE_ENV === 'production')</code>, so staging never tests the production code paths.</li>
+      <li>Sharing the same database or API keys between staging and production.</li>
+      <li>Printing the whole config at startup "for debugging", leaking every secret into the logs.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add a new setting <code>ORDER_CANCEL_WINDOW_MINUTES</code> (integer, 1–1440, default 30) that controls how long customers can cancel an order. List every place you must update.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="env.validation.ts">
+        @IsInt() @Min(1) @Max(1440)
+        ORDER_CANCEL_WINDOW_MINUTES: number = 30;
+      </script>
+      <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+        constructor(private readonly config: ConfigService, private readonly prisma: PrismaService) {}
+
+        private canStillCancel(order: { createdAt: Date }): boolean {
+          const minutes = this.config.get<number>('ORDER_CANCEL_WINDOW_MINUTES', 30);
+          return Date.now() - order.createdAt.getTime() <= minutes * 60_000;
+        }
+      </script>
+      <p>Also: add it to <code>.env.example</code>, set it in the staging and production environment settings (or rely on the default), add it to the CI env if tests need a specific value, and mention it in the PR's "Config" section.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you manage configuration across environments in NestJS?</summary>
+      <p>Use <code>@nestjs/config</code> with environment variables, validate them at startup (class-validator or Joi), read them via <code>ConfigService</code> or typed <code>registerAs</code> namespaces, commit only <code>.env.example</code>, and inject real secrets from a secret manager or the deployment platform per environment.</p></details>
+    <details><summary>Why validate environment variables at startup?</summary>
+      <p>To fail fast. A missing or malformed variable stops the deploy immediately with a clear message, instead of causing confusing runtime errors later, possibly only on a rarely used code path.</p></details>
+    <details><summary>What is the purpose of a staging environment?</summary>
+      <p>To test the exact artifact and configuration shape that will go to production, with production-like infrastructure but separate data and secrets. It catches deployment, migration and integration problems before real users see them.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Same code, different config: env vars validated at startup, typed access through <code>ConfigService</code>, behavior controlled by settings (not "if prod"), and separate secrets per environment.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="monitoring">
+  <div class="topic-head"><span class="num">9</span><h2>Monitoring</h2></div>
+  <p class="tagline">error tracking and uptime checks</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Once your app is live, you can't watch it with your own eyes. Monitoring is the dashboard of a car: the speedometer (traffic), the temperature light (errors), the fuel gauge (database connections). <strong>Uptime checks</strong> are a friend who calls your shop every minute and tells you if nobody answers. <strong>Error tracking</strong> is a black box recorder: when something crashes, it saves exactly what happened (stack trace, request, user, version). The goal: <em>you</em> find out about problems before your customers tell you on Twitter.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The building blocks.</strong></p>
+  <table>
+    <tr><th>Tool type</th><th>Answers</th><th>Examples</th></tr>
+    <tr><td>Health endpoint</td><td>"Is this instance alive and can it reach the DB?"</td><td><code>@nestjs/terminus</code></td></tr>
+    <tr><td>Uptime check</td><td>"Can users reach the API from the internet?"</td><td>UptimeRobot, Better Stack, Pingdom, Checkly</td></tr>
+    <tr><td>Error tracking</td><td>"What crashed, where, for whom, since which release?"</td><td>Sentry, Rollbar, Bugsnag</td></tr>
+    <tr><td>Logs</td><td>"What exactly happened in this request?"</td><td>Pino JSON logs → Loki, CloudWatch, Datadog</td></tr>
+    <tr><td>Metrics</td><td>"How many requests, how slow, how many errors, over time?"</td><td>Prometheus + Grafana, Datadog, OpenTelemetry</td></tr>
+    <tr><td>Alerting</td><td>"Wake someone up when it matters"</td><td>PagerDuty, Opsgenie, Slack alerts</td></tr>
+  </table>
+  <p>Google's SRE book suggests watching four "golden signals" for every service: <strong>latency</strong> (how slow), <strong>traffic</strong> (how many requests), <strong>errors</strong> (how many fail), <strong>saturation</strong> (how full: CPU, memory, DB pool).</p>
+
+  <p><strong>Step 1: a health endpoint with Terminus.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @nestjs/terminus
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/health/health.controller.ts">
+    import { Controller, Get } from '@nestjs/common';
+    import {
+      HealthCheck, HealthCheckService, MemoryHealthIndicator, PrismaHealthIndicator,
+    } from '@nestjs/terminus';
+    import { PrismaService } from '../prisma/prisma.service';
+
+    @Controller('health')
+    export class HealthController {
+      constructor(
+        private readonly health: HealthCheckService,
+        private readonly prismaHealth: PrismaHealthIndicator,
+        private readonly memory: MemoryHealthIndicator,
+        private readonly prisma: PrismaService,
+      ) {}
+
+      // Liveness: "is the process OK?" — cheap, no external dependencies
+      @Get('live')
+      live() {
+        return { status: 'ok' };
+      }
+
+      // Readiness: "can this instance serve traffic?" — checks the database
+      @Get()
+      @HealthCheck()
+      check() {
+        return this.health.check([
+          () => this.prismaHealth.pingCheck('database', this.prisma, { timeout: 1500 }),
+          () => this.memory.checkHeap('memory_heap', 512 * 1024 * 1024), // 512 MB
+        ]);
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/health/health.module.ts">
+    import { Module } from '@nestjs/common';
+    import { TerminusModule } from '@nestjs/terminus';
+    import { HealthController } from './health.controller';
+    import { PrismaModule } from '../prisma/prisma.module';
+
+    @Module({
+      imports: [TerminusModule, PrismaModule],
+      controllers: [HealthController],
+    })
+    export class HealthModule {}
+  </script>
+  <script type="text/x-code" data-lang="http">
+    GET /health  →  200 OK
+    {"status":"ok","info":{"database":{"status":"up"},"memory_heap":{"status":"up"}},"error":{},"details":{...}}
+
+    GET /health  →  503 Service Unavailable   (when Postgres is down)
+    {"status":"error","error":{"database":{"status":"down","message":"timeout of 1500ms exceeded"}},...}
+  </script>
+  <p>The orchestrator (Docker, Kubernetes, ECS) uses these endpoints: if <em>liveness</em> fails, restart the container; if <em>readiness</em> fails, stop sending it traffic. Don't put the database check in liveness: if the DB is down, restarting every API container won't fix it and only makes things worse.</p>
+
+  <p><strong>Step 2: uptime checks from outside.</strong> Your health endpoint can say "OK" while DNS, TLS or the load balancer is broken. An external service calls <code>https://api.shop.com/health</code> every minute from several regions, and alerts you (Slack, SMS) after e.g. 2 failures in a row. Also monitor the TLS certificate expiry date. Expired certificates still cause big outages every year.</p>
+
+  <p><strong>Step 3: error tracking with Sentry.</strong> The official <code>@sentry/nestjs</code> SDK captures unhandled exceptions with stack traces, request data and the release version.</p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @sentry/nestjs
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/instrument.ts">
+    import * as Sentry from '@sentry/nestjs';
+
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,               // empty in local dev → Sentry is disabled
+      environment: process.env.APP_ENV,          // staging / production
+      release: process.env.APP_VERSION,          // git SHA from the CD pipeline
+      tracesSampleRate: 0.1,                     // 10% of requests for performance tracing
+      sendDefaultPii: false,                     // ✅ don't send IPs/cookies by default
+    });
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
+    import './instrument';                       // ✅ MUST be the first import
+    import { NestFactory } from '@nestjs/core';
+    import { AppModule } from './app.module';
+    // ...bootstrap as before
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { APP_FILTER } from '@nestjs/core';
+    import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+
+    @Module({
+      imports: [SentryModule.forRoot(), /* ConfigModule, HealthModule, ... */],
+      providers: [
+        { provide: APP_FILTER, useClass: SentryGlobalFilter },  // reports unexpected errors
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <p>Sentry groups identical errors into one <em>issue</em>, tells you "first seen in release <code>a1b2c3d</code>", and counts affected users. Expected errors like a 404 or a 400 validation failure are <em>not</em> bugs. Report 5xx errors, not every <code>HttpException</code>, or the real problems drown in noise.</p>
+
+  <p><strong>Step 4: structured logs.</strong> Logs should be JSON with a request ID, so you can search "all logs for request X" or "all errors for user 42".</p>
+  <script type="text/x-code" data-lang="json" data-title="one log line (nestjs-pino)">
+    {"level":"error","time":"2026-10-05T09:12:44.120Z","req":{"id":"7f3a…","method":"POST","url":"/orders"},
+     "userId":42,"orderId":1881,"msg":"Payment provider timeout","err":{"type":"TimeoutError","stack":"…"}}
+  </script>
+
+  <p><strong>Step 5: alert on symptoms, not on everything.</strong> Good alerts are rare, urgent and actionable. "Error rate &gt; 2% for 5 minutes", "p95 latency &gt; 1 s for 10 minutes", "uptime check failed twice". Bad alerts: "CPU &gt; 70% once" (nobody can act on it, so people start ignoring all alerts). Each alert should link to a short <em>runbook</em>: what it means and the first steps to take.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Combine logs and error tracking in one global filter: log every server error with context, and return a safe message to the client. Never leak stack traces in production responses.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/common/all-exceptions.filter.ts">
+      import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+      import * as Sentry from '@sentry/nestjs';
+      import { Request, Response } from 'express';
+
+      @Catch()
+      export class AllExceptionsFilter implements ExceptionFilter {
+        private readonly logger = new Logger('Exceptions');
+
+        catch(exception: unknown, host: ArgumentsHost) {
+          const ctx = host.switchToHttp();
+          const req = ctx.getRequest<Request>();
+          const res = ctx.getResponse<Response>();
+
+          const status = exception instanceof HttpException
+            ? exception.getStatus()
+            : HttpStatus.INTERNAL_SERVER_ERROR;
+
+          if (status >= 500) {
+            Sentry.captureException(exception);                       // only real bugs
+            this.logger.error(`${req.method} ${req.url} failed`, (exception as Error)?.stack);
+          }
+
+          res.status(status).json(
+            exception instanceof HttpException
+              ? exception.getResponse()
+              : { statusCode: 500, message: 'Internal server error' }, // ✅ no stack trace to clients
+          );
+        }
+      }
+    </script>
+    <p>If you register your own catch-all filter like this, use it <em>instead of</em> <code>SentryGlobalFilter</code> (or decorate its <code>catch</code> method with <code>@SentryExceptionCaptured()</code>), so errors are not reported twice.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>A <code>/health</code> endpoint that always returns 200 without checking anything, so it says "healthy" while the database is down.</li>
+      <li>Checking the database in the <em>liveness</em> probe, causing restart storms when the DB has a short hiccup.</li>
+      <li>Sending every 4xx to Sentry. Quota gone, real bugs invisible.</li>
+      <li>Logging passwords, tokens, full card numbers or entire request bodies. Logs are copied to many systems and kept for a long time.</li>
+      <li>Too many noisy alerts, so the team mutes the channel and misses the real outage.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Design minimal monitoring for a small shop API (1 region, 2 instances, Postgres). Name: the endpoints, the external checks, what goes to Sentry, and three alerts with thresholds.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>Endpoints:</strong> <code>GET /health/live</code> (process only) for liveness, <code>GET /health</code> (DB ping + memory) for readiness and the Docker <code>HEALTHCHECK</code>.</li>
+        <li><strong>External:</strong> uptime check on <code>https://api.shop.com/health</code> every 60 s from 3 regions; TLS expiry alert 14 days before.</li>
+        <li><strong>Sentry:</strong> unhandled exceptions and 5xx, with <code>environment</code> = <code>APP_ENV</code> and <code>release</code> = git SHA; no PII.</li>
+        <li><strong>Alerts:</strong> (1) uptime check fails 2× in a row → page on-call; (2) 5xx rate &gt; 2% for 5 min → page; (3) p95 latency &gt; 1 s for 10 min → Slack (not a page). Plus a Sentry alert on any <em>new</em> issue after a deploy.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between liveness and readiness checks?</summary>
+      <p>Liveness asks "is the process stuck or broken?"; failing it makes the orchestrator restart the container. Readiness asks "can this instance handle traffic right now?" (DB reachable, warmed up); failing it only removes the instance from the load balancer until it recovers.</p></details>
+    <details><summary>Logs, metrics and traces: what's the difference?</summary>
+      <p>Logs are detailed records of individual events. Metrics are numbers aggregated over time (request rate, error rate, latency percentiles), cheap to store and good for alerts. Traces follow one request across services and show where time was spent. Together they are called the three pillars of observability.</p></details>
+    <details><summary>What makes a good alert?</summary>
+      <p>It fires on a user-visible symptom (errors, latency, downtime), not on every internal blip; it is urgent and actionable; it has a clear owner; and it links to a runbook. If an alert is regularly ignored, fix or delete it.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Health endpoints (live vs ready), external uptime checks, error tracking tagged with environment and release, structured logs without secrets, and a few actionable alerts on user-visible symptoms.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Security.html">← Prev: 10. Security</a>
+  <a href="Senior-Engineering-Mindset.html">Next: 12. Senior Engineering Mindset →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TypeScript Mastery</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 1 of 12</span>
+  </nav>
+  <h1>1. TypeScript Mastery</h1>
+  <p class="goal"><strong>Goal:</strong> Become comfortable writing TypeScript without copying patterns blindly.</p>
+  <p class="howto">How to use this page: read each point top to bottom, type the examples yourself (in the <a href="https://www.typescriptlang.org/play" target="_blank" rel="noopener">TypeScript Playground</a> or a local project), do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#variables-and-types">Variables and types</a></li>
+      <li><a href="#interfaces-vs-types">Interfaces vs types</a></li>
+      <li><a href="#functions">Functions</a></li>
+      <li><a href="#generics">Generics</a></li>
+      <li><a href="#union-intersection">Union &amp; intersection types</a></li>
+      <li><a href="#enums">Enums</a></li>
+      <li><a href="#oop">OOP</a></li>
+      <li><a href="#inheritance">Inheritance</a></li>
+      <li><a href="#structural-typing">Structural typing</a></li>
+      <li><a href="#decorators">Decorators</a></li>
+      <li><a href="#async">Async TypeScript</a></li>
+      <li><a href="#utility-types">Utility types</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#tsconfig">tsconfig</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="variables-and-types">
+  <div class="topic-head"><span class="num">1</span><h2>Variables and types</h2></div>
+  <p class="tagline">let, const, type inference, strict mode</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>JavaScript lets any variable hold anything, at any time. TypeScript adds a <em>label</em> to each variable that says what kind of value it is allowed to hold. If you break the rule, the editor underlines it in red <strong>before</strong> you run the code. The labels disappear when the code is compiled to JavaScript. They exist only to help you while writing.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong><code>const</code> vs <code>let</code>.</strong> Use <code>const</code> when the variable will never be re-assigned, and <code>let</code> when it will. Never use <code>var</code>: it ignores block scope (<code>{ }</code>) and leads to confusing bugs. A good habit is to always start with <code>const</code> and switch to <code>let</code> only when the compiler tells you that you re-assign it.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const appName = 'shop-api';   // cannot be re-assigned
+    let retries = 0;               // can change
+    retries = retries + 1;         // ✅ ok
+    // appName = 'other';          // ❌ Cannot assign to 'appName' because it is a constant.
+
+    // Note: const protects the variable, NOT the object inside it
+    const user = { name: 'An' };
+    user.name = 'Binh';            // ✅ allowed — we changed a property, not the variable
+  </script>
+
+  <p><strong>Basic types.</strong> The primitive types are <code>string</code>, <code>number</code> (integers and decimals are both <code>number</code>), <code>boolean</code>, <code>null</code>, <code>undefined</code>, <code>bigint</code> and <code>symbol</code>. You write a type after a colon:</p>
+  <script type="text/x-code" data-lang="typescript">
+    let username: string = 'khy';
+    let age: number = 27;
+    let isAdmin: boolean = false;
+
+    let tags: string[] = ['backend', 'nestjs'];     // array of strings
+    let scores: Array<number> = [9, 8.5, 10];       // same thing, generic syntax
+
+    let point: [number, number] = [10, 20];         // tuple: fixed length + fixed types per position
+
+    let product: { id: number; title: string; price?: number } = {
+      id: 1,
+      title: 'Keyboard',
+      // price is optional because of the "?"
+    };
+  </script>
+
+  <p><strong>Type inference.</strong> You do <em>not</em> need to write the type everywhere. TypeScript looks at the value and works out the type for you. This is called <em>inference</em>. Good TypeScript code writes types at the "edges" (function parameters, public APIs) and lets inference handle the rest.</p>
+  <script type="text/x-code" data-lang="typescript">
+    let city = 'Hanoi';      // inferred: string
+    city = 42;               // ❌ Type 'number' is not assignable to type 'string'.
+
+    const role = 'admin';    // inferred: the literal type 'admin' (const can never change)
+    let role2 = 'admin';     // inferred: string (let might change later)
+
+    const prices = [10, 20, 30];               // inferred: number[]
+    const total = prices.reduce((a, b) => a + b, 0); // inferred: number
+  </script>
+
+  <p><strong><code>any</code> vs <code>unknown</code>.</strong> <code>any</code> switches off type checking: anything goes, so bugs slip through. <code>unknown</code> means "I don't know the type yet". It is safe because TypeScript forces you to <em>check</em> the value before you use it.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const a: any = JSON.parse('{"x":1}');
+    a.foo.bar.baz();             // compiles 😱 — crashes at runtime
+
+    const u: unknown = JSON.parse('{"x":1}');
+    // u.x;                      // ❌ 'u' is of type 'unknown'
+    if (typeof u === 'object' && u !== null && 'x' in u) {
+      console.log((u as { x: number }).x);  // ✅ checked first
+    }
+  </script>
+
+  <p><strong>Strict mode.</strong> In <code>tsconfig.json</code>, <code>"strict": true</code> turns on a group of safety checks. The two most important ones:</p>
+  <ul>
+    <li><code>strictNullChecks</code>: <code>null</code> and <code>undefined</code> are no longer allowed in every type. You must handle them explicitly. This catches the classic "Cannot read properties of undefined" bug.</li>
+    <li><code>noImplicitAny</code>: if TypeScript can't infer a type, it reports an error instead of silently using <code>any</code>.</li>
+  </ul>
+  <script type="text/x-code" data-lang="typescript">
+    function findUser(id: number): { name: string } | undefined {
+      return id === 1 ? { name: 'An' } : undefined;
+    }
+
+    const found = findUser(2);
+    // console.log(found.name);   // ❌ with strict: 'found' is possibly 'undefined'
+    console.log(found?.name);      // ✅ optional chaining → undefined instead of crash
+    if (found) console.log(found.name); // ✅ narrowed: found is { name: string } here
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A new Nest project (<code>nest new</code>) sets <code>strictNullChecks</code> but not full <code>strict</code>. Many teams switch on <code>"strict": true</code> right away. With strict mode, Prisma's <code>findUnique()</code> returns <code>User | null</code>, so the compiler <em>forces</em> you to handle "user not found", which is usually where you throw a <code>NotFoundException</code>.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+      async findOne(id: number) {
+        const user = await this.prisma.user.findUnique({ where: { id } }); // User | null
+        if (!user) throw new NotFoundException(`User ${id} not found`);
+        return user; // TypeScript now knows: User (not null)
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>any</code> to "make the red line go away". You lose all protection. Prefer <code>unknown</code> or a real type.</li>
+      <li>Thinking <code>const</code> makes an object immutable. It only prevents re-assignment. Use <code>readonly</code> or <code>as const</code> for immutability.</li>
+      <li>Writing types for everything (<code>const x: number = 5</code>). Let inference work. Annotate parameters and return types of public functions.</li>
+      <li>Using <code>String</code> / <code>Number</code> (capital letter). Those are wrapper objects. Always use lowercase <code>string</code> / <code>number</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Declare a variable <code>config</code> with a <code>port</code> (number), <code>host</code> (string), an optional <code>debug</code> (boolean) and <code>allowedOrigins</code> (array of strings). Then write a line that would cause a type error, and explain why.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        let config: {
+          port: number;
+          host: string;
+          debug?: boolean;
+          allowedOrigins: string[];
+        } = {
+          port: 3000,
+          host: 'localhost',
+          allowedOrigins: ['http://localhost:5173'],
+        };
+
+        config.port = '3000'; // ❌ Type 'string' is not assignable to type 'number'.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between <code>any</code> and <code>unknown</code>?</summary>
+      <p>Both accept any value. With <code>any</code>, TypeScript stops checking, so you can call anything on it. With <code>unknown</code>, you must narrow the type (with <code>typeof</code>, <code>instanceof</code>, a type guard…) before using it. <code>unknown</code> is the type-safe choice.</p></details>
+    <details><summary>Do TypeScript types exist at runtime?</summary>
+      <p>No. Types are erased during compilation, and the output is plain JavaScript. That's why you still need runtime validation (e.g. <code>class-validator</code>) for data coming from HTTP requests.</p></details>
+    <details><summary>What does <code>strictNullChecks</code> do?</summary>
+      <p>It removes <code>null</code> and <code>undefined</code> from every type unless you add them explicitly (e.g. <code>string | null</code>). The compiler then forces you to handle missing values, which prevents many runtime crashes.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Start with <code>const</code>, let inference do the work, annotate the edges, avoid <code>any</code>, and always turn on <code>strict</code>.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="interfaces-vs-types">
+  <div class="topic-head"><span class="num">2</span><h2>Interfaces vs types</h2></div>
+  <p class="tagline">know when to use each and why</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Both <code>interface</code> and <code>type</code> let you give a <em>name</em> to a shape, so you can write <code>User</code> instead of repeating <code>{ id: number; email: string }</code> everywhere. For describing objects they are 90% the same. The difference is in the edge cases: <code>type</code> can describe <em>anything</em> (unions, primitives, tuples), while <code>interface</code> only describes object shapes but can be <em>extended and merged</em>.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <script type="text/x-code" data-lang="typescript">
+    // Same thing, two syntaxes
+    interface UserA {
+      id: number;
+      email: string;
+    }
+
+    type UserB = {
+      id: number;
+      email: string;
+    };
+
+    const u1: UserA = { id: 1, email: 'a@x.com' };
+    const u2: UserB = u1; // ✅ compatible — same shape
+  </script>
+
+  <p><strong>Things only <code>type</code> can do:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    type ID = string | number;                         // union
+    type Status = 'pending' | 'paid' | 'cancelled';    // union of string literals
+    type Coordinates = [lat: number, lng: number];     // tuple
+    type Handler = (req: Request) => Promise<void>;    // function type (interface can too, but type is nicer)
+    type Nullable<T> = T | null;                       // generic alias
+    type UserKeys = keyof UserA;                       // 'id' | 'email' — computed types
+  </script>
+
+  <p><strong>Things only <code>interface</code> can do:</strong> <em>declaration merging</em>. If you declare the same interface twice, TypeScript merges them. Libraries use this to let you <em>add</em> properties to their types.</p>
+  <script type="text/x-code" data-lang="typescript">
+    interface Settings { theme: string; }
+    interface Settings { language: string; }   // merged!
+
+    const s: Settings = { theme: 'dark', language: 'en' }; // both required
+
+    // type Settings2 = { a: string };
+    // type Settings2 = { b: string };          // ❌ Duplicate identifier 'Settings2'.
+  </script>
+
+  <p><strong>Extending:</strong> interfaces use <code>extends</code>, types use <code>&amp;</code> (intersection). Both work. <code>extends</code> gives clearer error messages and is slightly faster for the compiler on big hierarchies.</p>
+  <script type="text/x-code" data-lang="typescript">
+    interface Entity { id: number; createdAt: Date; }
+    interface Post extends Entity { title: string; }
+
+    type EntityT = { id: number; createdAt: Date };
+    type PostT = EntityT & { title: string };
+  </script>
+
+  <table>
+    <tr><th>Need</th><th>Use</th></tr>
+    <tr><td>Shape of an object / class contract</td><td><code>interface</code> (or <code>type</code>, just be consistent)</td></tr>
+    <tr><td>Union, tuple, primitive alias, function type</td><td><code>type</code> (only option)</td></tr>
+    <tr><td>Mapped / computed types (<code>keyof</code>, <code>Partial</code>…)</td><td><code>type</code></td></tr>
+    <tr><td>Augmenting a library type (e.g. Express <code>Request</code>)</td><td><code>interface</code> (declaration merging)</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A classic use of declaration merging is adding <code>user</code> to Express's <code>Request</code> after authentication:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="types/express.d.ts">
+      import { JwtPayload } from '../auth/jwt-payload.type';
+
+      declare global {
+        namespace Express {
+          interface Request {
+            user?: JwtPayload; // now req.user is typed everywhere
+          }
+        }
+      }
+    </script>
+    <p>Note that DTOs in Nest are <strong>classes</strong>, not interfaces or types. Classes exist at runtime, so <code>ValidationPipe</code> and Swagger can read them. Interfaces and types vanish after compilation.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using an <code>interface</code> for a request DTO in Nest. Validation decorators can't run on it, because it doesn't exist at runtime. Use a <code>class</code>.</li>
+      <li>Mixing <code>interface</code> and <code>type</code> randomly in one codebase. Pick a team convention (e.g. "interface for objects, type for everything else").</li>
+      <li>Accidentally merging an interface with an existing global one (e.g. naming yours <code>Request</code> or <code>Event</code>).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create: (1) a type <code>OrderStatus</code> that can only be <code>'new'</code>, <code>'shipped'</code> or <code>'delivered'</code>; (2) an interface <code>BaseEntity</code> with <code>id</code> and <code>createdAt</code>; (3) an interface <code>Order</code> that extends <code>BaseEntity</code> and has a <code>status</code> and a <code>total</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        type OrderStatus = 'new' | 'shipped' | 'delivered';
+
+        interface BaseEntity {
+          id: number;
+          createdAt: Date;
+        }
+
+        interface Order extends BaseEntity {
+          status: OrderStatus;
+          total: number;
+        }
+
+        const o: Order = { id: 1, createdAt: new Date(), status: 'new', total: 99 };
+        // o.status = 'lost'; // ❌ not assignable to type 'OrderStatus'
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>When must you use <code>type</code> instead of <code>interface</code>?</summary>
+      <p>For anything that isn't an object shape: unions (<code>'a' | 'b'</code>), tuples, primitive aliases, and mapped/conditional types.</p></details>
+    <details><summary>What is declaration merging?</summary>
+      <p>When two <code>interface</code> declarations have the same name in the same scope, TypeScript combines their members into one interface. It's used to extend third-party types, such as adding <code>user</code> to Express's <code>Request</code>.</p></details>
+    <details><summary>Why are NestJS DTOs classes rather than interfaces?</summary>
+      <p>Interfaces are erased at compile time. Classes remain as JavaScript constructors, so decorators (<code>@IsEmail()</code>, <code>@ApiProperty()</code>) can attach metadata that <code>ValidationPipe</code> and Swagger read at runtime.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>interface</code> = extendable object contract. <code>type</code> = can name <em>any</em> type. For runtime validation in Nest, use a <code>class</code>.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="functions">
+  <div class="topic-head"><span class="num">3</span><h2>Functions</h2></div>
+  <p class="tagline">optional/default params, overloads, arrow functions</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A typed function is like a vending machine with clear labels: "put in <em>these</em> things, you will get <em>this</em> thing back". TypeScript checks every place you call the function, so you can't forget a parameter or pass the wrong kind.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Parameter and return types:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    function add(a: number, b: number): number {
+      return a + b;
+    }
+
+    add(1, 2);      // ✅ 3
+    // add(1);      // ❌ Expected 2 arguments, but got 1.
+    // add(1, '2'); // ❌ Argument of type 'string' is not assignable to parameter of type 'number'.
+  </script>
+  <p>Return types are usually inferred, but writing them on <em>exported</em> functions is good practice. It documents the contract and catches mistakes inside the function body.</p>
+
+  <p><strong>Optional (<code>?</code>) and default parameters:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    function greet(name: string, greeting?: string): string {
+      // greeting is string | undefined
+      return `${greeting ?? 'Hello'}, ${name}`;
+    }
+
+    function paginate(page = 1, limit = 20) { // types inferred as number
+      return { skip: (page - 1) * limit, take: limit };
+    }
+
+    greet('An');            // "Hello, An"
+    greet('An', 'Hi');      // "Hi, An"
+    paginate();             // { skip: 0, take: 20 }
+    paginate(3);            // { skip: 40, take: 20 }
+  </script>
+  <p>Optional parameters must come <em>after</em> required ones.</p>
+
+  <p><strong>Rest parameters</strong> collect "the rest" into an array:</p>
+  <script type="text/x-code" data-lang="typescript">
+    function sum(...nums: number[]): number {
+      return nums.reduce((acc, n) => acc + n, 0);
+    }
+    sum(1, 2, 3, 4); // 10
+  </script>
+
+  <p><strong>Arrow functions</strong> are a shorter syntax. They also do <em>not</em> have their own <code>this</code>: they use the <code>this</code> of the surrounding code. That makes them perfect for callbacks inside classes.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const multiply = (a: number, b: number): number => a * b;
+    const toUpper = (s: string) => s.toUpperCase();   // return type inferred
+
+    // Function TYPE (describes a function's shape)
+    type Mapper = (input: string) => string;
+    const shout: Mapper = (s) => s.toUpperCase() + '!'; // s is inferred as string
+
+    class Counter {
+      count = 0;
+      start() {
+        setInterval(() => { this.count++; }, 1000);        // ✅ arrow keeps 'this'
+        // setInterval(function () { this.count++; }, 1000); // ❌ 'this' is wrong here
+      }
+    }
+  </script>
+
+  <p><strong><code>void</code> and <code>never</code>:</strong> <code>void</code> means "returns nothing useful". <code>never</code> means "never returns at all", because it always throws or loops forever.</p>
+  <script type="text/x-code" data-lang="typescript">
+    function log(msg: string): void { console.log(msg); }
+    function fail(msg: string): never { throw new Error(msg); }
+  </script>
+
+  <p><strong>Overloads</strong> let one function have several call signatures. You write the "public" signatures first, then <em>one</em> implementation that handles all of them.</p>
+  <script type="text/x-code" data-lang="typescript">
+    function parse(value: string): number;          // overload 1
+    function parse(value: string[]): number[];      // overload 2
+    function parse(value: string | string[]) {      // implementation (not callable directly)
+      return Array.isArray(value) ? value.map(Number) : Number(value);
+    }
+
+    const one = parse('42');          // type: number
+    const many = parse(['1', '2']);   // type: number[]
+  </script>
+  <p>Without overloads, both calls would return <code>number | number[]</code> and you'd have to check every time. If a union parameter is enough, prefer that. Use overloads only when the <em>return type depends on the input type</em>.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Every controller handler and service method is a typed function. Default parameters show up in query handling, and async methods return <code>Promise&lt;T&gt;</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products.service.ts">
+      async findAll(page = 1, limit = 20): Promise<Product[]> {
+        return this.prisma.product.findMany({
+          skip: (page - 1) * limit,
+          take: limit,
+        });
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using a regular <code>function</code> as a callback inside a class and losing <code>this</code>. Use an arrow function.</li>
+      <li>Putting an optional parameter before a required one. Not allowed, so reorder them or use an options object.</li>
+      <li>Too many positional parameters (<code>createUser(a, b, c, d, e)</code>). With more than 3, pass one object: <code>createUser({ email, name, role })</code>.</li>
+      <li>Writing overloads when a simple union would do.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a function <code>formatPrice(amount, currency?)</code> that returns a string like <code>"10.00 USD"</code>. The currency defaults to <code>"USD"</code>. Then write it again as an arrow function stored in a variable of type <code>PriceFormatter</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        function formatPrice(amount: number, currency = 'USD'): string {
+          return `${amount.toFixed(2)} ${currency}`;
+        }
+
+        type PriceFormatter = (amount: number, currency?: string) => string;
+        const formatPrice2: PriceFormatter = (amount, currency = 'USD') =>
+          `${amount.toFixed(2)} ${currency}`;
+
+        formatPrice(10);          // "10.00 USD"
+        formatPrice2(5.5, 'VND'); // "5.50 VND"
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between an arrow function and a regular function?</summary>
+      <p>Arrow functions don't have their own <code>this</code>, <code>arguments</code> or <code>prototype</code>, and can't be used with <code>new</code>. They capture <code>this</code> from the surrounding scope, which makes them ideal for callbacks.</p></details>
+    <details><summary>What's the difference between <code>void</code> and <code>never</code>?</summary>
+      <p><code>void</code>: the function finishes but returns nothing meaningful. <code>never</code>: the function never finishes normally (it always throws or loops forever). <code>never</code> is also used for exhaustive checks.</p></details>
+    <details><summary>When would you use function overloads?</summary>
+      <p>When the return type depends on the type of the arguments, and you want callers to get a precise type without manual checks.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Type the parameters, let the return type be inferred (but write it on exported functions), use arrow functions for callbacks, and use an options object for many parameters.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="generics">
+  <div class="topic-head"><span class="num">4</span><h2>Generics</h2></div>
+  <p class="tagline">generic functions, classes and constraints</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A generic is a <em>type parameter</em>: a placeholder for a type that will be filled in later. Think of a box with a label slot. <code>Box&lt;T&gt;</code> means "a box of <em>something</em>". When you use it, you say <code>Box&lt;Apple&gt;</code> or <code>Box&lt;Book&gt;</code>, and TypeScript remembers what's inside. You write the code once and it works for many types, <em>without</em> losing type safety the way <code>any</code> would.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The problem generics solve:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    function firstAny(arr: any[]): any { return arr[0]; }
+    const x = firstAny([1, 2, 3]);   // x: any — we lost the type 😞
+
+    function first<T>(arr: T[]): T | undefined { return arr[0]; }
+    const n = first([1, 2, 3]);      // n: number | undefined ✅
+    const s = first(['a', 'b']);     // s: string | undefined ✅
+    // T is inferred from the argument — you rarely write first<number>(...) yourself
+  </script>
+
+  <p><strong>Generic types and interfaces:</strong> very common for API responses.</p>
+  <script type="text/x-code" data-lang="typescript">
+    interface ApiResponse<T> {
+      data: T;
+      success: boolean;
+      message?: string;
+    }
+
+    interface Paginated<T> {
+      items: T[];
+      total: number;
+      page: number;
+    }
+
+    type User = { id: number; name: string };
+
+    const res: ApiResponse<Paginated<User>> = {
+      success: true,
+      data: { items: [{ id: 1, name: 'An' }], total: 1, page: 1 },
+    };
+    res.data.items[0].name; // fully typed: string
+  </script>
+
+  <p><strong>Generic classes:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    class InMemoryCache<T> {
+      private store = new Map<string, T>();
+
+      set(key: string, value: T): void { this.store.set(key, value); }
+      get(key: string): T | undefined { return this.store.get(key); }
+    }
+
+    const userCache = new InMemoryCache<User>();
+    userCache.set('1', { id: 1, name: 'An' });
+    // userCache.set('2', 'hello'); // ❌ string is not a User
+  </script>
+
+  <p><strong>Constraints (<code>extends</code>)</strong> limit what <code>T</code> can be, so you can safely use its properties:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // T must have an id
+    function findById<T extends { id: number }>(items: T[], id: number): T | undefined {
+      return items.find((item) => item.id === id); // ✅ we know item.id exists
+    }
+
+    // K must be one of the keys of T
+    function getProp<T, K extends keyof T>(obj: T, key: K): T[K] {
+      return obj[key];
+    }
+
+    const user = { id: 1, name: 'An', age: 27 };
+    getProp(user, 'name');   // type: string
+    getProp(user, 'age');    // type: number
+    // getProp(user, 'email'); // ❌ '"email"' is not assignable to '"id" | "name" | "age"'
+  </script>
+
+  <p><strong>Default type parameters:</strong> <code>interface ApiResponse&lt;T = unknown&gt;</code> lets you write <code>ApiResponse</code> without specifying T.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Generics are everywhere: <code>Promise&lt;User&gt;</code>, <code>Repository&lt;T&gt;</code>, <code>ConfigService.get&lt;string&gt;('DB_URL')</code>, interceptors typed as <code>NestInterceptor&lt;T, Response&lt;T&gt;&gt;</code>. A common pattern is a generic response wrapper:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="transform.interceptor.ts">
+      export interface Response<T> { data: T; timestamp: string; }
+
+      @Injectable()
+      export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+        intercept(ctx: ExecutionContext, next: CallHandler<T>): Observable<Response<T>> {
+          return next.handle().pipe(
+            map((data) => ({ data, timestamp: new Date().toISOString() })),
+          );
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>any</code> where a generic would keep the type.</li>
+      <li>Adding generics that are used only once (<code>function log&lt;T&gt;(x: T): void</code>). If T doesn't connect two things (input → output), you probably don't need it.</li>
+      <li>Forgetting a constraint, then getting "Property 'id' does not exist on type 'T'".</li>
+      <li>Naming generics badly in complex code. <code>T</code> is fine for simple cases, but <code>TEntity</code>, <code>TKey</code> read better in bigger ones.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a generic function <code>groupBy(items, key)</code> that groups an array of objects by one of their keys and returns a <code>Record&lt;string, T[]&gt;</code>. Example: grouping users by <code>role</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        function groupBy<T, K extends keyof T>(items: T[], key: K): Record<string, T[]> {
+          return items.reduce((groups, item) => {
+            const groupKey = String(item[key]);
+            (groups[groupKey] ??= []).push(item);
+            return groups;
+          }, {} as Record<string, T[]>);
+        }
+
+        const users = [
+          { name: 'An', role: 'admin' },
+          { name: 'Binh', role: 'user' },
+          { name: 'Chi', role: 'user' },
+        ];
+        groupBy(users, 'role');
+        // { admin: [{An}], user: [{Binh}, {Chi}] }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why use generics instead of <code>any</code>?</summary>
+      <p>Generics keep the relationship between input and output types. <code>first&lt;T&gt;(arr: T[]): T</code> returns the exact element type, while <code>any</code> throws the type information away.</p></details>
+    <details><summary>What does <code>&lt;T extends X&gt;</code> mean?</summary>
+      <p>It's a constraint: T can be any type, as long as it's assignable to X. That allows you to use X's properties inside the function.</p></details>
+    <details><summary>Explain <code>K extends keyof T</code>.</summary>
+      <p><code>keyof T</code> is the union of T's property names. <code>K extends keyof T</code> means K must be one of those names, and <code>T[K]</code> is the type of that property.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Generics are "type parameters". Use them when you need to keep a connection between types (input → output), and add <code>extends</code> constraints when you need to use properties.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="union-intersection">
+  <div class="topic-head"><span class="num">5</span><h2>Union &amp; intersection types</h2></div>
+  <p class="tagline">narrowing and discriminated unions</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p><strong>Union</strong> (<code>A | B</code>) means "<em>either</em> A <em>or</em> B", like a parcel that is either a letter or a box. <strong>Intersection</strong> (<code>A &amp; B</code>) means "<em>both</em> A <em>and</em> B at the same time", like a person who is both an employee and a student. <strong>Narrowing</strong> is the process of checking which one you actually have, after which TypeScript knows the exact type.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Union types and narrowing:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    function formatId(id: string | number): string {
+      // id.toUpperCase(); // ❌ not available on number
+      if (typeof id === 'string') {
+        return id.toUpperCase();     // here id: string
+      }
+      return id.toFixed(0);          // here id: number
+    }
+  </script>
+  <p>Ways to narrow:</p>
+  <ul>
+    <li><code>typeof x === 'string'</code> for primitives</li>
+    <li><code>x instanceof Date</code> for classes</li>
+    <li><code>'prop' in x</code> to check whether an object has a property</li>
+    <li><code>x === null</code>, <code>if (x)</code> for null/undefined (truthiness)</li>
+    <li><code>Array.isArray(x)</code> for arrays</li>
+    <li>A custom <strong>type guard</strong>: <code>function isAdmin(u): u is Admin</code></li>
+  </ul>
+  <script type="text/x-code" data-lang="typescript">
+    type Admin = { name: string; permissions: string[] };
+    type Guest = { name: string; visitCount: number };
+
+    function isAdmin(u: Admin | Guest): u is Admin {   // custom type guard
+      return 'permissions' in u;
+    }
+
+    function describe(u: Admin | Guest) {
+      if (isAdmin(u)) return `${u.name} can ${u.permissions.join(', ')}`;
+      return `${u.name} visited ${u.visitCount} times`;
+    }
+  </script>
+
+  <p><strong>Discriminated unions</strong>: the most useful pattern. Every member of the union has a common property (the "discriminant", often <code>type</code> or <code>kind</code>) with a <em>different literal value</em>. Checking that property narrows the whole object.</p>
+  <script type="text/x-code" data-lang="typescript">
+    type PaymentResult =
+      | { status: 'success'; transactionId: string }
+      | { status: 'failed'; reason: string }
+      | { status: 'pending'; retryAfterSeconds: number };
+
+    function handle(result: PaymentResult): string {
+      switch (result.status) {
+        case 'success': return `Paid! tx=${result.transactionId}`;
+        case 'failed':  return `Failed: ${result.reason}`;
+        case 'pending': return `Retry in ${result.retryAfterSeconds}s`;
+        default: {
+          // Exhaustiveness check: if someone adds a new status and forgets
+          // to handle it, this line becomes a compile error.
+          const _exhaustive: never = result;
+          return _exhaustive;
+        }
+      }
+    }
+  </script>
+
+  <p><strong>Intersection types</strong> combine several types into one:</p>
+  <script type="text/x-code" data-lang="typescript">
+    type Timestamps = { createdAt: Date; updatedAt: Date };
+    type SoftDelete = { deletedAt: Date | null };
+    type Article = { id: number; title: string } & Timestamps & SoftDelete;
+
+    const a: Article = {
+      id: 1, title: 'Hello',
+      createdAt: new Date(), updatedAt: new Date(), deletedAt: null,
+    }; // must have ALL properties
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Discriminated unions are great for service results and domain events. They make "what can happen" explicit:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="auth.service.ts">
+      type LoginResult =
+        | { ok: true; accessToken: string; refreshToken: string }
+        | { ok: false; error: 'INVALID_CREDENTIALS' | 'ACCOUNT_LOCKED' };
+
+      // controller
+      const result = await this.authService.login(dto);
+      if (!result.ok) {
+        throw new UnauthorizedException(result.error); // result.error is known here
+      }
+      return { accessToken: result.accessToken };     // and the tokens are known here
+    </script>
+    <p>Prisma also uses unions heavily. For example, a <code>where</code> filter accepts <code>string | StringFilter</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>as</code> (type assertion) instead of narrowing: <code>(x as Admin).permissions</code> lies to the compiler and can crash at runtime.</li>
+      <li>Intersecting incompatible types, e.g. <code>{ a: string } &amp; { a: number }</code>. Then <code>a</code> becomes <code>never</code> and no value can satisfy it.</li>
+      <li>Forgetting the exhaustive <code>never</code> check, so new union members silently fall through.</li>
+      <li>Using optional fields instead of a discriminated union (<code>{ success: boolean; data?: T; error?: string }</code>), which allows invalid combos like success + error.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Model a <code>Shape</code> that can be a circle (radius), a rectangle (width, height) or a triangle (base, height). Write <code>area(shape)</code> with an exhaustive switch.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        type Shape =
+          | { kind: 'circle'; radius: number }
+          | { kind: 'rectangle'; width: number; height: number }
+          | { kind: 'triangle'; base: number; height: number };
+
+        function area(shape: Shape): number {
+          switch (shape.kind) {
+            case 'circle':    return Math.PI * shape.radius ** 2;
+            case 'rectangle': return shape.width * shape.height;
+            case 'triangle':  return (shape.base * shape.height) / 2;
+            default: {
+              const _never: never = shape;
+              throw new Error(`Unknown shape: ${JSON.stringify(_never)}`);
+            }
+          }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a discriminated union?</summary>
+      <p>A union where each member has a common literal property (like <code>kind: 'circle'</code>). Checking that property lets TypeScript narrow to the exact member, so each case is fully typed.</p></details>
+    <details><summary>What is type narrowing?</summary>
+      <p>Refining a broad type into a more specific one through runtime checks (<code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, type guards). TypeScript follows the control flow and updates the type in each branch.</p></details>
+    <details><summary>How do you make a switch exhaustive?</summary>
+      <p>In the <code>default</code> branch, assign the value to a variable of type <code>never</code>. If any case is unhandled, the value isn't <code>never</code>, and compilation fails.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>|</code> = one of, <code>&amp;</code> = all of. Narrow with checks, not with <code>as</code>. Discriminated union + <code>never</code> check = bulletproof branching.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="enums">
+  <div class="topic-head"><span class="num">6</span><h2>Enums</h2></div>
+  <p class="tagline">numeric, string and const enums</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>An enum is a <em>named list of fixed options</em>, like the options in a dropdown menu. Instead of writing the magic string <code>'ADMIN'</code> everywhere (and making a typo somewhere), you write <code>Role.Admin</code>, and the editor autocompletes it.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Numeric enums</strong> get auto-incrementing numbers starting from 0:</p>
+  <script type="text/x-code" data-lang="typescript">
+    enum Direction {
+      Up,      // 0
+      Down,    // 1
+      Left,    // 2
+      Right,   // 3
+    }
+    const d = Direction.Up;         // 0
+    console.log(Direction[0]);      // "Up" — reverse mapping (numeric enums only)
+
+    enum HttpStatus { Ok = 200, Created = 201, NotFound = 404 } // explicit values
+  </script>
+  <p>⚠️ Numeric enums are loosely checked in older TS versions, and the numbers are meaningless in logs and in the database (<code>status: 2</code>, but what is 2?).</p>
+
+  <p><strong>String enums</strong> are the usual choice for backend code. The values are readable everywhere: logs, JSON, database.</p>
+  <script type="text/x-code" data-lang="typescript">
+    enum Role {
+      Admin = 'ADMIN',
+      Editor = 'EDITOR',
+      User = 'USER',
+    }
+
+    function canDelete(role: Role): boolean {
+      return role === Role.Admin;
+    }
+
+    canDelete(Role.Admin);   // ✅
+    // canDelete('ADMIN');   // ❌ string is not assignable to Role (enums are "nominal")
+  </script>
+
+  <p><strong>Const enums</strong> are inlined at compile time: no JavaScript object is generated, and <code>Role.Admin</code> becomes literally <code>'ADMIN'</code> in the output. They are faster, but they can't be iterated and cause problems with some build tools (<code>isolatedModules</code>). Avoid them unless you know why you need them.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const enum Color { Red = 'RED', Blue = 'BLUE' }
+    const c = Color.Red; // compiled JS: const c = "RED";
+  </script>
+
+  <p><strong>The popular alternative: <code>as const</code> object + union type.</strong> Many teams prefer this, because it's plain JavaScript and accepts plain strings:</p>
+  <script type="text/x-code" data-lang="typescript">
+    export const OrderStatus = {
+      Pending: 'PENDING',
+      Paid: 'PAID',
+      Shipped: 'SHIPPED',
+    } as const;
+
+    // Extract a union type from the object values:
+    export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+    // => 'PENDING' | 'PAID' | 'SHIPPED'
+
+    function ship(status: OrderStatus) { /* ... */ }
+    ship(OrderStatus.Paid); // ✅
+    ship('PAID');           // ✅ also fine — plain strings work
+    Object.values(OrderStatus); // ['PENDING', 'PAID', 'SHIPPED'] — easy to iterate
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma generates enums for you from <code>schema.prisma</code>. Use them in DTOs with <code>@IsEnum</code>:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      model User {
+        id   Int  @id @default(autoincrement())
+        role Role @default(USER)
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="update-role.dto.ts">
+      import { Role } from '@prisma/client';
+      import { IsEnum } from 'class-validator';
+
+      export class UpdateRoleDto {
+        @IsEnum(Role)   // rejects anything except 'ADMIN' | 'USER' at runtime
+        role!: Role;
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Storing numeric enum values in the database. If someone reorders the enum, every stored value now means something else. Use string enums.</li>
+      <li>Creating your own <code>Role</code> enum when Prisma already generates one. You end up with two types that don't match.</li>
+      <li>Using <code>const enum</code> in a library or with <code>isolatedModules</code> builds (SWC, esbuild). They may break.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a string enum <code>LogLevel</code> (DEBUG, INFO, WARN, ERROR), then write a function <code>shouldLog(level, minLevel)</code> that returns true if <code>level</code> is at least <code>minLevel</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        enum LogLevel {
+          Debug = 'DEBUG',
+          Info = 'INFO',
+          Warn = 'WARN',
+          Error = 'ERROR',
+        }
+
+        const ORDER: LogLevel[] = [LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error];
+
+        function shouldLog(level: LogLevel, minLevel: LogLevel): boolean {
+          return ORDER.indexOf(level) >= ORDER.indexOf(minLevel);
+        }
+
+        shouldLog(LogLevel.Error, LogLevel.Warn); // true
+        shouldLog(LogLevel.Debug, LogLevel.Info); // false
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>String enum vs numeric enum: which do you prefer and why?</summary>
+      <p>String enums. Their values are readable in logs, JSON and the database, and they don't change meaning if members are reordered.</p></details>
+    <details><summary>What is a <code>const enum</code>?</summary>
+      <p>An enum that is fully inlined at compile time: no runtime object exists. It's slightly faster, but you can't iterate it, and it doesn't work well with <code>isolatedModules</code>-based compilers.</p></details>
+    <details><summary>What is the alternative to enums?</summary>
+      <p>An <code>as const</code> object plus a derived union type. It's plain JavaScript, works with string literals, and is easy to iterate.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use string enums (or <code>as const</code> objects) for fixed sets of values. With Prisma, reuse the generated enums.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="oop">
+  <div class="topic-head"><span class="num">7</span><h2>OOP</h2></div>
+  <p class="tagline">classes, constructors, access modifiers</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A <strong>class</strong> is a blueprint. An <strong>object</strong> (instance) is a thing built from that blueprint. The <strong>constructor</strong> is the setup step that runs when you build it. <strong>Access modifiers</strong> (<code>public</code>, <code>private</code>, <code>protected</code>) are like rooms in a house: some are open to visitors, some only to the family.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <script type="text/x-code" data-lang="typescript">
+    class BankAccount {
+      public readonly owner: string;       // anyone can read, nobody can change after construction
+      private balance: number;             // only code inside this class can touch it
+      static readonly bankName = 'TS Bank'; // belongs to the class, not each instance
+
+      constructor(owner: string, initialBalance = 0) {
+        this.owner = owner;
+        this.balance = initialBalance;
+      }
+
+      deposit(amount: number): void {
+        if (amount <= 0) throw new Error('Amount must be positive');
+        this.balance += amount;
+      }
+
+      get currentBalance(): number {        // getter: read like a property
+        return this.balance;
+      }
+    }
+
+    const acc = new BankAccount('An', 100);
+    acc.deposit(50);
+    console.log(acc.currentBalance); // 150
+    // acc.balance = 1_000_000;      // ❌ Property 'balance' is private
+    // acc.owner = 'Hacker';         // ❌ Cannot assign to 'owner' because it is read-only
+    console.log(BankAccount.bankName); // 'TS Bank'
+  </script>
+
+  <table>
+    <tr><th>Modifier</th><th>Accessible from</th></tr>
+    <tr><td><code>public</code> (default)</td><td>Anywhere</td></tr>
+    <tr><td><code>protected</code></td><td>The class and its subclasses</td></tr>
+    <tr><td><code>private</code></td><td>Only inside the class (compile-time only)</td></tr>
+    <tr><td><code>#field</code></td><td>Only inside the class, <em>enforced at runtime</em> by JavaScript</td></tr>
+    <tr><td><code>readonly</code></td><td>Can be set only in the declaration or constructor</td></tr>
+  </table>
+
+  <p><strong>Parameter properties:</strong> a TypeScript shortcut that declares and assigns a field in one go. Put a modifier in front of a constructor parameter:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Long version
+    class UserServiceLong {
+      private readonly repo: UserRepository;
+      constructor(repo: UserRepository) {
+        this.repo = repo;
+      }
+    }
+
+    // Short version — exactly the same result
+    class UserService {
+      constructor(private readonly repo: UserRepository) {}
+    }
+  </script>
+
+  <p><strong>The four OOP principles, briefly:</strong></p>
+  <ul>
+    <li><strong>Encapsulation</strong>: hide internal data (<code>private balance</code>) and expose safe methods (<code>deposit()</code>), so rules can't be bypassed.</li>
+    <li><strong>Abstraction</strong>: callers use a simple interface without knowing the details.</li>
+    <li><strong>Inheritance</strong>: a class reuses another class (next topic).</li>
+    <li><strong>Polymorphism</strong>: different classes respond to the same method call in their own way.</li>
+  </ul>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Almost everything in Nest is a class: controllers, services, modules, guards, DTOs. The parameter-property shortcut is how Nest's dependency injection works. You'll write this hundreds of times:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      @Injectable()
+      export class OrdersService {
+        constructor(
+          private readonly prisma: PrismaService,
+          private readonly mailService: MailService,
+        ) {}
+
+        async create(dto: CreateOrderDto) {
+          const order = await this.prisma.order.create({ data: dto });
+          await this.mailService.sendOrderConfirmation(order);
+          return order;
+        }
+      }
+    </script>
+    <p><code>private readonly</code> is the convention: the dependency is internal to the service and should never be replaced.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Thinking <code>private</code> protects data at runtime. It's a compile-time check only. Use <code>#field</code> if you need real runtime privacy.</li>
+      <li>Making all fields <code>public</code> and changing them from outside. That breaks encapsulation, and rules get bypassed.</li>
+      <li>Forgetting <code>this.</code> when accessing fields inside methods.</li>
+      <li>Putting heavy async work in the constructor. Constructors can't be <code>async</code>. In Nest, use <code>onModuleInit()</code> instead.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a class <code>ShoppingCart</code> with a private list of items (<code>{ name, price, qty }</code>), methods <code>addItem</code> and <code>removeItem(name)</code>, and a getter <code>total</code>. Nobody outside should be able to modify the list directly.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        type CartItem = { name: string; price: number; qty: number };
+
+        class ShoppingCart {
+          private items: CartItem[] = [];
+
+          addItem(item: CartItem): void {
+            const existing = this.items.find((i) => i.name === item.name);
+            if (existing) existing.qty += item.qty;
+            else this.items.push({ ...item });
+          }
+
+          removeItem(name: string): void {
+            this.items = this.items.filter((i) => i.name !== name);
+          }
+
+          get total(): number {
+            return this.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+          }
+
+          get list(): readonly CartItem[] {   // read-only view for outsiders
+            return this.items;
+          }
+        }
+
+        const cart = new ShoppingCart();
+        cart.addItem({ name: 'Pen', price: 2, qty: 3 });
+        cart.total; // 6
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between <code>private</code> and <code>#private</code>?</summary>
+      <p><code>private</code> is a TypeScript-only check and is erased in JavaScript, so the field is still accessible at runtime. <code>#field</code> is a native JavaScript private field, enforced by the runtime.</p></details>
+    <details><summary>What are parameter properties?</summary>
+      <p>Adding <code>public</code>/<code>private</code>/<code>protected</code>/<code>readonly</code> before a constructor parameter declares a class field and assigns it automatically. Nest uses this for dependency injection.</p></details>
+    <details><summary>Explain encapsulation with an example.</summary>
+      <p>Hiding internal state and exposing only controlled methods. For example, <code>balance</code> is private and can only change through <code>deposit()</code>, which validates the amount.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Classes = blueprints. Keep state <code>private</code>, expose behavior through methods, and use <code>constructor(private readonly x: X) {}</code> for dependencies.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="inheritance">
+  <div class="topic-head"><span class="num">8</span><h2>Inheritance</h2></div>
+  <p class="tagline">extends, super, abstract classes</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Inheritance means "this class <em>is a kind of</em> that class". A <code>Dog</code> is an <code>Animal</code>, so it gets everything an Animal has, and can add or change things. An <strong>abstract class</strong> is an unfinished blueprint: you can't build it directly, only extend it, and it can force children to implement certain methods.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <script type="text/x-code" data-lang="typescript">
+    class Animal {
+      constructor(protected name: string) {}
+
+      move(distance = 0): string {
+        return `${this.name} moved ${distance}m`;
+      }
+    }
+
+    class Dog extends Animal {
+      constructor(name: string, private breed: string) {
+        super(name);              // MUST call the parent constructor first
+      }
+
+      bark(): string {
+        return `${this.name} (${this.breed}) says Woof`;  // 'name' is protected → accessible
+      }
+
+      override move(distance = 5): string {   // replace parent behavior
+        return 'Running... ' + super.move(distance); // call the parent version
+      }
+    }
+
+    const dog = new Dog('Rex', 'Corgi');
+    dog.bark();   // "Rex (Corgi) says Woof"
+    dog.move();   // "Running... Rex moved 5m"
+  </script>
+  <ul>
+    <li><code>extends</code>: inherit from a parent class (only <em>one</em> parent is allowed).</li>
+    <li><code>super(...)</code>: call the parent constructor. It's required before using <code>this</code> in a child constructor.</li>
+    <li><code>super.method()</code>: call the parent's version of a method.</li>
+    <li><code>override</code>: explicitly marks a replaced method. With <code>noImplicitOverride</code> on, the compiler catches typos.</li>
+  </ul>
+
+  <p><strong>Abstract classes</strong> mix shared code with mandatory "fill-in-the-blank" methods:</p>
+  <script type="text/x-code" data-lang="typescript">
+    abstract class Notifier {
+      // shared logic for every notifier
+      async notify(userId: number, message: string): Promise<void> {
+        const formatted = `[${new Date().toISOString()}] ${message}`;
+        await this.send(userId, formatted);
+        console.log(`Notification sent via ${this.channel}`);
+      }
+
+      // children MUST implement these
+      protected abstract readonly channel: string;
+      protected abstract send(userId: number, message: string): Promise<void>;
+    }
+
+    class EmailNotifier extends Notifier {
+      protected readonly channel = 'email';
+      protected async send(userId: number, message: string) {
+        /* send email */
+      }
+    }
+
+    class SmsNotifier extends Notifier {
+      protected readonly channel = 'sms';
+      protected async send(userId: number, message: string) {
+        /* send SMS */
+      }
+    }
+
+    // new Notifier();  // ❌ Cannot create an instance of an abstract class.
+    const notifiers: Notifier[] = [new EmailNotifier(), new SmsNotifier()];
+    for (const n of notifiers) await n.notify(1, 'Hello'); // polymorphism!
+  </script>
+  <p>This pattern, where the parent defines the steps and the children fill in the details, is called the <strong>Template Method</strong> pattern.</p>
+
+  <p><strong>Composition over inheritance.</strong> Inheritance creates a tight bond between parent and child: changing the parent can break every child. Deep hierarchies (A → B → C → D) are hard to follow. Often it's better to <em>give</em> a class the thing it needs (composition) than to <em>be</em> that thing:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Inheritance: OrderService IS-A LoggerService? ❌ weird
+    // class OrderService extends LoggerService {}
+
+    // Composition: OrderService HAS-A logger ✅
+    class OrderService {
+      constructor(private readonly logger: Logger) {}
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Nest uses inheritance for its framework classes. You extend <code>PassportStrategy</code>, <code>HttpException</code>, <code>AuthGuard('jwt')</code>, or <code>PrismaClient</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts / exceptions">
+      @Injectable()
+      export class PrismaService extends PrismaClient implements OnModuleInit {
+        async onModuleInit() {
+          await this.$connect();
+        }
+      }
+
+      export class InsufficientStockException extends BadRequestException {
+        constructor(productId: number) {
+          super(`Product ${productId} is out of stock`);
+        }
+      }
+    </script>
+    <p>For your own business logic, prefer composition (inject services) over building big class hierarchies.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>this</code> in a child constructor before calling <code>super()</code>. That's an error.</li>
+      <li>Building deep inheritance chains just to share one helper method. Use composition or a plain function.</li>
+      <li>Forgetting <code>override</code>, then renaming a parent method so the child silently stops overriding it. Turn on <code>noImplicitOverride</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create an abstract class <code>PaymentMethod</code> with an abstract <code>process(amount)</code> and a concrete <code>pay(amount)</code> that validates <code>amount &gt; 0</code> and then calls <code>process</code>. Implement <code>CardPayment</code> and <code>WalletPayment</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        abstract class PaymentMethod {
+          pay(amount: number): string {
+            if (amount <= 0) throw new Error('Amount must be positive');
+            return this.process(amount);
+          }
+          protected abstract process(amount: number): string;
+        }
+
+        class CardPayment extends PaymentMethod {
+          constructor(private last4: string) { super(); }
+          protected process(amount: number) { return `Charged ${amount} to card ****${this.last4}`; }
+        }
+
+        class WalletPayment extends PaymentMethod {
+          protected process(amount: number) { return `Paid ${amount} from wallet`; }
+        }
+
+        new CardPayment('4242').pay(100); // "Charged 100 to card ****4242"
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Abstract class vs interface?</summary>
+      <p>An interface is a pure contract with no code, and a class can implement many interfaces. An abstract class can contain shared implementation and state, but a class can extend only one. Use an abstract class when children share real logic.</p></details>
+    <details><summary>Why "composition over inheritance"?</summary>
+      <p>Inheritance couples child to parent tightly, and changes ripple down. Composition (injecting collaborators) is more flexible, easier to test with mocks, and avoids fragile hierarchies.</p></details>
+    <details><summary>What does <code>super</code> do?</summary>
+      <p><code>super(...)</code> calls the parent constructor. <code>super.method()</code> calls the parent's implementation of an overridden method.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>extends</code> = "is a". Call <code>super()</code> first. Use abstract classes for shared logic with required hooks, and prefer composition for your own services.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="structural-typing">
+  <div class="topic-head"><span class="num">9</span><h2>Structural typing</h2></div>
+  <p class="tagline">implements, interfaces as contracts</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>TypeScript cares about <em>what something looks like</em>, not <em>what it is called</em>. If an object has all the properties a type needs, it fits, even if it was never declared as that type. "If it walks like a duck and quacks like a duck, it's a duck." Java and C# work differently (<em>nominal</em> typing: the name must match).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <script type="text/x-code" data-lang="typescript">
+    interface Point { x: number; y: number; }
+
+    function printPoint(p: Point) {
+      console.log(`${p.x}, ${p.y}`);
+    }
+
+    const coords = { x: 10, y: 20, label: 'home' }; // never said "Point"
+    printPoint(coords);   // ✅ it has x and y → it fits
+
+    class Vector { constructor(public x: number, public y: number) {} }
+    printPoint(new Vector(1, 2)); // ✅ a class instance with the same shape also fits
+  </script>
+
+  <p><strong>Excess property check:</strong> one surprise. When you pass an object <em>literal</em> directly, TypeScript is stricter and rejects unknown properties, because it's probably a typo:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // printPoint({ x: 1, y: 2, z: 3 }); // ❌ Object literal may only specify known properties
+    const p3 = { x: 1, y: 2, z: 3 };
+    printPoint(p3);                       // ✅ via a variable, it's fine (structural)
+  </script>
+
+  <p><strong><code>implements</code></strong> lets a class promise to follow an interface (a contract). The compiler checks that the class really has every member:</p>
+  <script type="text/x-code" data-lang="typescript">
+    interface Storage {
+      upload(path: string, data: Buffer): Promise<string>; // returns URL
+      delete(path: string): Promise<void>;
+    }
+
+    class S3Storage implements Storage {
+      async upload(path: string, data: Buffer) { /* AWS SDK... */ return `https://s3/${path}`; }
+      async delete(path: string) { /* ... */ }
+    }
+
+    class LocalStorage implements Storage {
+      async upload(path: string, data: Buffer) { /* fs.writeFile... */ return `/uploads/${path}`; }
+      // ❌ if you forget delete(): Class 'LocalStorage' incorrectly implements interface 'Storage'.
+      async delete(path: string) { /* fs.unlink... */ }
+    }
+  </script>
+  <p>Code that depends on <code>Storage</code> (the interface) doesn't care which implementation it gets. You can swap S3 for local disk in development, or for a fake in tests. This is the "D" in SOLID: depend on abstractions.</p>
+  <p>Note: <code>implements</code> is only a <em>check</em>. Because of structural typing, a class that has the right shape would be accepted even without it. Writing <code>implements</code> makes the intent clear and gives earlier, clearer errors.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>You implement Nest's interfaces all the time: <code>CanActivate</code>, <code>NestInterceptor</code>, <code>PipeTransform</code>, <code>OnModuleInit</code>. To inject <em>your own</em> interface, there's a catch: <strong>interfaces don't exist at runtime</strong>, so Nest can't use them as an injection key. You need a <strong>token</strong>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="storage.module.ts">
+      export const STORAGE = Symbol('STORAGE'); // runtime token
+
+      @Module({
+        providers: [
+          {
+            provide: STORAGE,
+            useClass: process.env.NODE_ENV === 'production' ? S3Storage : LocalStorage,
+          },
+        ],
+        exports: [STORAGE],
+      })
+      export class StorageModule {}
+
+      // usage
+      @Injectable()
+      export class AvatarService {
+        constructor(@Inject(STORAGE) private readonly storage: Storage) {}
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Trying to inject an interface directly (<code>constructor(private s: Storage)</code>) in Nest. It fails because the interface is gone at runtime. Use a token and <code>@Inject()</code>.</li>
+      <li>Expecting <code>instanceof SomeInterface</code> to work. It can't, because interfaces aren't values.</li>
+      <li>Being surprised that two unrelated types with the same shape are interchangeable (e.g. <code>UserId</code> and <code>OrderId</code> both <code>number</code>). Use "branded types" if you need to tell them apart.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Define an interface <code>Cache</code> with <code>get(key)</code>, <code>set(key, value, ttlSeconds)</code> and <code>del(key)</code>. Implement <code>MemoryCache</code>. Then write a function <code>cached(cache, key, loader)</code> that works with <em>any</em> Cache implementation.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        interface Cache {
+          get(key: string): Promise<string | null>;
+          set(key: string, value: string, ttlSeconds: number): Promise<void>;
+          del(key: string): Promise<void>;
+        }
+
+        class MemoryCache implements Cache {
+          private store = new Map<string, { value: string; expiresAt: number }>();
+
+          async get(key: string) {
+            const entry = this.store.get(key);
+            if (!entry || entry.expiresAt < Date.now()) return null;
+            return entry.value;
+          }
+          async set(key: string, value: string, ttlSeconds: number) {
+            this.store.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
+          }
+          async del(key: string) { this.store.delete(key); }
+        }
+
+        async function cached(cache: Cache, key: string, loader: () => Promise<string>) {
+          const hit = await cache.get(key);
+          if (hit !== null) return hit;
+          const value = await loader();
+          await cache.set(key, value, 60);
+          return value;
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is structural typing?</summary>
+      <p>Type compatibility is decided by shape (members and their types), not by declared names. Any value with the required members fits the type.</p></details>
+    <details><summary>Why can't you inject an interface in NestJS?</summary>
+      <p>Nest's DI resolves dependencies at runtime using metadata, and interfaces are erased during compilation, so there's nothing to look up. You use a string or Symbol token with <code>@Inject(TOKEN)</code> instead.</p></details>
+    <details><summary>Is <code>implements</code> required?</summary>
+      <p>No. Structural typing would accept a matching shape anyway. <code>implements</code> documents intent and makes the compiler check the class at its definition, which gives clearer errors.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Shape matters, names don't. Use interfaces as contracts with <code>implements</code>, and in Nest, inject them via a token.</div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="topic" id="decorators">
+  <div class="topic-head"><span class="num">10</span><h2>Decorators</h2></div>
+  <p class="tagline">class, method, property and parameter decorators</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A decorator is a <em>sticky note</em> you put on a class, method, property or parameter with <code>@something</code>. Behind the scenes it's just a <strong>function</strong> that runs when the class is defined. It can record information ("this method handles GET /users") or wrap behavior ("log every call to this method"). NestJS is built almost entirely on decorators.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>Nest uses the "legacy" (experimental) decorators, enabled in <code>tsconfig.json</code>:</p>
+  <script type="text/x-code" data-lang="json" data-title="tsconfig.json">
+    {
+      "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+      }
+    }
+  </script>
+  <ul>
+    <li><code>experimentalDecorators</code>: allows the <code>@</code> syntax.</li>
+    <li><code>emitDecoratorMetadata</code>: makes TypeScript save the <em>types</em> of constructor parameters as metadata. That's how Nest knows which service to inject.</li>
+  </ul>
+
+  <p><strong>1. Class decorator</strong>: receives the class (constructor function):</p>
+  <script type="text/x-code" data-lang="typescript">
+    function Entity(tableName: string) {          // decorator FACTORY (takes arguments)
+      return function (target: Function) {        // the actual decorator
+        (target as any).tableName = tableName;
+      };
+    }
+
+    @Entity('users')
+    class User {}
+
+    console.log((User as any).tableName); // 'users'
+  </script>
+
+  <p><strong>2. Method decorator</strong>: receives the prototype, the method name and its descriptor. It can wrap the original method:</p>
+  <script type="text/x-code" data-lang="typescript">
+    function LogExecutionTime() {
+      return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        const original = descriptor.value;               // the real method
+
+        descriptor.value = async function (...args: any[]) {
+          const start = Date.now();
+          try {
+            return await original.apply(this, args);     // call the real method
+          } finally {
+            console.log(`${propertyKey} took ${Date.now() - start}ms`);
+          }
+        };
+      };
+    }
+
+    class ReportService {
+      @LogExecutionTime()
+      async generate() { /* slow work */ }
+    }
+    // calling generate() now prints "generate took 532ms"
+  </script>
+
+  <p><strong>3. Property decorator</strong>: receives the prototype and the property name. Often used to store metadata:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import 'reflect-metadata';
+
+    function MinLength(len: number) {
+      return function (target: any, propertyKey: string) {
+        Reflect.defineMetadata('minLength', len, target, propertyKey);
+      };
+    }
+
+    class SignupDto {
+      @MinLength(8)
+      password!: string;
+    }
+
+    Reflect.getMetadata('minLength', SignupDto.prototype, 'password'); // 8
+  </script>
+  <p>That is essentially how <code>class-validator</code>'s <code>@MinLength(8)</code> works: it stores rules, and <code>validate()</code> reads them later.</p>
+
+  <p><strong>4. Parameter decorator</strong>: receives the prototype, the method name and the parameter's index:</p>
+  <script type="text/x-code" data-lang="typescript">
+    function Required(target: any, methodName: string, paramIndex: number) {
+      const existing: number[] = Reflect.getMetadata('required', target, methodName) ?? [];
+      Reflect.defineMetadata('required', [...existing, paramIndex], target, methodName);
+    }
+
+    class Api {
+      find(@Required id: string, filter?: string) {}
+    }
+  </script>
+
+  <p><strong>Execution order:</strong> decorators run <em>once</em>, when the class is defined (not every time you call a method). When stacked, they are applied bottom-to-top:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @First()   // applied 2nd
+    @Second()  // applied 1st
+    class X {}
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Every Nest decorator is one of these four kinds:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+      @Controller('users')                    // class decorator — route prefix metadata
+      @UseGuards(JwtAuthGuard)                // class decorator — guard metadata
+      export class UsersController {
+        constructor(private readonly usersService: UsersService) {}
+        // ↑ emitDecoratorMetadata saved "UsersService" as the param type → DI works
+
+        @Get(':id')                           // method decorator — route metadata
+        @Roles('admin')                       // your own custom metadata decorator
+        findOne(@Param('id', ParseIntPipe) id: number) {   // parameter decorator
+          return this.usersService.findOne(id);
+        }
+      }
+    </script>
+    <p>A custom decorator to read the logged-in user is a very common addition:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="current-user.decorator.ts">
+      export const CurrentUser = createParamDecorator(
+        (_data: unknown, ctx: ExecutionContext) => ctx.switchToHttp().getRequest().user,
+      );
+
+      // usage: getProfile(@CurrentUser() user: JwtPayload) { ... }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting the parentheses: <code>@Injectable</code> instead of <code>@Injectable()</code>. Nest decorators are <em>factories</em>, so they need <code>()</code>.</li>
+      <li>Thinking a decorator runs on every method call. It runs once at class definition. Only the <em>wrapper</em> it installs runs per call.</li>
+      <li>Wrapping a method with a regular function and losing <code>this</code>. Always use <code>original.apply(this, args)</code>.</li>
+      <li>Importing a type with <code>import type</code> for a constructor parameter. The metadata then has no runtime value, and DI breaks.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a method decorator <code>@Retry(times)</code> that retries an async method up to <code>times</code> times if it throws, then rethrows the last error.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        function Retry(times: number) {
+          return function (_target: any, key: string, descriptor: PropertyDescriptor) {
+            const original = descriptor.value;
+            descriptor.value = async function (...args: any[]) {
+              let lastError: unknown;
+              for (let attempt = 1; attempt <= times; attempt++) {
+                try {
+                  return await original.apply(this, args);
+                } catch (err) {
+                  lastError = err;
+                  console.warn(`${key} failed (attempt ${attempt}/${times})`);
+                }
+              }
+              throw lastError;
+            };
+          };
+        }
+
+        class PaymentGateway {
+          @Retry(3)
+          async charge(amount: number) { /* call external API */ }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a decorator, technically?</summary>
+      <p>A function that is called at class definition time with information about the decorated element (class, method descriptor, property name or parameter index). It can attach metadata or replace or wrap the element.</p></details>
+    <details><summary>What does <code>emitDecoratorMetadata</code> do and why does Nest need it?</summary>
+      <p>It makes the compiler emit <code>design:paramtypes</code> metadata (the constructor parameter types) for decorated classes. Nest reads it to know which providers to inject, without you listing them manually.</p></details>
+    <details><summary>What is a decorator factory?</summary>
+      <p>A function that <em>returns</em> a decorator, so you can pass arguments: <code>@Get(':id')</code>, <code>@MinLength(8)</code>.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Decorators are functions that run once at class definition. They attach metadata or wrap behavior, and Nest reads that metadata to build your app.</div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="topic" id="async">
+  <div class="topic-head"><span class="num">11</span><h2>Async TypeScript</h2></div>
+  <p class="tagline">Promise, async/await, error handling</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A <strong>Promise</strong> is like the buzzer a restaurant gives you: "your food isn't ready yet, but I promise to tell you when it is (or that something went wrong)". While you wait, you're free to do other things. Node.js is single-threaded, so instead of blocking while the database answers, it handles other requests. <code>async</code>/<code>await</code> is a nicer syntax for waiting on Promises that reads like normal top-to-bottom code.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Promise basics and typing:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    function wait(ms: number): Promise<void> {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function fetchUser(id: number): Promise<{ id: number; name: string }> {
+      return new Promise((resolve, reject) => {
+        if (id <= 0) reject(new Error('Invalid id'));
+        else resolve({ id, name: 'An' });
+      });
+    }
+
+    // Old style: .then / .catch
+    fetchUser(1)
+      .then((user) => console.log(user.name))
+      .catch((err) => console.error(err.message));
+  </script>
+
+  <p><strong>async/await:</strong> an <code>async</code> function <em>always</em> returns a Promise. <code>await</code> pauses <em>that function</em> (not the whole server) until the Promise settles:</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function showUser(id: number): Promise<string> {
+      const user = await fetchUser(id);   // user: { id: number; name: string }
+      return user.name;                   // wrapped in a Promise automatically
+    }
+  </script>
+
+  <p><strong>Error handling:</strong> a rejected Promise behaves like a thrown error, so you use <code>try/catch</code>. In <code>catch</code>, the error is typed <code>unknown</code> (with strict), so check it before use:</p>
+  <script type="text/x-code" data-lang="typescript">
+    async function safeShowUser(id: number) {
+      try {
+        return await fetchUser(id);
+      } catch (err: unknown) {
+        if (err instanceof Error) console.error('Failed:', err.message);
+        throw err;  // re-throw if you can't really handle it
+      } finally {
+        console.log('always runs');
+      }
+    }
+  </script>
+
+  <p><strong>Sequential vs parallel</strong>: one of the biggest performance wins:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Sequential: ~300ms total (each waits for the previous)
+    const user = await getUser(id);        // 100ms
+    const orders = await getOrders(id);    // 100ms
+    const reviews = await getReviews(id);  // 100ms
+
+    // ✅ Parallel: ~100ms total (independent calls start together)
+    const [user2, orders2, reviews2] = await Promise.all([
+      getUser(id),
+      getOrders(id),
+      getReviews(id),
+    ]);  // types are preserved per position!
+  </script>
+  <table>
+    <tr><th>Helper</th><th>Behavior</th></tr>
+    <tr><td><code>Promise.all</code></td><td>Waits for all. Rejects immediately if <em>any</em> fails.</td></tr>
+    <tr><td><code>Promise.allSettled</code></td><td>Waits for all and gives you each result or error. Never rejects.</td></tr>
+    <tr><td><code>Promise.race</code></td><td>Settles with the first one to finish (useful for timeouts).</td></tr>
+    <tr><td><code>Promise.any</code></td><td>Resolves with the first <em>success</em>.</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    // Send 3 emails; don't fail all if one fails
+    const results = await Promise.allSettled(emails.map((e) => mailer.send(e)));
+    const failed = results.filter((r) => r.status === 'rejected');
+    console.log(`${failed.length} emails failed`);
+  </script>
+
+  <p><strong><code>Awaited&lt;T&gt;</code></strong> extracts the value type from a Promise: <code>Awaited&lt;Promise&lt;User&gt;&gt;</code> is <code>User</code>.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Almost every service method is <code>async</code>, because Prisma calls return Promises. Nest automatically awaits whatever your controller returns. If your code throws an <code>HttpException</code> inside an async handler, Nest catches it and sends the right HTTP response:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="dashboard.service.ts">
+      async getDashboard(userId: number) {
+        const [user, orderCount, lastOrders] = await Promise.all([
+          this.prisma.user.findUnique({ where: { id: userId } }),
+          this.prisma.order.count({ where: { userId } }),
+          this.prisma.order.findMany({ where: { userId }, take: 5, orderBy: { createdAt: 'desc' } }),
+        ]);
+        if (!user) throw new NotFoundException();
+        return { user, orderCount, lastOrders };
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li><strong>Forgetting <code>await</code></strong>: <code>const user = this.prisma.user.findUnique(...)</code> gives you a Promise, not a user. Errors also escape your <code>try/catch</code>. Turn on the ESLint rule <code>@typescript-eslint/no-floating-promises</code>.</li>
+      <li>Using <code>await</code> inside a <code>for</code> loop over independent items, which makes it slow. Use <code>Promise.all</code>. But beware of firing 10,000 DB queries at once: batch them.</li>
+      <li><code>array.forEach(async (x) =&gt; ...)</code>: <code>forEach</code> doesn't wait. Use <code>for...of</code> or <code>Promise.all(array.map(...))</code>.</li>
+      <li>Swallowing errors: <code>catch (e) {}</code> with nothing inside hides bugs. Log the error and rethrow, or handle it properly.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write <code>withTimeout(promise, ms)</code> that rejects with <code>Error('Timeout')</code> if the promise takes longer than <code>ms</code>. Keep the result type generic.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+          let timer: NodeJS.Timeout;
+          const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error('Timeout')), ms);
+          });
+          return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+        }
+
+        // usage
+        const user = await withTimeout(fetchUser(1), 2000); // user is typed
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does an <code>async</code> function return?</summary>
+      <p>Always a Promise. Returning a value resolves the Promise with it, and throwing rejects it.</p></details>
+    <details><summary><code>Promise.all</code> vs <code>Promise.allSettled</code>?</summary>
+      <p><code>all</code> rejects as soon as one promise rejects (fail-fast). <code>allSettled</code> waits for every promise and reports each outcome, so it's good when partial failure is acceptable.</p></details>
+    <details><summary>Does <code>await</code> block the Node.js server?</summary>
+      <p>No. It pauses only the current async function. The event loop keeps serving other requests while the awaited I/O completes.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Always <code>await</code> your Promises, catch errors you can actually handle, and run independent work in parallel with <code>Promise.all</code>.</div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="topic" id="utility-types">
+  <div class="topic-head"><span class="num">12</span><h2>Utility types</h2></div>
+  <p class="tagline">Partial, Pick, Omit, Record, Required</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Utility types are built-in "type transformers": you give them a type, and they give you a modified copy. Instead of writing a new <code>UpdateUser</code> type by hand (and forgetting to update it when <code>User</code> changes), you write <code>Partial&lt;User&gt;</code>, and it stays in sync automatically.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>We'll use this base type:</p>
+  <script type="text/x-code" data-lang="typescript">
+    interface User {
+      id: number;
+      email: string;
+      name: string;
+      password: string;
+      bio?: string;
+    }
+  </script>
+
+  <table>
+    <tr><th>Utility</th><th>What it does</th><th>Result</th></tr>
+    <tr><td><code>Partial&lt;User&gt;</code></td><td>All properties optional</td><td><code>{ id?; email?; name?; password?; bio? }</code></td></tr>
+    <tr><td><code>Required&lt;User&gt;</code></td><td>All properties required</td><td><code>bio</code> becomes required</td></tr>
+    <tr><td><code>Readonly&lt;User&gt;</code></td><td>All properties read-only</td><td>Can't re-assign any field</td></tr>
+    <tr><td><code>Pick&lt;User, 'id' | 'email'&gt;</code></td><td>Keep only these keys</td><td><code>{ id; email }</code></td></tr>
+    <tr><td><code>Omit&lt;User, 'password'&gt;</code></td><td>Remove these keys</td><td>Everything except <code>password</code></td></tr>
+    <tr><td><code>Record&lt;K, V&gt;</code></td><td>Object with keys K and values V</td><td><code>Record&lt;string, number&gt;</code></td></tr>
+  </table>
+
+  <script type="text/x-code" data-lang="typescript">
+    // Partial — perfect for "update" operations
+    function updateUser(id: number, changes: Partial<User>) { /* ... */ }
+    updateUser(1, { name: 'New name' }); // ✅ only what changed
+
+    // Omit — never leak the password
+    type PublicUser = Omit<User, 'password'>;
+    function toPublic(u: User): PublicUser {
+      const { password, ...rest } = u;
+      return rest;
+    }
+
+    // Pick — a small "summary" shape
+    type UserSummary = Pick<User, 'id' | 'name'>;
+
+    // Record — dictionaries / lookup tables
+    type Role = 'admin' | 'editor' | 'viewer';
+    const permissions: Record<Role, string[]> = {
+      admin: ['read', 'write', 'delete'],
+      editor: ['read', 'write'],
+      viewer: ['read'],
+      // forgetting a role → ❌ compile error. Great for exhaustiveness!
+    };
+
+    // Required — config after defaults are applied
+    type Options = { retries?: number; timeout?: number };
+    function withDefaults(o: Options): Required<Options> {
+      return { retries: 3, timeout: 5000, ...o };
+    }
+  </script>
+
+  <p><strong>More useful ones:</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    type A = NonNullable<string | null | undefined>;      // string
+    type B = ReturnType<typeof toPublic>;                  // PublicUser
+    type C = Parameters<typeof updateUser>;                // [id: number, changes: Partial<User>]
+    type D = Awaited<Promise<User>>;                       // User
+    type E = Exclude<'a' | 'b' | 'c', 'a'>;                // 'b' | 'c'
+    type F = Extract<'a' | 'b' | 1 | 2, string>;           // 'a' | 'b'
+  </script>
+  <p>You can <strong>combine</strong> them: <code>Partial&lt;Omit&lt;User, 'id'&gt;&gt;</code> means "any fields except id, all optional", which is a typical update payload.</p>
+
+  <p><strong>How do they work?</strong> They're written with <em>mapped types</em>. For example, <code>Partial</code> is just:</p>
+  <script type="text/x-code" data-lang="typescript">
+    type MyPartial<T> = { [K in keyof T]?: T[K] };     // for every key K of T, make it optional
+    type MyReadonly<T> = { readonly [K in keyof T]: T[K] };
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Nest has <em>class</em> versions of these in <code>@nestjs/mapped-types</code> (or <code>@nestjs/swagger</code>). They also copy the validation and Swagger decorators, which the plain TS utilities can't do:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="update-user.dto.ts">
+      import { PartialType, OmitType, PickType } from '@nestjs/swagger';
+
+      export class CreateUserDto {
+        @IsEmail() email!: string;
+        @IsString() @MinLength(2) name!: string;
+        @IsString() @MinLength(8) password!: string;
+      }
+
+      // All fields optional, validation rules kept
+      export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['password'] as const)) {}
+
+      export class LoginDto extends PickType(CreateUserDto, ['email', 'password'] as const) {}
+    </script>
+    <p>Prisma generates types too, like <code>Prisma.UserCreateInput</code> and <code>Prisma.UserGetPayload&lt;...&gt;</code>. Combine them with <code>Omit</code> to create safe response types.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using the TS <code>Partial&lt;T&gt;</code> type for a Nest DTO. It's not a class, so there's no runtime validation. Use <code>PartialType()</code> from <code>@nestjs/mapped-types</code> or <code>@nestjs/swagger</code>.</li>
+      <li>Thinking <code>Omit&lt;User, 'password'&gt;</code> removes the password at runtime. It only changes the type. You still need to actually remove it (destructuring, Prisma <code>select</code>, or <code>class-transformer</code>'s <code>@Exclude</code>).</li>
+      <li>Copy-pasting types by hand instead of deriving them, so they drift apart over time.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Given <code>interface Product { id: number; name: string; price: number; stock: number; createdAt: Date }</code>, create: (a) <code>CreateProductInput</code> without <code>id</code> and <code>createdAt</code>; (b) <code>UpdateProductInput</code> where all of those fields are optional; (c) a <code>Record</code> mapping a product id to its stock.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        interface Product { id: number; name: string; price: number; stock: number; createdAt: Date }
+
+        type CreateProductInput = Omit<Product, 'id' | 'createdAt'>;
+        type UpdateProductInput = Partial<CreateProductInput>;
+        type StockById = Record<number, number>;
+
+        const stock: StockById = { 1: 10, 2: 0 };
+        const patch: UpdateProductInput = { price: 19.99 };
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Difference between <code>Pick</code> and <code>Omit</code>?</summary>
+      <p><code>Pick</code> keeps the listed keys. <code>Omit</code> keeps everything <em>except</em> the listed keys. Use whichever list is shorter and more stable.</p></details>
+    <details><summary>How is <code>Partial</code> implemented?</summary>
+      <p>As a mapped type: <code>{ [K in keyof T]?: T[K] }</code>. It iterates over every key and adds the <code>?</code> modifier.</p></details>
+    <details><summary>Why use <code>PartialType</code> from Nest instead of TS <code>Partial</code>?</summary>
+      <p>Nest's version produces a real class and copies the validation and Swagger metadata, with every rule made optional. TS <code>Partial</code> only exists at compile time.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Derive types instead of duplicating them. <code>Partial</code> for updates, <code>Omit</code> to hide fields, <code>Pick</code> for subsets, <code>Record</code> for dictionaries, and Nest's <code>PartialType</code> for DTOs.</div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section class="topic" id="modules">
+  <div class="topic-head"><span class="num">13</span><h2>Modules</h2></div>
+  <p class="tagline">import/export, namespaces, barrel files</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Every <code>.ts</code> file with an <code>import</code> or <code>export</code> is a <strong>module</strong>: its own private room. Nothing inside is visible to other files unless you <code>export</code> it, and other files must <code>import</code> it explicitly. This prevents name clashes and makes dependencies obvious.</p>
+    <p><em>Note: these are TypeScript/JavaScript modules (files). NestJS <code>@Module()</code> is a different concept, covered in Lesson 2.</em></p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Named exports</strong> (recommended):</p>
+  <script type="text/x-code" data-lang="typescript" data-title="math.ts">
+    export const PI = 3.14159;
+    export function area(r: number) { return PI * r * r; }
+    export interface Circle { radius: number; }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.ts">
+    import { area, PI, Circle } from './math';
+    import { area as circleArea } from './math';   // rename on import
+    import * as MathUtils from './math';            // everything as an object
+    MathUtils.area(2);
+  </script>
+
+  <p><strong>Default export:</strong> one per file, and the importer chooses the name:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // logger.ts
+    export default class Logger {}
+
+    // app.ts
+    import Logger from './logger';
+    import Whatever from './logger';  // also works — that's the problem: names drift
+  </script>
+  <p>Most TypeScript and NestJS codebases prefer <strong>named exports</strong>: names stay consistent, auto-import works better, and renaming is safer.</p>
+
+  <p><strong>Type-only imports:</strong> import something only as a type. It is fully removed from the JavaScript output:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import type { User } from './user.types';
+    import { type Order, createOrder } from './orders';
+  </script>
+
+  <p><strong>Barrel files</strong>: an <code>index.ts</code> that re-exports from a folder, so imports get shorter:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users/index.ts">
+    export * from './users.service';
+    export * from './users.controller';
+    export * from './dto/create-user.dto';
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    // Before
+    import { UsersService } from './users/users.service';
+    import { CreateUserDto } from './users/dto/create-user.dto';
+    // After
+    import { UsersService, CreateUserDto } from './users';
+  </script>
+  <p>⚠️ <strong>Downside:</strong> barrels can create <em>circular imports</em> (A imports the barrel, the barrel imports B, B imports A). At runtime, one of them is <code>undefined</code>. In Nest, this shows up as the dreaded "Nest can't resolve dependencies… [?]" or "A circular dependency between modules" error. Use barrels for the public API of a folder, but import directly inside the same feature.</p>
+
+  <p><strong>Namespaces</strong> are an older TypeScript way of grouping code (<code>namespace Utils { ... }</code>), from before ES modules existed. In modern code, <strong>use modules instead</strong>. You'll still see namespaces in <code>.d.ts</code> files, like <code>declare global { namespace Express { ... } }</code>.</p>
+
+  <p><strong>CommonJS vs ES modules:</strong> Node.js has two module systems. <code>require()</code>/<code>module.exports</code> is CommonJS, and <code>import</code>/<code>export</code> is ESM. You <em>write</em> <code>import</code>/<code>export</code> in TS, and the compiler converts it based on <code>"module"</code> in tsconfig. NestJS projects compile to <strong>CommonJS</strong> by default.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Typical feature folder, with one class per file and named exports:</p>
+    <script type="text/x-code" data-lang="plaintext" data-title="folder structure">
+      src/
+      ├── users/
+      │   ├── dto/
+      │   │   ├── create-user.dto.ts
+      │   │   └── update-user.dto.ts
+      │   ├── users.controller.ts     → export class UsersController
+      │   ├── users.service.ts        → export class UsersService
+      │   └── users.module.ts         → export class UsersModule
+      ├── common/
+      │   └── index.ts                → barrel for shared guards/decorators
+      └── main.ts
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Circular imports through barrel files, which show up as values that are <code>undefined</code> at runtime.</li>
+      <li>Using <code>import type</code> for a class that Nest must inject. The import is erased, so DI can't find it.</li>
+      <li>Mixing default and named exports randomly. Pick named exports.</li>
+      <li>Using deep relative paths (<code>../../../../common/x</code>). Configure path aliases (next topic).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a folder <code>utils/</code> with <code>string.ts</code> (exporting <code>slugify</code>) and <code>date.ts</code> (exporting <code>formatDate</code>), plus a barrel. Then import both in one line.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // utils/string.ts
+        export function slugify(s: string): string {
+          return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+
+        // utils/date.ts
+        export function formatDate(d: Date): string {
+          return d.toISOString().slice(0, 10);
+        }
+
+        // utils/index.ts
+        export * from './string';
+        export * from './date';
+
+        // anywhere
+        import { slugify, formatDate } from './utils';
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Named vs default exports: which do you prefer?</summary>
+      <p>Named exports. Names are consistent across imports, refactoring and auto-import work better, and a file can export many things clearly.</p></details>
+    <details><summary>What is a barrel file and what's the risk?</summary>
+      <p>An <code>index.ts</code> that re-exports a folder's contents for shorter imports. The risk is circular dependencies (some imports become <code>undefined</code> at runtime) and slower builds or tests from loading more than needed.</p></details>
+    <details><summary>What does <code>import type</code> do?</summary>
+      <p>It imports only type information, and the statement is removed entirely from the emitted JavaScript. That's good for avoiding runtime side effects and cycles, but don't use it for classes needed at runtime.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> One file = one module. Prefer named exports, use barrels carefully, avoid namespaces, and watch out for circular imports.</div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section class="topic" id="tsconfig">
+  <div class="topic-head"><span class="num">14</span><h2>tsconfig</h2></div>
+  <p class="tagline">strict flags, paths, module resolution</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p><code>tsconfig.json</code> is the <em>settings file</em> for the TypeScript compiler. It answers questions like: How strict should checking be? Which JavaScript version should I output? Where do the compiled files go? How do I find imported files? Understanding it means you're no longer scared when a build breaks.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>A typical NestJS <code>tsconfig.json</code>, explained line by line:</p>
+  <script type="text/x-code" data-lang="json" data-title="tsconfig.json">
+    {
+      "compilerOptions": {
+        "module": "commonjs",                // output require()/module.exports for Node
+        "target": "ES2021",                  // which JS syntax version to output
+        "outDir": "./dist",                  // where compiled .js files go
+        "baseUrl": "./",                     // root for non-relative imports
+        "sourceMap": true,                   // map JS errors back to your .ts lines
+        "declaration": true,                 // emit .d.ts type files
+        "removeComments": true,
+        "incremental": true,                 // faster rebuilds
+
+        "experimentalDecorators": true,      // needed by NestJS
+        "emitDecoratorMetadata": true,       // needed by NestJS DI
+
+        "strict": true,                      // ⭐ turn on all strict checks
+        "skipLibCheck": true,                // don't type-check node_modules .d.ts (faster)
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "paths": {                           // import aliases
+          "@common/*": ["src/common/*"],
+          "@modules/*": ["src/modules/*"]
+        }
+      }
+    }
+  </script>
+
+  <p><strong>The strict family.</strong> <code>"strict": true</code> enables all of these at once:</p>
+  <table>
+    <tr><th>Flag</th><th>What it catches</th></tr>
+    <tr><td><code>noImplicitAny</code></td><td>Variables or parameters whose type can't be inferred (silent <code>any</code>)</td></tr>
+    <tr><td><code>strictNullChecks</code></td><td>Using a value that might be <code>null</code>/<code>undefined</code></td></tr>
+    <tr><td><code>strictPropertyInitialization</code></td><td>Class fields never assigned in the constructor</td></tr>
+    <tr><td><code>strictFunctionTypes</code></td><td>Unsafe function parameter assignments</td></tr>
+    <tr><td><code>strictBindCallApply</code></td><td>Wrong arguments to <code>.bind/.call/.apply</code></td></tr>
+    <tr><td><code>useUnknownInCatchVariables</code></td><td><code>catch (e)</code> gives <code>unknown</code> instead of <code>any</code></td></tr>
+    <tr><td><code>alwaysStrict</code></td><td>Emits <code>"use strict"</code></td></tr>
+  </table>
+  <p>Extra flags worth knowing: <code>noUnusedLocals</code>, <code>noUnusedParameters</code>, and <code>noUncheckedIndexedAccess</code> (makes <code>arr[0]</code> typed as <code>T | undefined</code>, which is very safe but noisier).</p>
+
+  <p><strong><code>strictPropertyInitialization</code> and DTOs:</strong> DTO fields are filled in by the framework, not by a constructor, so TypeScript complains. Use the <code>!</code> (definite assignment) operator:</p>
+  <script type="text/x-code" data-lang="typescript">
+    export class CreateUserDto {
+      @IsEmail()
+      email!: string;   // "trust me, it will be assigned"
+    }
+  </script>
+
+  <p><strong>Path aliases (<code>paths</code>)</strong> replace deep relative imports:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // Before
+    import { Roles } from '../../../common/decorators/roles.decorator';
+    // After
+    import { Roles } from '@common/decorators/roles.decorator';
+  </script>
+  <p>⚠️ <code>paths</code> only tells the <em>type checker</em> where to look. The compiled JavaScript still contains <code>'@common/...'</code>, which Node doesn't understand. The Nest CLI handles this for you during build, but tools like Jest need their own mapping (<code>moduleNameMapper</code>). Otherwise, plain <code>node dist/main</code> needs a helper like <code>tsconfig-paths</code>.</p>
+
+  <p><strong><code>moduleResolution</code></strong> decides <em>how</em> an import string is turned into a file. <code>"node"</code> (Node 10 style, the Nest default with CommonJS) checks <code>./x.ts</code>, <code>./x/index.ts</code> and <code>node_modules</code>. <code>"node16"</code>/<code>"nodenext"</code> follow modern Node ESM rules (file extensions required, <code>package.json</code> <code>exports</code> respected). <code>"bundler"</code> is meant for code going through Vite, webpack or esbuild.</p>
+
+  <p><strong>Multiple configs:</strong> Nest projects also have <code>tsconfig.build.json</code>, which <code>extends</code> the main file and excludes tests from the production build:</p>
+  <script type="text/x-code" data-lang="json" data-title="tsconfig.build.json">
+    {
+      "extends": "./tsconfig.json",
+      "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>When you create a project with <code>nest new</code>, check whether <code>"strict": true</code> is on (newer versions set some flags but not all). Turning it on early is cheap. Turning it on later in a big codebase means fixing hundreds of errors. Also make sure <code>experimentalDecorators</code> and <code>emitDecoratorMetadata</code> stay <code>true</code>. Without them, dependency injection stops working.</p>
+    <p>Useful command: <code>npx tsc --noEmit</code> type-checks the whole project without building. It's great in CI.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Leaving <code>strict</code> off and fighting null bugs at runtime instead.</li>
+      <li>Adding <code>paths</code> but forgetting Jest's <code>moduleNameMapper</code>, so tests fail with "Cannot find module '@common/...'".</li>
+      <li>Disabling <code>emitDecoratorMetadata</code>, after which Nest can't resolve any constructor dependencies.</li>
+      <li>Turning off checks (<code>skipLibCheck</code> is fine, but <code>noImplicitAny: false</code> is not) just to silence errors.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Set up a path alias <code>@shared/*</code> that points to <code>src/shared/*</code>, and the matching Jest config so tests can resolve it.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="json" data-title="tsconfig.json (excerpt)">
+        {
+          "compilerOptions": {
+            "baseUrl": "./",
+            "paths": { "@shared/*": ["src/shared/*"] }
+          }
+        }
+      </script>
+      <script type="text/x-code" data-lang="json" data-title="package.json → jest (excerpt)">
+        {
+          "jest": {
+            "rootDir": "src",
+            "moduleNameMapper": {
+              "^@shared/(.*)$": "<rootDir>/shared/$1"
+            }
+          }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does <code>"strict": true</code> enable?</summary>
+      <p>A family of checks: <code>noImplicitAny</code>, <code>strictNullChecks</code>, <code>strictPropertyInitialization</code>, <code>strictFunctionTypes</code>, <code>strictBindCallApply</code>, <code>useUnknownInCatchVariables</code>, <code>alwaysStrict</code> and others. New strict checks added in future TS versions are included automatically.</p></details>
+    <details><summary>Why might path aliases work in the editor but fail at runtime?</summary>
+      <p><code>paths</code> affects type resolution only. The emitted JavaScript keeps the alias, so the runtime (Node, Jest) needs its own mapping: a build step that rewrites paths, <code>tsconfig-paths</code>, or <code>moduleNameMapper</code>.</p></details>
+    <details><summary>Difference between <code>target</code> and <code>module</code>?</summary>
+      <p><code>target</code> sets the JavaScript syntax level of the output (e.g. ES2021). <code>module</code> sets the module system used for imports and exports (e.g. CommonJS or ESNext).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Turn on <code>strict</code>, keep the decorator flags on for Nest, use <code>paths</code> (and map them for Jest), and run <code>tsc --noEmit</code> in CI.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="nestjs.html">← Roadmap</a>
+  <a href="NestJS-Fundamentals.html">Next: 2. NestJS Fundamentals →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

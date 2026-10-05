@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Testing</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 8 of 12</span>
+  </nav>
+  <h1>8. Testing</h1>
+  <p class="goal"><strong>Goal:</strong> Be confident changing code without breaking existing behavior.</p>
+  <p class="howto">How to use this page: every example tests code from the same shop API (a <code>UsersService</code> backed by Prisma, the auth flow from Lesson 7, orders). Use a project created with <code>nest new</code>, which already includes Jest, ts-jest and Supertest. Type the tests yourself, run them with <code>npm test</code>, do the exercise <em>before</em> opening the answer, then answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#unit-tests">Unit tests</a></li>
+      <li><a href="#testing-services">Testing services</a></li>
+      <li><a href="#testing-controllers">Testing controllers</a></li>
+      <li><a href="#e2e-tests">e2e tests</a></li>
+      <li><a href="#test-database">Test database</a></li>
+      <li><a href="#mocking">Mocking</a></li>
+      <li><a href="#test-edge-cases">Test edge cases</a></li>
+      <li><a href="#test-coverage">Test coverage</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="unit-tests">
+  <div class="topic-head"><span class="num">1</span><h2>Unit tests</h2></div>
+  <p class="tagline">Jest fundamentals</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A unit test is a tiny robot that checks one small piece of your code. You tell it: "when I give this function <em>these</em> inputs, it must return <em>this</em>". Then you can run hundreds of robots in a few seconds, every time you change something. If a change breaks old behaviour, a robot shouts immediately, long before a customer notices. <strong>Jest</strong> is the tool that runs the robots and reports which ones passed.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What <code>nest new</code> gives you.</strong> A new project is already set up for Jest. Look at <code>package.json</code>:</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json (generated by the Nest CLI)">
+    {
+      "scripts": {
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config ./test/jest-e2e.json"
+      },
+      "jest": {
+        "moduleFileExtensions": ["js", "json", "ts"],
+        "rootDir": "src",
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+        "collectCoverageFrom": ["**/*.(t|j)s"],
+        "coverageDirectory": "../coverage",
+        "testEnvironment": "node"
+      }
+    }
+  </script>
+  <ul>
+    <li><strong>Unit tests</strong> live next to the code: <code>src/users/users.service.spec.ts</code>. Any file ending in <code>.spec.ts</code> under <code>src</code> runs with <code>npm test</code>.</li>
+    <li><strong>e2e tests</strong> live in <code>test/</code> and end in <code>.e2e-spec.ts</code>. They have their own config (point 4).</li>
+    <li><code>ts-jest</code> compiles TypeScript on the fly, so you write tests in TypeScript.</li>
+  </ul>
+
+  <p><strong>The building blocks.</strong> Let's test a pure function first, with no Nest and no database. That is the simplest kind of unit test.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/orders/pricing.ts">
+    export type LineItem = { unitPrice: number; quantity: number }; // prices in cents
+
+    export function calculateOrderTotal(items: LineItem[], couponPercent = 0): number {
+      if (couponPercent < 0 || couponPercent > 100) {
+        throw new RangeError('couponPercent must be between 0 and 100');
+      }
+      const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      return Math.round(subtotal * (1 - couponPercent / 100));
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/orders/pricing.spec.ts">
+    import { calculateOrderTotal } from './pricing';
+
+    describe('calculateOrderTotal', () => {               // a group of related tests
+      it('sums price × quantity for every line', () => {  // one test = one behaviour
+        // Arrange
+        const items = [
+          { unitPrice: 1500, quantity: 2 },  // 30.00
+          { unitPrice: 999, quantity: 1 },   //  9.99
+        ];
+        // Act
+        const total = calculateOrderTotal(items);
+        // Assert
+        expect(total).toBe(3999);
+      });
+
+      it('returns 0 for an empty cart', () => {
+        expect(calculateOrderTotal([])).toBe(0);
+      });
+
+      it('applies a percentage coupon and rounds to whole cents', () => {
+        expect(calculateOrderTotal([{ unitPrice: 999, quantity: 1 }], 10)).toBe(899); // 899.1 → 899
+      });
+
+      it('rejects an invalid coupon', () => {
+        // ✅ wrap the call in a function, so Jest can catch the throw
+        expect(() => calculateOrderTotal([], 150)).toThrow(RangeError);
+        // ❌ expect(calculateOrderTotal([], 150)).toThrow() — throws BEFORE expect runs
+      });
+    });
+  </script>
+  <p>The <strong>Arrange → Act → Assert</strong> pattern (AAA) makes every test read the same way: set up the data, call the code once, check the result. One test should check one behaviour, and its name should read like a sentence: "calculateOrderTotal returns 0 for an empty cart".</p>
+
+  <p><strong>The matchers you'll use 95% of the time.</strong></p>
+  <table>
+    <tr><th>Matcher</th><th>Checks</th><th>Example</th></tr>
+    <tr><td><code>toBe</code></td><td>Exact equality (<code>Object.is</code>): primitives, same reference</td><td><code>expect(total).toBe(3999)</code></td></tr>
+    <tr><td><code>toEqual</code></td><td>Deep equality of objects and arrays</td><td><code>expect(user).toEqual({ id: 1, email: 'a@x.com' })</code></td></tr>
+    <tr><td><code>toMatchObject</code></td><td>Object contains <em>at least</em> these fields</td><td><code>expect(user).toMatchObject({ role: 'USER' })</code></td></tr>
+    <tr><td><code>toThrow</code></td><td>Function throws (class, message or regex)</td><td><code>expect(() =&gt; fn()).toThrow('between 0 and 100')</code></td></tr>
+    <tr><td><code>toHaveLength</code>, <code>toContain</code></td><td>Arrays and strings</td><td><code>expect(list).toHaveLength(3)</code></td></tr>
+    <tr><td><code>toBeNull</code>, <code>toBeDefined</code>, <code>toBeTruthy</code></td><td>Presence</td><td><code>expect(found).toBeNull()</code></td></tr>
+    <tr><td><code>.not</code></td><td>Negates any matcher</td><td><code>expect(body).not.toHaveProperty('passwordHash')</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ toBe on objects compares references → fails even though they look equal
+    expect({ id: 1 }).toBe({ id: 1 });
+    // ✅
+    expect({ id: 1 }).toEqual({ id: 1 });
+
+    // Partial matching with "asymmetric matchers"
+    expect(user).toEqual({
+      id: expect.any(Number),
+      email: 'an@shop.com',
+      createdAt: expect.any(Date),
+    });
+  </script>
+
+  <p><strong>Async tests.</strong> Most Nest code is async. Make the test <code>async</code> and <code>await</code>, or Jest will finish the test before your promise settles, and it will pass even when it should fail.</p>
+  <script type="text/x-code" data-lang="typescript">
+    it('resolves with the user', async () => {
+      await expect(service.findOne(1)).resolves.toMatchObject({ id: 1 });
+    });
+
+    it('rejects when the user is missing', async () => {
+      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+    });
+
+    // ❌ forgot "await" → the test ends immediately and always passes
+    it('looks fine but tests nothing', () => {
+      expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+    });
+  </script>
+
+  <p><strong>Setup and teardown.</strong> <code>beforeEach</code> runs before every test in its <code>describe</code> block, so each test starts fresh. <code>beforeAll</code> runs once (good for expensive setup like starting an app). <code>afterEach</code> and <code>afterAll</code> clean up.</p>
+  <p><strong>Table tests.</strong> When only the input changes, use <code>it.each</code> instead of copying the test:</p>
+  <script type="text/x-code" data-lang="typescript">
+    it.each([
+      [0, 1000],
+      [10, 900],
+      [33, 670],
+      [100, 0],
+    ])('with a %i%% coupon, 1000 cents costs %i', (coupon, expected) => {
+      expect(calculateOrderTotal([{ unitPrice: 1000, quantity: 1 }], coupon)).toBe(expected);
+    });
+  </script>
+  <script type="text/x-code" data-lang="bash">
+    npm test                         # run all unit tests once
+    npm run test:watch               # re-run tests related to changed files
+    npx jest pricing                 # run only files matching "pricing"
+    npx jest -t "empty cart"         # run only tests whose name matches
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>When you run <code>nest g service users</code>, the CLI also creates <code>users.service.spec.ts</code> with a "should be defined" test. That test is only a starting point: it proves the class can be built, not that it works. Keep the scaffold, then add real behaviour tests next to it (points 2 and 3). The best unit-test targets are the parts of the app with <em>logic</em>: pricing, discount rules, permission maps, status transitions. They are pure functions or plain classes, so tests are fast and need no mocks.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/orders/order-status.spec.ts">
+      import { canTransition } from './order-status';
+
+      describe('canTransition', () => {
+        it.each([
+          ['PENDING', 'PAID', true],
+          ['PAID', 'SHIPPED', true],
+          ['SHIPPED', 'PENDING', false],   // can't go backwards
+          ['CANCELLED', 'PAID', false],    // final state
+        ] as const)('%s → %s is %s', (from, to, allowed) => {
+          expect(canTransition(from, to)).toBe(allowed);
+        });
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting <code>await</code> (or <code>return</code>) on async expectations. The test passes no matter what.</li>
+      <li><code>expect(fn()).toThrow()</code> instead of <code>expect(() =&gt; fn()).toThrow()</code>. The error is thrown before Jest can catch it.</li>
+      <li>Using <code>toBe</code> for objects and arrays. Use <code>toEqual</code>.</li>
+      <li>Tests that depend on each other's order or shared state. Every test must pass when run alone (<code>it.only</code>).</li>
+      <li>Committing <code>it.only</code> or <code>describe.only</code>, which silently skips the rest of the file in CI.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write tests for <code>slugify(title: string): string</code>, which turns <code>"  Gaming Keyboard RGB! "</code> into <code>"gaming-keyboard-rgb"</code>. Cover a normal title, extra spaces, symbols, and an empty string (which must throw).</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="src/products/slugify.spec.ts">
+        import { slugify } from './slugify';
+
+        describe('slugify', () => {
+          it('lower-cases and joins words with dashes', () => {
+            expect(slugify('Gaming Keyboard')).toBe('gaming-keyboard');
+          });
+
+          it('trims and collapses whitespace', () => {
+            expect(slugify('  Gaming   Keyboard  ')).toBe('gaming-keyboard');
+          });
+
+          it('removes symbols', () => {
+            expect(slugify('Gaming Keyboard RGB!')).toBe('gaming-keyboard-rgb');
+          });
+
+          it.each(['', '   ', '!!!'])('throws for a title with no letters: %p', (title) => {
+            expect(() => slugify(title)).toThrow('Title must contain letters or digits');
+          });
+        });
+      </script>
+      <script type="text/x-code" data-lang="typescript" data-title="src/products/slugify.ts (one possible implementation)">
+        export function slugify(title: string): string {
+          const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          if (!slug) throw new Error('Title must contain letters or digits');
+          return slug;
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between <code>toBe</code> and <code>toEqual</code>?</summary>
+      <p><code>toBe</code> uses <code>Object.is</code>: same primitive value or the same object reference. <code>toEqual</code> compares recursively by value, so two different objects with the same fields are equal. Use <code>toStrictEqual</code> if <code>undefined</code> properties and class types must also match.</p></details>
+    <details><summary>What makes a good unit test?</summary>
+      <p>It is fast, isolated (no network or database), deterministic (same result every run), tests one behaviour through the public API, and has a name that describes that behaviour. When it fails, you should know what broke without reading the code.</p></details>
+    <details><summary>How do you test that an async function rejects?</summary>
+      <p><code>await expect(promise).rejects.toThrow(SomeError)</code>. The <code>await</code> is essential. Without it, the test finishes before the promise settles.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Arrange, Act, Assert: one behaviour per test, <code>await</code> every async expectation, <code>toEqual</code> for objects, and wrap throwing calls in a function.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="testing-services">
+  <div class="topic-head"><span class="num">2</span><h2>Testing services</h2></div>
+  <p class="tagline">mocking Prisma and repositories</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A service usually talks to the database. For a unit test we don't want a real database: it's slow, needs setup, and a failure might be the database's fault, not your code's. So we give the service a <em>stunt double</em> for Prisma: a fake object that looks like Prisma, returns whatever we tell it to, and remembers how it was called. Then we can check the service's own decisions, such as "throw 404 if the user is missing" or "hash the password before saving", in milliseconds.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The service under test.</strong> This is a typical <code>UsersService</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/users/users.service.ts">
+    import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+    import { Prisma } from '@prisma/client';
+    import * as argon2 from 'argon2';
+    import { PrismaService } from '../prisma/prisma.service';
+    import { CreateUserDto } from './dto/create-user.dto';
+
+    export const publicUserSelect = { id: true, email: true, name: true, role: true } as const;
+
+    @Injectable()
+    export class UsersService {
+      constructor(private readonly prisma: PrismaService) {}
+
+      async findOne(id: number) {
+        const user = await this.prisma.user.findUnique({ where: { id }, select: publicUserSelect });
+        if (!user) throw new NotFoundException(`User ${id} not found`);
+        return user;
+      }
+
+      findAll(page = 1, limit = 20) {
+        return this.prisma.user.findMany({
+          select: publicUserSelect,
+          orderBy: { id: 'asc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        });
+      }
+
+      async create(dto: CreateUserDto) {
+        const passwordHash = await argon2.hash(dto.password);
+        try {
+          return await this.prisma.user.create({
+            data: { email: dto.email.toLowerCase(), name: dto.name, passwordHash },
+            select: publicUserSelect,
+          });
+        } catch (e) {
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            throw new ConflictException('Email already registered');
+          }
+          throw e;
+        }
+      }
+    }
+  </script>
+
+  <p><strong>Step 1: build a testing module with a fake <code>PrismaService</code>.</strong> <code>Test.createTestingModule()</code> creates a small Nest DI container, just like a real module. With <code>{ provide: PrismaService, useValue: prismaMock }</code> we tell Nest: "whenever someone asks for <code>PrismaService</code>, give them this object instead". The service doesn't know the difference.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/users/users.service.spec.ts">
+    import { ConflictException, NotFoundException } from '@nestjs/common';
+    import { Test } from '@nestjs/testing';
+    import { Prisma } from '@prisma/client';
+    import { PrismaService } from '../prisma/prisma.service';
+    import { UsersService } from './users.service';
+
+    jest.mock('argon2', () => ({ hash: jest.fn().mockResolvedValue('hashed-pw') })); // see point 6
+
+    describe('UsersService', () => {
+      let service: UsersService;
+
+      // only the methods this service actually uses
+      const prismaMock = {
+        user: {
+          findUnique: jest.fn(),
+          findMany: jest.fn(),
+          create: jest.fn(),
+        },
+      };
+
+      beforeEach(async () => {
+        jest.clearAllMocks(); // forget calls and return values from the previous test
+
+        const moduleRef = await Test.createTestingModule({
+          providers: [
+            UsersService,                                     // the REAL class under test
+            { provide: PrismaService, useValue: prismaMock }, // the fake dependency
+          ],
+        }).compile();
+
+        service = moduleRef.get(UsersService);
+      });
+
+      // tests go here (below)
+    });
+  </script>
+
+  <p><strong>Step 2: test the decisions, not Prisma.</strong> For each method, ask: what does <em>my</em> code decide? <code>findOne</code> decides "missing user → 404". <code>create</code> decides "hash the password, lower-case the email, translate P2002 into 409".</p>
+  <script type="text/x-code" data-lang="typescript">
+    describe('findOne', () => {
+      it('returns the user when it exists', async () => {
+        const user = { id: 1, email: 'an@shop.com', name: 'An', role: 'USER' };
+        prismaMock.user.findUnique.mockResolvedValue(user);
+
+        await expect(service.findOne(1)).resolves.toEqual(user);
+        expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
+          where: { id: 1 },
+          select: expect.objectContaining({ email: true }),
+        });
+      });
+
+      it('throws NotFoundException when Prisma returns null', async () => {
+        prismaMock.user.findUnique.mockResolvedValue(null);
+
+        await expect(service.findOne(42)).rejects.toThrow(NotFoundException);
+      });
+    });
+
+    describe('create', () => {
+      const dto = { email: 'An@Shop.com', password: 'Summer2024!', name: 'An' };
+
+      it('stores a hash (never the plain password) and a lower-cased email', async () => {
+        prismaMock.user.create.mockResolvedValue({ id: 1, email: 'an@shop.com', name: 'An', role: 'USER' });
+
+        await service.create(dto);
+
+        const args = prismaMock.user.create.mock.calls[0][0];      // first call, first argument
+        expect(args.data).toEqual({ email: 'an@shop.com', name: 'An', passwordHash: 'hashed-pw' });
+        expect(JSON.stringify(args)).not.toContain('Summer2024!');  // ✅ plain password never sent
+      });
+
+      it('translates a unique-constraint error (P2002) into 409 Conflict', async () => {
+        prismaMock.user.create.mockRejectedValue(
+          new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+            code: 'P2002',
+            clientVersion: '6.0.0',
+          }),
+        );
+
+        await expect(service.create(dto)).rejects.toThrow(ConflictException);
+      });
+
+      it('re-throws unknown errors untouched', async () => {
+        const boom = new Error('connection lost');
+        prismaMock.user.create.mockRejectedValue(boom);
+
+        await expect(service.create(dto)).rejects.toBe(boom);
+      });
+    });
+  </script>
+
+  <p><strong>Typing the mock.</strong> The hand-written mock above is simple, but TypeScript doesn't check that it matches Prisma. The package <code>jest-mock-extended</code> creates a fully typed deep mock of the whole client:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // npm i -D jest-mock-extended
+    import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
+    import { PrismaClient } from '@prisma/client';
+
+    let prismaMock: DeepMockProxy<PrismaClient>;
+
+    beforeEach(async () => {
+      prismaMock = mockDeep<PrismaClient>();
+      const moduleRef = await Test.createTestingModule({
+        providers: [UsersService, { provide: PrismaService, useValue: prismaMock }],
+      }).compile();
+      service = moduleRef.get(UsersService);
+    });
+
+    it('returns users', async () => {
+      prismaMock.user.findMany.mockResolvedValue([]);  // ✅ autocompleted and type-checked
+      await expect(service.findAll()).resolves.toEqual([]);
+    });
+  </script>
+
+  <p><strong>Repositories: an easier seam.</strong> Some teams put all Prisma calls in a <code>UsersRepository</code> class with methods like <code>findById</code>, <code>insert</code> and <code>existsByEmail</code>. The service then depends on the repository, and the mock becomes tiny and business-shaped, with no nested <code>user.findUnique</code>:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const usersRepoMock = { findById: jest.fn(), insert: jest.fn() };
+
+    await Test.createTestingModule({
+      providers: [UsersService, { provide: UsersRepository, useValue: usersRepoMock }],
+    }).compile();
+
+    usersRepoMock.findById.mockResolvedValue(null);
+    await expect(service.findOne(42)).rejects.toThrow(NotFoundException);
+  </script>
+  <table>
+    <tr><th>What you mock</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td>PrismaService directly</td><td>No extra layer; matches most Nest + Prisma projects</td><td>Mocks mirror Prisma's API shape; tests break when you change a query's form</td></tr>
+    <tr><td>A repository class</td><td>Small, readable mocks; services are easier to test</td><td>One more layer to write and maintain</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Unit tests with a mocked Prisma are great for service <em>logic</em>, but they can't tell you whether the query itself is right (a wrong field name, a missing <code>include</code>, a unique constraint that doesn't exist). A healthy project uses both:</p>
+    <ul>
+      <li><strong>Unit tests</strong> (<code>*.spec.ts</code>, mocked Prisma) for branches and error handling: fast, hundreds of them.</li>
+      <li><strong>Integration and e2e tests</strong> (points 4–5) against a real PostgreSQL test database, to prove the queries and constraints work.</li>
+    </ul>
+    <p>A common shared helper keeps every service spec short:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/test-utils/prisma-mock.ts">
+      import { PrismaClient } from '@prisma/client';
+      import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+      import { PrismaService } from '../prisma/prisma.service';
+
+      export type PrismaMock = DeepMockProxy<PrismaClient>;
+
+      export const prismaMockProvider = () => {
+        const mock = mockDeep<PrismaClient>();
+        return { mock, provider: { provide: PrismaService, useValue: mock } };
+      };
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Testing that Prisma was called with exactly the same object you wrote in the service, and nothing else. That only repeats the implementation. Test outcomes and decisions.</li>
+      <li>Not resetting mocks between tests, so a <code>mockResolvedValue</code> from test A leaks into test B. Use <code>jest.clearAllMocks()</code> in <code>beforeEach</code> or <code>clearMocks: true</code> in the config.</li>
+      <li>Keeping the CLI's "should be defined" test as the only test. It passes for a completely broken service.</li>
+      <li>Importing the real <code>PrismaModule</code> into a unit test, which then tries to connect to a database.</li>
+      <li>Mocking the class you are testing. Only its <em>dependencies</em> should be fake.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add <code>remove(id)</code> to <code>UsersService</code>: it deletes the user, and if Prisma throws <code>P2025</code> ("record not found") it throws <code>NotFoundException</code>. Write the two tests.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // users.service.ts
+        async remove(id: number): Promise<void> {
+          try {
+            await this.prisma.user.delete({ where: { id } });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+              throw new NotFoundException(`User ${id} not found`);
+            }
+            throw e;
+          }
+        }
+
+        // users.service.spec.ts  (add delete: jest.fn() to prismaMock.user)
+        describe('remove', () => {
+          it('deletes the user by id', async () => {
+            prismaMock.user.delete.mockResolvedValue({ id: 3 });
+            await expect(service.remove(3)).resolves.toBeUndefined();
+            expect(prismaMock.user.delete).toHaveBeenCalledWith({ where: { id: 3 } });
+          });
+
+          it('throws NotFoundException when the record does not exist (P2025)', async () => {
+            prismaMock.user.delete.mockRejectedValue(
+              new Prisma.PrismaClientKnownRequestError('Record not found', {
+                code: 'P2025',
+                clientVersion: '6.0.0',
+              }),
+            );
+            await expect(service.remove(3)).rejects.toThrow(NotFoundException);
+          });
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you replace a dependency in a NestJS unit test?</summary>
+      <p>Build a module with <code>Test.createTestingModule</code> and register a custom provider that uses the real token: <code>{ provide: PrismaService, useValue: mock }</code> (or <code>useClass</code> / <code>useFactory</code>). The class under test receives the mock through normal dependency injection.</p></details>
+    <details><summary>What can't a unit test with a mocked Prisma catch?</summary>
+      <p>Anything about the real database: wrong queries, missing relations, constraint behaviour, migrations, transaction semantics, and Prisma's actual return shape. You need integration or e2e tests against a real database for those.</p></details>
+    <details><summary>Mock Prisma directly or introduce a repository?</summary>
+      <p>Mocking Prisma directly is fine and common. A repository gives smaller, intention-revealing mocks and isolates the ORM, at the cost of an extra layer. Choose based on the size and complexity of the data access.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use the real service with fake dependencies. Mock Prisma (or a repository) to test your service's decisions, and leave query correctness to tests that use a real database.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="testing-controllers">
+  <div class="topic-head"><span class="num">3</span><h2>Testing controllers</h2></div>
+  <p class="tagline">mocking providers</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A controller is the receptionist of your app. It takes the request, passes it to the right department (a service), and hands back the answer. When you test the receptionist, you don't need the real departments. You replace the service with a fake that says "yes, here's a user", and you check only the receptionist's job: did it ask the right department, with the right details, and pass the answer back correctly?</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The controller under test.</strong> It uses the guards and decorators from Lesson 7:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/users/users.controller.ts">
+    import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+    import { Role } from '@prisma/client';
+    import { CurrentUser } from '../auth/decorators/current-user.decorator';
+    import { Roles } from '../auth/decorators/roles.decorator';
+    import { JwtPayload } from '../auth/types/jwt-payload.type';
+    import { CreateUserDto } from './dto/create-user.dto';
+    import { PaginationQueryDto } from './dto/pagination-query.dto';
+    import { UsersService } from './users.service';
+
+    @Controller('users')
+    export class UsersController {
+      constructor(private readonly usersService: UsersService) {}
+
+      @Get('me')
+      me(@CurrentUser() user: JwtPayload) {
+        return this.usersService.findOne(user.sub);
+      }
+
+      @Roles(Role.ADMIN)
+      @Get()
+      findAll(@Query() query: PaginationQueryDto) {
+        return this.usersService.findAll(query.page, query.limit);
+      }
+
+      @Roles(Role.ADMIN)
+      @Post()
+      create(@Body() dto: CreateUserDto) {
+        return this.usersService.create(dto);
+      }
+
+      @Roles(Role.ADMIN)
+      @Delete(':id')
+      @HttpCode(204)
+      remove(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.remove(id);
+      }
+    }
+  </script>
+
+  <p><strong>Step 1: mock the service provider.</strong> Same idea as point 2, one level up: the controller is real, and <code>UsersService</code> is a fake.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/users/users.controller.spec.ts">
+    import { NotFoundException } from '@nestjs/common';
+    import { Test } from '@nestjs/testing';
+    import { UsersController } from './users.controller';
+    import { UsersService } from './users.service';
+
+    describe('UsersController', () => {
+      let controller: UsersController;
+
+      const usersServiceMock = {
+        findOne: jest.fn(),
+        findAll: jest.fn(),
+        create: jest.fn(),
+        remove: jest.fn(),
+      };
+
+      beforeEach(async () => {
+        jest.clearAllMocks();
+        const moduleRef = await Test.createTestingModule({
+          controllers: [UsersController],
+          providers: [{ provide: UsersService, useValue: usersServiceMock }],
+        }).compile();
+
+        controller = moduleRef.get(UsersController);
+      });
+
+      it('GET /users/me loads the user from the token "sub"', async () => {
+        const user = { id: 7, email: 'an@shop.com', name: 'An', role: 'USER' };
+        usersServiceMock.findOne.mockResolvedValue(user);
+
+        const result = await controller.me({ sub: 7, email: 'an@shop.com', role: 'USER' });
+
+        expect(usersServiceMock.findOne).toHaveBeenCalledWith(7);
+        expect(result).toEqual(user);
+      });
+
+      it('GET /users passes pagination to the service', async () => {
+        usersServiceMock.findAll.mockResolvedValue([]);
+
+        await controller.findAll({ page: 2, limit: 10 });
+
+        expect(usersServiceMock.findAll).toHaveBeenCalledWith(2, 10);
+      });
+
+      it('lets service exceptions bubble up (Nest turns them into HTTP errors)', async () => {
+        usersServiceMock.findOne.mockRejectedValue(new NotFoundException());
+
+        await expect(controller.me({ sub: 99, email: 'x@y.z', role: 'USER' })).rejects.toThrow(
+          NotFoundException,
+        );
+      });
+    });
+  </script>
+
+  <p><strong>What does <em>not</em> run in a controller unit test?</strong> You call the method directly, like a normal function. Nest's request pipeline is skipped completely:</p>
+  <table>
+    <tr><th>Piece</th><th>Runs when you call <code>controller.findAll()</code>?</th><th>Where to test it</th></tr>
+    <tr><td>Your method body</td><td>✅ Yes</td><td>Controller unit test</td></tr>
+    <tr><td>Guards (<code>JwtAuthGuard</code>, <code>RolesGuard</code>)</td><td>❌ No</td><td>Guard unit test + e2e</td></tr>
+    <tr><td>Pipes (<code>ParseIntPipe</code>, <code>ValidationPipe</code>)</td><td>❌ No</td><td>e2e (or DTO unit test)</td></tr>
+    <tr><td>Interceptors, exception filters</td><td>❌ No</td><td>Their own unit tests + e2e</td></tr>
+    <tr><td>Route paths and HTTP status codes</td><td>❌ No</td><td>e2e</td></tr>
+  </table>
+  <p>That's why controllers should be <em>thin</em>: if all the logic lives in services, controller tests stay short, and e2e tests cover the HTTP wiring.</p>
+
+  <p><strong>Step 2: overriding guards that have dependencies.</strong> If a controller uses <code>@UseGuards(SomeGuard)</code> directly, Nest must <em>create</em> that guard when it compiles the testing module, even though it never runs it. If the guard needs <code>ConfigService</code> or <code>Reflector</code> from a module you didn't import, compilation fails. Replace the guard:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const moduleRef = await Test.createTestingModule({
+      controllers: [InternalController],
+      providers: [{ provide: OrdersService, useValue: ordersServiceMock }],
+    })
+      .overrideGuard(ApiKeyGuard)
+      .useValue({ canActivate: () => true })   // ✅ no ConfigService needed
+      .compile();
+  </script>
+  <p>Global guards registered with <code>APP_GUARD</code> in <code>AppModule</code> are not part of this small testing module, so you don't need to override them here.</p>
+
+  <p><strong>Step 3: test the security metadata.</strong> Guards don't run in unit tests, but you <em>can</em> check that a route has the right decorators. This catches "someone deleted <code>@Roles(Role.ADMIN)</code> by accident":</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { Reflector } from '@nestjs/core';
+    import { Role } from '@prisma/client';
+    import { ROLES_KEY } from '../auth/decorators/roles.decorator';
+
+    it.each(['findAll', 'create', 'remove'] as const)('%s is admin-only', (method) => {
+      const roles = new Reflector().get(ROLES_KEY, UsersController.prototype[method]);
+      expect(roles).toEqual([Role.ADMIN]);
+    });
+
+    it('/users/me is open to any logged-in user', () => {
+      expect(new Reflector().get(ROLES_KEY, UsersController.prototype.me)).toBeUndefined();
+    });
+  </script>
+
+  <p><strong>Auto-mocking many providers.</strong> When a controller has five dependencies, writing every mock by hand gets boring. <code>useMocker()</code> creates a mock for any provider you didn't register:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // npm i -D @golevelup/ts-jest
+    import { createMock } from '@golevelup/ts-jest';
+
+    const moduleRef = await Test.createTestingModule({ controllers: [OrdersController] })
+      .useMocker(createMock)             // every missing dependency becomes a deep mock
+      .compile();
+
+    const ordersService = moduleRef.get(OrdersService); // the auto-created mock
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The <code>AuthController</code> from Lesson 7 sets a cookie, which is a good example of controller logic worth unit-testing. Pass a fake <code>Response</code> object with only the method you need:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.controller.spec.ts">
+      import { Response } from 'express';
+
+      it('login returns only the access token and sets the refresh cookie', async () => {
+        authServiceMock.issueTokens.mockResolvedValue({
+          accessToken: 'acc', refreshToken: 'ref', jti: 'j1',
+        });
+        const res = { cookie: jest.fn() } as unknown as Response;
+
+        const body = await controller.login(
+          { id: 1, email: 'an@shop.com', name: 'An', role: 'USER' }, res,
+        );
+
+        expect(body).toEqual({ accessToken: 'acc' });              // ✅ no refresh token in JSON
+        expect(res.cookie).toHaveBeenCalledWith(
+          'refresh_token', 'ref', expect.objectContaining({ httpOnly: true, path: '/auth' }),
+        );
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Expecting <code>ValidationPipe</code> or <code>ParseIntPipe</code> to run when calling <code>controller.create(dto)</code>. They don't. Test validation in e2e tests.</li>
+      <li>Believing a route is protected because the controller test "passes". Guards never ran. Test the metadata, and test the 401/403 in e2e.</li>
+      <li>Putting business logic in controllers, so you need a huge controller test full of mocks. Move it to a service.</li>
+      <li>Forgetting to mock a dependency, which gives <em>"Nest can't resolve dependencies of the UsersController (?)"</em>. Every constructor dependency needs a provider or <code>useMocker</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a test for <code>UsersController.create</code> that checks: (1) the DTO is passed to the service unchanged; (2) the controller returns what the service returns. Then add one line proving the route is admin-only.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        describe('create', () => {
+          const dto = { email: 'new@shop.com', password: 'Summer2024!', name: 'New' };
+
+          it('delegates to UsersService.create and returns its result', async () => {
+            const created = { id: 10, email: 'new@shop.com', name: 'New', role: 'USER' };
+            usersServiceMock.create.mockResolvedValue(created);
+
+            await expect(controller.create(dto)).resolves.toEqual(created);
+            expect(usersServiceMock.create).toHaveBeenCalledWith(dto);
+            expect(usersServiceMock.create).toHaveBeenCalledTimes(1);
+          });
+
+          it('is admin-only', () => {
+            expect(new Reflector().get(ROLES_KEY, UsersController.prototype.create)).toEqual([Role.ADMIN]);
+          });
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Do guards and pipes run in a controller unit test?</summary>
+      <p>No. Calling the method directly bypasses Nest's request pipeline: no guards, pipes, interceptors or filters. Test those separately, and use e2e tests (with Supertest) to test them together over HTTP.</p></details>
+    <details><summary>What is the difference between <code>overrideProvider</code> and <code>overrideGuard</code>?</summary>
+      <p>Both replace something in the testing module before <code>compile()</code>. <code>overrideProvider(Token)</code> replaces an injectable provider (a service, a repository). <code>overrideGuard(GuardClass)</code> replaces a guard referenced with <code>@UseGuards()</code>, for example with <code>{ canActivate: () =&gt; true }</code>.</p></details>
+    <details><summary>How can you test that a route is protected without running the app?</summary>
+      <p>Read the metadata the decorators attached: <code>new Reflector().get(ROLES_KEY, Controller.prototype.method)</code> and assert the expected roles. For full confidence, also write e2e tests that expect 401 and 403.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Controller unit tests check delegation and response shaping, with mocked services. Guards, pipes and status codes need e2e tests.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="e2e-tests">
+  <div class="topic-head"><span class="num">4</span><h2>e2e tests</h2></div>
+  <p class="tagline">Supertest and TestingModule</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Unit tests check each part of a car on a workbench. An end-to-end (e2e) test turns the key and drives the car around the block. We start the whole NestJS app in memory and send it real HTTP requests, just like a browser or mobile app would. The request goes through middleware, guards, pipes, the controller, the service and the database, and we check the final HTTP response: status code, headers and body. If an e2e test passes, a real client would see the same thing.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What the CLI generated.</strong> <code>nest new</code> creates a <code>test/</code> folder with its own Jest config and one example:</p>
+  <script type="text/x-code" data-lang="json" data-title="test/jest-e2e.json">
+    {
+      "moduleFileExtensions": ["js", "json", "ts"],
+      "rootDir": ".",
+      "testEnvironment": "node",
+      "testRegex": ".e2e-spec.ts$",
+      "transform": { "^.+\\.(t|j)s$": "ts-jest" }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="test/app.e2e-spec.ts (generated)">
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { INestApplication } from '@nestjs/common';
+    import request from 'supertest';                  // Nest 10 projects: import * as request from 'supertest';
+    import { App } from 'supertest/types';
+    import { AppModule } from './../src/app.module';
+
+    describe('AppController (e2e)', () => {
+      let app: INestApplication<App>;
+
+      beforeEach(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],                         // the WHOLE app, real providers
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();                               // no listen(): no port needed
+      });
+
+      it('/ (GET)', () => {
+        return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
+      });
+    });
+  </script>
+  <p><code>Test.createTestingModule({ imports: [AppModule] })</code> builds the real app. <code>createNestApplication()</code> + <code>init()</code> create the HTTP layer without opening a port. Supertest's <code>request(app.getHttpServer())</code> sends requests straight to that server object.</p>
+
+  <p><strong>Trap #1: <code>main.ts</code> is not used.</strong> Everything you configure in <code>main.ts</code> (global <code>ValidationPipe</code>, <code>cookieParser</code>, global prefix, CORS) does <em>not</em> exist in the test app. Then validation tests pass in production but fail in tests, or the other way round. Fix: move that setup into one function and call it from both places.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/app.setup.ts">
+    import { INestApplication, ValidationPipe } from '@nestjs/common';
+    import cookieParser from 'cookie-parser';
+
+    export function configureApp(app: INestApplication) {
+      app.use(cookieParser());
+      app.useGlobalPipes(
+        new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      );
+      return app;
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
+    const app = await NestFactory.create(AppModule);
+    configureApp(app);                   // ✅ same setup in prod…
+    await app.listen(process.env.PORT ?? 3000);
+  </script>
+
+  <p><strong>Trap #2: speed.</strong> Starting the app takes a second or two. The generated example uses <code>beforeEach</code>, which restarts the app before every test. For a suite of 30 tests, use <code>beforeAll</code> and close the app in <code>afterAll</code>. Otherwise Jest warns <em>"did not exit one second after the test run"</em> because Prisma connections stay open.</p>
+
+  <p><strong>A real e2e test: the full auth flow.</strong> <code>request.agent()</code> keeps cookies between requests, like a browser, which is perfect for our httpOnly refresh cookie.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/auth.e2e-spec.ts">
+    import { INestApplication } from '@nestjs/common';
+    import { Test } from '@nestjs/testing';
+    import request from 'supertest';
+    import { App } from 'supertest/types';
+    import { AppModule } from '../src/app.module';
+    import { configureApp } from '../src/app.setup';
+    import { PrismaService } from '../src/prisma/prisma.service';
+    import { resetDatabase } from './utils/reset-database';   // point 5
+
+    describe('Auth (e2e)', () => {
+      let app: INestApplication<App>;
+      let prisma: PrismaService;
+
+      beforeAll(async () => {
+        const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+        app = configureApp(moduleRef.createNestApplication());   // ✅ … and in tests
+        await app.init();
+        prisma = app.get(PrismaService);
+      });
+
+      beforeEach(() => resetDatabase(prisma));
+      afterAll(() => app.close());
+
+      it('register → login → /users/me → refresh → logout', async () => {
+        const agent = request.agent(app.getHttpServer());         // keeps cookies
+
+        await agent
+          .post('/auth/register')
+          .send({ email: 'an@shop.com', password: 'Summer2024!', name: 'An' })
+          .expect(201)
+          .expect((res) => {
+            expect(res.body).toMatchObject({ email: 'an@shop.com', role: 'USER' });
+            expect(res.body).not.toHaveProperty('passwordHash');    // ✅ never leaked
+          });
+
+        const login = await agent
+          .post('/auth/login')
+          .send({ email: 'an@shop.com', password: 'Summer2024!' })
+          .expect(200);
+        expect(login.headers['set-cookie']?.[0]).toMatch(/refresh_token=.+; .*HttpOnly/);
+        const accessToken: string = login.body.accessToken;
+
+        await agent
+          .get('/users/me')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(200)
+          .expect((res) => expect(res.body.email).toBe('an@shop.com'));
+
+        const refreshed = await agent.post('/auth/refresh').expect(200);  // cookie sent automatically
+        expect(refreshed.body.accessToken).toEqual(expect.any(String));
+
+        await agent.post('/auth/logout').expect(204);
+        await agent.post('/auth/refresh').expect(401);                    // ✅ session is gone
+      });
+    });
+  </script>
+
+  <p><strong>Replacing only external services.</strong> e2e tests should use your real code and a real database, but not real e-mails or payments. Override just those providers:</p>
+  <script type="text/x-code" data-lang="typescript">
+    const mailServiceMock = { sendWelcomeEmail: jest.fn().mockResolvedValue(undefined) };
+
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(MailService)
+      .useValue(mailServiceMock)                  // ✅ no real email sent
+      .compile();
+
+    // later, in a test:
+    expect(mailServiceMock.sendWelcomeEmail).toHaveBeenCalledWith('an@shop.com');
+  </script>
+
+  <table>
+    <tr><th></th><th>Unit test</th><th>e2e test</th></tr>
+    <tr><td>Scope</td><td>One class</td><td>Whole app over HTTP</td></tr>
+    <tr><td>Dependencies</td><td>Mocked</td><td>Real (except external APIs)</td></tr>
+    <tr><td>Database</td><td>None</td><td>Real test database</td></tr>
+    <tr><td>Speed</td><td>~1–10 ms each</td><td>~20–200 ms each, plus app start</td></tr>
+    <tr><td>Finds</td><td>Logic bugs</td><td>Wiring bugs: guards, pipes, routes, queries, status codes</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Typical layout and scripts:</p>
+    <script type="text/x-code" data-lang="plaintext">
+      test/
+        jest-e2e.json
+        utils/
+          reset-database.ts       # point 5
+          factories.ts            # createUser(), createOrder() …
+          auth.ts                 # loginAs(app, user) → access token
+        auth.e2e-spec.ts
+        users.e2e-spec.ts
+        orders.e2e-spec.ts
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="test/utils/auth.ts">
+      import { INestApplication } from '@nestjs/common';
+      import request from 'supertest';
+      import { App } from 'supertest/types';
+
+      export async function loginAs(app: INestApplication<App>, email: string, password = 'Summer2024!') {
+        const res = await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email, password })
+          .expect(200);
+        return res.body.accessToken as string;
+      }
+    </script>
+    <p>Run e2e tests one file at a time (<code>--runInBand</code>) when they share a database, so two files don't wipe each other's data (point 5).</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting that <code>main.ts</code> doesn't run, so there is no <code>ValidationPipe</code> in tests. Share a <code>configureApp()</code> function.</li>
+      <li>Not calling <code>app.close()</code>, so open DB connections keep Jest running ("Jest did not exit…").</li>
+      <li>Pointing e2e tests at the development database and wiping your local data. Use a separate test DB (point 5).</li>
+      <li>Mocking services in e2e tests "to make them easier". Then they're just slow unit tests. Mock only things outside your system.</li>
+      <li>Not returning or awaiting the Supertest chain, so the test ends before the request finishes.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write an e2e test proving that a normal user gets <code>403</code> on <code>GET /users</code> (admin-only), and an admin gets <code>200</code> with an array. Use a factory to create both users directly in the database.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="test/users.e2e-spec.ts">
+        import * as argon2 from 'argon2';
+        import { Role } from '@prisma/client';
+
+        async function createUser(prisma: PrismaService, email: string, role: Role = Role.USER) {
+          return prisma.user.create({
+            data: { email, role, passwordHash: await argon2.hash('Summer2024!') },
+          });
+        }
+
+        it('GET /users is forbidden for USER and allowed for ADMIN', async () => {
+          await createUser(prisma, 'user@shop.com');
+          await createUser(prisma, 'admin@shop.com', Role.ADMIN);
+
+          const userToken = await loginAs(app, 'user@shop.com');
+          const adminToken = await loginAs(app, 'admin@shop.com');
+
+          await request(app.getHttpServer())
+            .get('/users')
+            .set('Authorization', `Bearer ${userToken}`)
+            .expect(403);
+
+          const res = await request(app.getHttpServer())
+            .get('/users')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(200);
+          expect(res.body).toHaveLength(2);
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does <code>app.getHttpServer()</code> give Supertest, and why is no port needed?</summary>
+      <p>It returns the underlying Node HTTP server (Express by default). Supertest can send requests directly to a server object; if it isn't listening, Supertest binds it to a temporary port itself. So tests don't fight over port 3000.</p></details>
+    <details><summary>Why might validation work in production but not in your e2e tests?</summary>
+      <p>Global pipes, middleware and prefixes set in <code>main.ts</code> aren't applied to an app created by the testing module. Put that configuration in a shared function and call it in both places, or register pipes with <code>APP_PIPE</code> in a module.</p></details>
+    <details><summary>What should and shouldn't be mocked in e2e tests?</summary>
+      <p>Keep everything you own real: controllers, services, guards, Prisma and a real test database. Mock only external systems you don't control or don't want to call: email, payment providers, SMS, third-party APIs.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> e2e tests boot the real app and talk HTTP with Supertest. Share the <code>main.ts</code> setup, close the app, use a test database, and mock only the outside world.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="test-database">
+  <div class="topic-head"><span class="num">5</span><h2>Test database</h2></div>
+  <p class="tagline">isolated test data strategy</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>e2e tests need a real database, but never <em>your</em> database. Think of a cooking school: students practise in a training kitchen, not in the restaurant during dinner service. Before each lesson, the counters are wiped clean, so nobody's leftover ingredients ruin the next recipe. A test database is that training kitchen: separate, disposable, and reset to a known clean state before each test, so every test gets the same result every time.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Rule 1: a separate database.</strong> Run a dedicated PostgreSQL for tests. With Docker it costs nothing, and <code>tmpfs</code> keeps the data in RAM, which is faster and gets thrown away when the container stops.</p>
+  <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml">
+    services:
+      db:
+        image: postgres:16
+        environment: { POSTGRES_USER: shop, POSTGRES_PASSWORD: shop, POSTGRES_DB: shop }
+        ports: ['5432:5432']
+        volumes: ['pgdata:/var/lib/postgresql/data']
+
+      db-test:
+        image: postgres:16
+        environment: { POSTGRES_USER: shop, POSTGRES_PASSWORD: shop, POSTGRES_DB: shop_test }
+        ports: ['5433:5432']                      # different port
+        tmpfs: ['/var/lib/postgresql/data']       # in memory: fast, disposable
+
+    volumes:
+      pgdata:
+  </script>
+  <script type="text/x-code" data-lang="ini" data-title=".env.test">
+    DATABASE_URL="postgresql://shop:shop@localhost:5433/shop_test?schema=public"
+    JWT_ACCESS_SECRET=test-access-secret
+    JWT_REFRESH_SECRET=test-refresh-secret
+  </script>
+
+  <p><strong>Rule 2: same schema as production.</strong> Apply your real migrations to the test DB before the tests run. Use <code>migrate deploy</code> (apply existing migrations), not <code>migrate dev</code> (which may create new ones). <code>dotenv-cli</code> loads <code>.env.test</code> for both Prisma and Jest. <code>@nestjs/config</code> does not overwrite variables that already exist in <code>process.env</code>, so the app picks up the test values.</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json">
+    {
+      "scripts": {
+        "db:test:up": "docker compose up -d db-test",
+        "pretest:e2e": "dotenv -e .env.test -- prisma migrate deploy",
+        "test:e2e": "dotenv -e .env.test -- jest --config ./test/jest-e2e.json --runInBand"
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="bash">
+    npm i -D dotenv-cli
+    npm run db:test:up
+    npm run test:e2e          # npm runs "pretest:e2e" (migrations) automatically first
+  </script>
+
+  <p><strong>Rule 3: a clean state for every test.</strong> If test A creates <code>an@shop.com</code> and test B registers the same email, B fails with 409, but only when A runs first. Such "flaky" tests destroy trust. The simplest reliable fix in PostgreSQL is to empty every table before each test with <code>TRUNCATE</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/utils/reset-database.ts">
+    import { PrismaClient } from '@prisma/client';
+
+    export async function resetDatabase(prisma: PrismaClient) {
+      // 🛑 safety net: never wipe a database that isn't clearly a test DB
+      if (!process.env.DATABASE_URL?.includes('_test')) {
+        throw new Error('resetDatabase() refused: DATABASE_URL is not a test database');
+      }
+
+      const tables = await prisma.$queryRaw<{ tablename: string }[]>`
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
+      `;
+      if (tables.length === 0) return;
+
+      const list = tables.map((t) => `"public"."${t.tablename}"`).join(', ');
+      // RESTART IDENTITY → ids start at 1 again; CASCADE → foreign keys don't block us
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
+    }
+  </script>
+  <p>Table names come from PostgreSQL itself, not from user input, so <code>$executeRawUnsafe</code> is safe here. One <code>TRUNCATE</code> of all tables takes a few milliseconds, much faster than <code>deleteMany()</code> on each model in the right foreign-key order.</p>
+
+  <p><strong>Rule 4: each test creates its own data.</strong> Don't rely on a big shared seed file ("user 3 is the admin"). Each test creates exactly what it needs, using <em>factories</em>: small functions with sensible defaults that you can override.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/utils/factories.ts">
+    import { Prisma, PrismaClient, Role } from '@prisma/client';
+    import * as argon2 from 'argon2';
+
+    let seq = 0;
+    const unique = () => `${Date.now()}-${++seq}`;
+
+    export async function createUser(
+      prisma: PrismaClient,
+      overrides: Partial<Prisma.UserCreateInput> & { password?: string } = {},
+    ) {
+      const { password = 'Summer2024!', ...data } = overrides;
+      return prisma.user.create({
+        data: {
+          email: `user-${unique()}@test.com`,         // unique by default
+          role: Role.USER,
+          passwordHash: await argon2.hash(password),
+          ...data,
+        },
+      });
+    }
+
+    export async function createOrder(prisma: PrismaClient, userId: number, totalCents = 4999) {
+      return prisma.order.create({ data: { userId, totalCents, status: 'PENDING' } });
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    it('an admin can list all orders', async () => {
+      const admin = await createUser(prisma, { role: Role.ADMIN });   // only what THIS test needs
+      const buyer = await createUser(prisma);
+      await createOrder(prisma, buyer.id);
+      // ... login as admin, GET /orders, expect 1 order
+    });
+  </script>
+
+  <p><strong>Isolation strategies compared.</strong></p>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td>Truncate before each test</td><td><code>resetDatabase()</code> in <code>beforeEach</code></td><td>Simple, reliable, works with real transactions</td><td>Test files must run one at a time (<code>--runInBand</code>)</td></tr>
+    <tr><td>Transaction rollback</td><td>Wrap each test in a transaction, roll back at the end</td><td>Very fast</td><td>Hard with Prisma: the app's own <code>$transaction</code> calls and HTTP requests use other connections</td></tr>
+    <tr><td>Database or schema per worker</td><td><code>?schema=test_${JEST_WORKER_ID}</code> and migrate each</td><td>Parallel test files</td><td>More setup; migrations run once per worker</td></tr>
+    <tr><td>Testcontainers</td><td>Start a fresh Postgres container from the test code</td><td>Zero manual setup; same in CI</td><td>Needs Docker; slower start</td></tr>
+  </table>
+  <p>Start with "truncate before each test + <code>--runInBand</code>". It's the easiest to understand and fast enough for hundreds of e2e tests. Move to schema-per-worker when the suite gets slow.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>In CI (GitHub Actions), the test database is a <em>service container</em>, so the pipeline runs the same commands as your laptop:</p>
+    <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/test.yml">
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          services:
+            postgres:
+              image: postgres:16
+              env: { POSTGRES_USER: shop, POSTGRES_PASSWORD: shop, POSTGRES_DB: shop_test }
+              ports: ['5433:5432']
+              options: >-
+                --health-cmd "pg_isready -U shop" --health-interval 5s --health-retries 10
+          steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with: { node-version: 22, cache: npm }
+            - run: npm ci
+            - run: npx prisma generate
+            - run: npm test                 # unit tests (no DB)
+            - run: npm run test:e2e         # migrations + e2e against postgres:16
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Running e2e tests against the development database and losing your local data. Use a separate DB and add the <code>_test</code> safety check.</li>
+      <li>Using SQLite for tests while production runs PostgreSQL. Behaviour differs (case sensitivity, JSON, enums, constraints). Test on the same engine.</li>
+      <li>Tests that depend on data created by another test, or on a shared seed. Each test creates its own data with factories.</li>
+      <li>Running e2e files in parallel against one database with truncation, so files randomly wipe each other's data. Use <code>--runInBand</code> or one schema per worker.</li>
+      <li>Hard-coding ids (<code>/users/1</code>) instead of using the id returned by the factory.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A test file fails only when run together with other files, never alone. List three likely causes, and how you'd confirm each one.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ol>
+        <li><strong>Leftover data</strong> from another file (missing reset, or a reset in <code>beforeAll</code> instead of <code>beforeEach</code>). Confirm: log the row counts at the start of the failing test.</li>
+        <li><strong>Parallel files sharing one database.</strong> Confirm: run with <code>--runInBand</code>. If it passes, that's it.</li>
+        <li><strong>Shared global state</strong>: mocks not cleared, fake timers left on, a module-level variable (like a counter or cache) changed by another test. Confirm: add <code>clearMocks</code>/<code>restoreMocks</code> to the config and check <code>afterEach</code> clean-up.</li>
+      </ol>
+      <p>Jest's <code>--randomize</code> flag shuffles test order inside files, which helps flush out order dependencies early.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you keep e2e tests isolated from each other?</summary>
+      <p>A dedicated test database with migrations applied, a reset (for example <code>TRUNCATE … RESTART IDENTITY CASCADE</code>) before each test, data created per test through factories, and no parallel writers to the same schema (run in band, or one schema per worker).</p></details>
+    <details><summary>Why not just use SQLite in memory for tests?</summary>
+      <p>It's a different database engine. Constraints, types, case-sensitivity, JSON and enum support, and raw SQL behave differently from PostgreSQL, so tests can pass while production fails. Use the same engine and version as production. Docker makes it cheap.</p></details>
+    <details><summary>Why is transaction-rollback isolation tricky with Prisma and e2e tests?</summary>
+      <p>The rollback only covers queries on the same connection or transaction. Requests through the HTTP app use Prisma's connection pool, and nested <code>$transaction</code> calls start their own transactions, so they escape the outer one. Truncation avoids these problems.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use a separate PostgreSQL with real migrations, reset it before every test, let each test create its own data with factories, and never let tests share state.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="mocking">
+  <div class="topic-head"><span class="num">6</span><h2>Mocking</h2></div>
+  <p class="tagline">jest.mock and manual mocks</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A mock is a stand-in actor. In a film, the stunt double looks enough like the star for the scene, does exactly what the director says, and nobody gets hurt. In tests, a mock looks enough like the real dependency (Prisma, argon2, an email sender, the clock), returns exactly what you tell it to, and <em>records</em> every call, so afterwards you can ask: "were you called? How many times? With what?".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>1. <code>jest.fn()</code>: a fake function.</strong> It's the building block of every other mock.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const sendEmail = jest.fn();                       // returns undefined by default
+
+    sendEmail.mockReturnValue(true);                   // always return true
+    sendEmail.mockResolvedValue({ id: 'msg_1' });      // async: return a resolved promise
+    sendEmail.mockRejectedValue(new Error('SMTP down'));// async: return a rejected promise
+    sendEmail.mockResolvedValueOnce({ id: 'a' })       // first call only…
+             .mockResolvedValueOnce({ id: 'b' });      // …then second call
+    sendEmail.mockImplementation(async (to: string) => ({ id: `msg-${to}` })); // custom logic
+
+    // Inspecting calls
+    expect(sendEmail).toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail).toHaveBeenCalledWith('an@shop.com', expect.stringContaining('Welcome'));
+    expect(sendEmail).not.toHaveBeenCalled();
+    sendEmail.mock.calls;                              // [[arg1, arg2], [arg1, arg2], ...]
+  </script>
+
+  <p><strong>2. <code>jest.spyOn()</code>: watch (or replace) a method on a real object.</strong> The object stays real. You only take control of one method, and you can restore the original afterwards.</p>
+  <script type="text/x-code" data-lang="typescript">
+    it('logs a warning when the refresh token is reused', async () => {
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {}); // silence + record
+
+      await expect(authService.refresh(reusedToken)).rejects.toThrow(UnauthorizedException);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('reuse'));
+
+      warn.mockRestore();                              // put the real method back
+    });
+
+    // spy on a method of the service under test to force one branch
+    jest.spyOn(usersService, 'findOne').mockResolvedValue(fakeUser);
+  </script>
+
+  <p><strong>3. <code>jest.mock('module')</code>: replace a whole imported module.</strong> Use this for libraries you import directly, like <code>argon2</code>. Real argon2 is deliberately slow (about 100 ms per hash), so 50 tests would waste 5 seconds. <code>jest.mock</code> calls are <em>hoisted</em>: Jest moves them above the imports, so the module is already fake when your code imports it.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.service.spec.ts">
+    import * as argon2 from 'argon2';
+
+    // a) automock: every exported function becomes jest.fn() returning undefined
+    jest.mock('argon2');
+
+    // b) or a factory — you decide exactly what the module exports
+    jest.mock('argon2', () => ({
+      hash: jest.fn().mockResolvedValue('hashed-pw'),
+      verify: jest.fn(),
+    }));
+
+    it('rejects a wrong password', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 1, email: 'an@shop.com', passwordHash: 'h' /* … */ });
+      jest.mocked(argon2.verify).mockResolvedValue(false);   // jest.mocked() = typed access
+
+      await expect(authService.validateUser('an@shop.com', 'nope')).resolves.toBeNull();
+      expect(argon2.verify).toHaveBeenCalledWith('h', 'nope');
+    });
+  </script>
+  <p><code>jest.mocked(fn)</code> doesn't change anything at runtime. It only tells TypeScript "this is a mock", so you get autocomplete for <code>mockResolvedValue</code>. For overloaded functions (like <code>argon2.hash</code>), the cast <code>(argon2.hash as jest.Mock)</code> is sometimes simpler.</p>
+
+  <p><strong>4. Manual mocks: a <code>__mocks__</code> folder.</strong> If many test files need the same fake module, write it once. For a <strong>node module</strong>, put the file in a <code>__mocks__</code> folder in one of Jest's <code>roots</code>. With the Nest CLI config (<code>"rootDir": "src"</code>), that's <code>src/__mocks__/</code>. Jest then uses it <em>automatically</em> in every unit test.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="src/__mocks__/argon2.ts">
+    // used automatically for every `import ... from 'argon2'` in unit tests
+    export const hash = jest.fn(async (plain: string) => `hashed:${plain}`);
+    export const verify = jest.fn(async (hash: string, plain: string) => hash === `hashed:${plain}`);
+    export const argon2id = 2;
+  </script>
+  <p>This fake behaves <em>believably</em>: <code>verify</code> returns <code>true</code> only for the matching "hash", so most tests need no setup at all. For your <strong>own</strong> modules (for example <code>src/mail/mail.client.ts</code>), put the manual mock in <code>src/mail/__mocks__/mail.client.ts</code> and activate it in the test with <code>jest.mock('./mail.client')</code>.</p>
+
+  <p><strong>5. Fake timers: control the clock.</strong> Token expiry, "orders unpaid after 30 minutes are cancelled"… you don't want tests that really wait.</p>
+  <script type="text/x-code" data-lang="typescript">
+    beforeEach(() => jest.useFakeTimers().setSystemTime(new Date('2025-01-01T12:00:00Z')));
+    afterEach(() => jest.useRealTimers());
+
+    it('treats an order older than 30 minutes as expired', () => {
+      const order = { createdAt: new Date('2025-01-01T11:20:00Z'), status: 'PENDING' as const };
+      expect(isPaymentExpired(order)).toBe(true);        // Date.now() is 12:00 in this test
+    });
+  </script>
+
+  <p><strong>6. Resetting mocks between tests.</strong> Three similar-sounding functions:</p>
+  <table>
+    <tr><th>Call</th><th>Clears recorded calls</th><th>Removes return values / implementations</th><th>Restores the original (spies)</th></tr>
+    <tr><td><code>mockClear()</code> / <code>clearMocks: true</code></td><td>✅</td><td>❌</td><td>❌</td></tr>
+    <tr><td><code>mockReset()</code> / <code>resetMocks: true</code></td><td>✅</td><td>✅</td><td>❌</td></tr>
+    <tr><td><code>mockRestore()</code> / <code>restoreMocks: true</code></td><td>✅</td><td>✅</td><td>✅ (for <code>spyOn</code>)</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="json" data-title="package.json → jest">
+    {
+      "clearMocks": true,
+      "restoreMocks": true
+    }
+  </script>
+  <p>Note: <code>resetMocks: true</code> also wipes the implementations of your <code>__mocks__</code> files before every test, so the believable argon2 fake above would return <code>undefined</code>. <code>clearMocks</code> + <code>restoreMocks</code> is a safe default.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>In Nest, most mocking happens through <strong>dependency injection</strong>, not <code>jest.mock</code>. Anything that is a provider (<code>PrismaService</code>, <code>MailService</code>, <code>JwtService</code>, <code>ConfigService</code>) is replaced with <code>useValue</code> in the testing module. Use <code>jest.mock</code> only for things that are imported directly, like library functions (<code>argon2</code>) or helper modules. That's another reason to wrap libraries in providers (like <code>PasswordService</code> in Lesson 7): then you can swap them through DI as well.</p>
+    <script type="text/x-code" data-lang="typescript">
+      const moduleRef = await Test.createTestingModule({
+        providers: [
+          AuthService,
+          { provide: PrismaService, useValue: prismaMock },
+          { provide: JwtService, useValue: { signAsync: jest.fn().mockResolvedValue('signed.jwt') } },
+          { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('test-secret') } },
+        ],
+      }).compile();
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Mocking everything, including the code under test. Then the test proves only that mocks return what you told them. Mock dependencies, not the subject.</li>
+      <li>Mocks that return impossible data (a user without an email, the wrong shape). The test passes, and production crashes. Keep fakes realistic.</li>
+      <li>Forgetting <code>mockRestore()</code> on spies (or <code>restoreMocks: true</code>), so a spy on <code>Logger.prototype</code> leaks into other tests.</li>
+      <li>Calling <code>jest.mock()</code> inside a test or a <code>beforeEach</code>, expecting it to affect imports that already happened. Put it at the top level of the file.</li>
+      <li>Leaving fake timers on after a test, which breaks later tests that use real <code>setTimeout</code> or Prisma timeouts.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p><code>OrdersService.checkout()</code> charges a card through <code>PaymentsClient.charge()</code> and, if that succeeds, calls <code>MailService.sendReceipt()</code>. Write two tests: (1) a successful payment sends the receipt once; (2) a failed payment throws and sends <em>no</em> email.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        const payments = { charge: jest.fn() };
+        const mail = { sendReceipt: jest.fn().mockResolvedValue(undefined) };
+
+        beforeEach(async () => {
+          const moduleRef = await Test.createTestingModule({
+            providers: [
+              OrdersService,
+              { provide: PrismaService, useValue: prismaMock },
+              { provide: PaymentsClient, useValue: payments },
+              { provide: MailService, useValue: mail },
+            ],
+          }).compile();
+          service = moduleRef.get(OrdersService);
+          prismaMock.order.findUnique.mockResolvedValue({ id: 5, userId: 1, totalCents: 4999, status: 'PENDING' });
+        });
+
+        it('sends exactly one receipt after a successful charge', async () => {
+          payments.charge.mockResolvedValue({ chargeId: 'ch_1' });
+          await service.checkout(5);
+          expect(mail.sendReceipt).toHaveBeenCalledTimes(1);
+        });
+
+        it('throws and sends no email when the charge fails', async () => {
+          payments.charge.mockRejectedValue(new Error('card_declined'));
+          await expect(service.checkout(5)).rejects.toThrow('card_declined');
+          expect(mail.sendReceipt).not.toHaveBeenCalled();
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between <code>jest.fn()</code>, <code>jest.spyOn()</code> and <code>jest.mock()</code>?</summary>
+      <p><code>jest.fn()</code> creates a standalone fake function. <code>jest.spyOn(obj, 'method')</code> wraps an existing method on a real object: it records calls, can replace the implementation, and can be restored. <code>jest.mock('module')</code> replaces a whole imported module (automatically, with a factory, or with a <code>__mocks__</code> file).</p></details>
+    <details><summary>Why are <code>jest.mock</code> calls hoisted?</summary>
+      <p>Imports run before any other code in the file. To make sure the code under test receives the fake module, Jest (via babel-jest or ts-jest) moves <code>jest.mock()</code> calls to the top of the file. That's also why a mock factory can't use normal variables from the file scope, except ones whose names start with <code>mock</code>.</p></details>
+    <details><summary>In NestJS, when do you use DI overrides instead of <code>jest.mock</code>?</summary>
+      <p>Whenever the dependency is a provider injected through the constructor: use <code>{ provide: X, useValue: mock }</code> or <code>overrideProvider</code>. It's explicit, type-friendly and per-test. Use <code>jest.mock</code> for modules imported directly (library functions, utility files).</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use DI overrides for providers and <code>jest.mock</code> for imported modules. Keep fakes realistic, mock dependencies rather than the subject, and reset mocks between tests.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="test-edge-cases">
+  <div class="topic-head"><span class="num">7</span><h2>Test edge cases</h2></div>
+  <p class="tagline">validation errors, empty states, auth failures</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Testing only the "happy path" is like testing a door by walking through it once when it's open. Real users (and attackers) will push when they should pull, lean on it, try the wrong key, or try it when the room is empty. Most production bugs live at the <em>edges</em>: missing fields, the wrong format, an empty list, a deleted record, an expired token, a user who isn't allowed. Good tests deliberately poke every edge.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>A checklist of edges for every endpoint.</strong> Go through it each time you write a feature:</p>
+  <table>
+    <tr><th>Category</th><th>Questions to ask</th><th>Expected result</th></tr>
+    <tr><td>Validation</td><td>Missing field? Wrong type? Too short or too long? Unknown extra field?</td><td>400 with a clear message</td></tr>
+    <tr><td>Boundaries</td><td>Exactly the minimum or maximum? One past it? 0, negative, huge numbers?</td><td>Accept on the boundary, reject past it</td></tr>
+    <tr><td>Empty states</td><td>No orders yet? Page beyond the last? Search with no hits?</td><td>200 with <code>[]</code>, not 404 or 500</td></tr>
+    <tr><td>Not found</td><td>Id doesn't exist? Was deleted? Belongs to someone else?</td><td>404</td></tr>
+    <tr><td>Conflicts</td><td>Duplicate email? Paying an already-paid order?</td><td>409</td></tr>
+    <tr><td>Authentication</td><td>No token? Malformed? Expired? Wrong secret?</td><td>401</td></tr>
+    <tr><td>Authorization</td><td>Wrong role? Another user's resource?</td><td>403 / 404</td></tr>
+    <tr><td>Dependencies failing</td><td>Payment API down? Email fails?</td><td>Handled error, consistent data</td></tr>
+  </table>
+
+  <p><strong>1. Validation errors, with a table test.</strong> These run in e2e tests, because <code>ValidationPipe</code> only runs inside the HTTP pipeline. One <code>it.each</code> covers many bad inputs, and each row reads like a specification:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/auth-validation.e2e-spec.ts">
+    const valid = { email: 'an@shop.com', password: 'Summer2024!' };
+
+    it.each([
+      ['a missing email',   { password: valid.password },               'email must be an email'],
+      ['an invalid email',  { ...valid, email: 'not-an-email' },        'email must be an email'],
+      ['a 7-char password', { ...valid, password: 'Abc123!' },          'password must be longer than or equal to 8 characters'],
+      ['a 73-char password',{ ...valid, password: 'a'.repeat(73) },     'password must be shorter than or equal to 72 characters'],
+      ['a password number', { ...valid, password: 12345678 },           'password must be a string'],
+      // 🔐 mass assignment: a client trying to make itself admin
+      ['an extra "role"',   { ...valid, role: 'ADMIN' },                'property role should not exist'],
+    ])('POST /auth/register rejects %s with 400', async (_case, body, message) => {
+      const res = await request(app.getHttpServer()).post('/auth/register').send(body).expect(400);
+      expect(res.body.message).toContain(message);   // ValidationPipe returns an array of messages
+    });
+
+    it('accepts exactly 8 and exactly 72 characters (the boundaries)', async () => {
+      for (const password of ['a'.repeat(8), 'b'.repeat(72)]) {
+        await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({ email: `${password.length}@shop.com`, password })
+          .expect(201);
+      }
+    });
+  </script>
+  <p>The <code>role: 'ADMIN'</code> row is a security test. It proves that <code>forbidNonWhitelisted</code> stops a client from setting fields it shouldn't. If someone removes that option one day, this test fails.</p>
+
+  <p><strong>2. Empty states.</strong> A list endpoint for a brand-new user is the most common "forgotten" case. An empty list is a normal, successful answer.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/orders.e2e-spec.ts">
+    it('GET /orders returns 200 and [] for a user with no orders', async () => {
+      await createUser(prisma, { email: 'new@shop.com' });
+      const token = await loginAs(app, 'new@shop.com');
+
+      const res = await request(app.getHttpServer())
+        .get('/orders')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body).toEqual([]);                       // ❌ not 404, not null, not 500
+    });
+
+    it('GET /orders?page=999 returns an empty page, not an error', async () => {
+      const user = await createUser(prisma);
+      await createOrder(prisma, user.id);
+      const token = await loginAs(app, user.email);
+
+      await request(app.getHttpServer())
+        .get('/orders?page=999&limit=20')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200)
+        .expect([]);
+    });
+
+    it("GET /orders/:id returns 404 for another user's order (no IDOR)", async () => {
+      const owner = await createUser(prisma);
+      const other = await createUser(prisma);
+      const order = await createOrder(prisma, owner.id);
+      const token = await loginAs(app, other.email);
+
+      await request(app.getHttpServer())
+        .get(`/orders/${order.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404);
+    });
+  </script>
+
+  <p><strong>3. Auth failures.</strong> Every way a token can be bad should give 401, and every "not allowed" should give 403. To create an <em>expired</em> or <em>wrongly signed</em> token, use a standalone <code>JwtService</code> (with no default options) inside the test:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/auth-failures.e2e-spec.ts">
+    import { JwtService } from '@nestjs/jwt';
+
+    const jwt = new JwtService();                       // no defaults → we control everything
+    const now = () => Math.floor(Date.now() / 1000);
+    const payload = { sub: 1, email: 'an@shop.com', role: 'USER' };
+    const accessSecret = process.env.JWT_ACCESS_SECRET!;
+
+    const badTokens: [string, () => Promise<string | undefined>][] = [
+      ['no token',          async () => undefined],
+      ['a garbage token',   async () => 'not.a.jwt'],
+      ['an expired token',  () => jwt.signAsync({ ...payload, exp: now() - 60 }, { secret: accessSecret })],
+      ['a wrong signature', () => jwt.signAsync(payload, { secret: 'attacker-secret', expiresIn: '15m' })],
+      ['a refresh token',   () => jwt.signAsync({ sub: 1, jti: 'x' },
+                                   { secret: process.env.JWT_REFRESH_SECRET!, expiresIn: '7d' })],
+    ];
+
+    it.each(badTokens)('GET /users/me with %s → 401', async (_case, makeToken) => {
+      const token = await makeToken();
+      const req = request(app.getHttpServer()).get('/users/me');
+      if (token) req.set('Authorization', `Bearer ${token}`);
+      await req.expect(401);
+    });
+
+    it('a USER calling an ADMIN route gets 403 (authenticated, but not allowed)', async () => {
+      await createUser(prisma, { email: 'user@shop.com' });
+      const token = await loginAs(app, 'user@shop.com');
+
+      await request(app.getHttpServer())
+        .delete('/products/1')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+    });
+
+    it('login with a wrong password and with an unknown email give the SAME 401 message', async () => {
+      await createUser(prisma, { email: 'an@shop.com' });
+      const wrongPw = await request(app.getHttpServer())
+        .post('/auth/login').send({ email: 'an@shop.com', password: 'WrongPass1!' }).expect(401);
+      const noUser = await request(app.getHttpServer())
+        .post('/auth/login').send({ email: 'ghost@shop.com', password: 'WrongPass1!' }).expect(401);
+
+      expect(wrongPw.body.message).toBe(noUser.body.message);    // no user enumeration
+    });
+  </script>
+
+  <p><strong>4. Edge cases in unit tests.</strong> Service-level edges (not found, conflicts, failing dependencies) are cheaper to test with mocks, as in point 2. Use e2e for edges that depend on the HTTP pipeline (validation, guards, status codes) and unit tests for edges inside your logic.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Pipes produce edge-case responses that clients rely on. Pin them down with tests, so a refactor (for example removing <code>ParseIntPipe</code>) can't silently turn a clean 400 into a 500 from Prisma:</p>
+    <script type="text/x-code" data-lang="typescript">
+      it('GET /orders/abc → 400 from ParseIntPipe, not 500', async () => {
+        const token = await loginAs(app, (await createUser(prisma)).email);
+        const res = await request(app.getHttpServer())
+          .get('/orders/abc')
+          .set('Authorization', `Bearer ${token}`)
+          .expect(400);
+        expect(res.body.message).toBe('Validation failed (numeric string is expected)');
+      });
+    </script>
+    <p>When a bug reaches production, first write a test that reproduces it (it fails), then fix the code (it passes). That test is now a permanent guard against that edge case returning.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Testing only the happy path, so the first empty list or missing field in production is a 500.</li>
+      <li>Returning 404 for an empty collection (<code>GET /orders</code> with no orders). An empty list is a valid 200.</li>
+      <li>Testing validation in controller unit tests, where <code>ValidationPipe</code> never runs. Those tests pass for any input.</li>
+      <li>Only testing "no token" for auth. Expired, wrongly signed, and the wrong token type (refresh used as access) are separate holes.</li>
+      <li>Asserting only the status code. Also check that the body doesn't leak internals (stack traces, <code>passwordHash</code>, SQL errors).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>List the edge-case tests you would write for <code>POST /orders/:id/pay</code> (a user pays their own pending order). Aim for at least six, each with the expected status.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li>No token → <strong>401</strong>.</li>
+        <li><code>:id</code> is not a number (<code>/orders/abc/pay</code>) → <strong>400</strong>.</li>
+        <li>Order doesn't exist → <strong>404</strong>.</li>
+        <li>Order belongs to another user → <strong>404</strong> (don't reveal it exists).</li>
+        <li>Order is already <code>PAID</code> → <strong>409</strong>, and the card is <em>not</em> charged again.</li>
+        <li>Order is <code>CANCELLED</code> → <strong>409</strong> (or 422).</li>
+        <li>Payment provider declines → <strong>402</strong> or 422, order stays <code>PENDING</code>, no receipt email.</li>
+        <li>Two simultaneous pay requests → exactly one charge (tests your transaction or locking).</li>
+        <li>Happy path → <strong>200</strong>, status becomes <code>PAID</code>, receipt sent once.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Where do you test request validation in NestJS, unit or e2e?</summary>
+      <p>e2e (or at least through the HTTP pipeline), because <code>ValidationPipe</code> and other pipes run only when a request goes through Nest. Calling a controller method directly skips them. You can also unit-test a DTO with <code>class-validator</code>'s <code>validate()</code>, but e2e proves the pipe is actually wired up.</p></details>
+    <details><summary>Should an empty list return 404?</summary>
+      <p>No. The collection resource exists; it just has no items. Return 200 with <code>[]</code> (or a paginated envelope with <code>total: 0</code>). Use 404 for a specific resource that doesn't exist (<code>/orders/123</code>).</p></details>
+    <details><summary>Which auth failure cases should a test suite cover?</summary>
+      <p>Missing token, malformed token, expired token, token signed with the wrong secret, the wrong token type (refresh used as access), a valid user without the required role (403), access to another user's resource (404/403), and identical responses for "unknown email" and "wrong password".</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Bugs live at the edges. For every endpoint, test bad input, boundaries, empty results, missing or foreign records, and every way auth can fail.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="test-coverage">
+  <div class="topic-head"><span class="num">8</span><h2>Test coverage</h2></div>
+  <p class="tagline">use coverage as a signal, not the only goal</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Coverage is a map that shows which roads your tests have driven on. It's very useful for finding roads <em>nobody</em> has driven: "the refund code has never been run by any test!". But driving on a road doesn't mean you checked it for potholes. A test can run a line of code without checking its result at all. So high coverage tells you "lots of code was executed", not "lots of code was verified".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Running it.</strong> The Nest CLI already added the script:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm run test:cov          # = jest --coverage
+    # open coverage/lcov-report/index.html for a clickable, line-by-line report
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    ---------------------|---------|----------|---------|---------|-------------------
+    File                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+    ---------------------|---------|----------|---------|---------|-------------------
+    All files            |   84.21 |    71.43 |   88.89 |   83.78 |
+     auth/auth.service.ts|   78.57 |    62.50 |   85.71 |   77.78 | 88-97,121
+     users/users.service |  100.00 |   100.00 |  100.00 |  100.00 |
+     orders/pricing.ts   |   90.00 |    75.00 |  100.00 |   88.89 | 14
+    ---------------------|---------|----------|---------|---------|-------------------
+  </script>
+
+  <p><strong>The four numbers.</strong></p>
+  <table>
+    <tr><th>Metric</th><th>Meaning</th><th>Why it matters</th></tr>
+    <tr><td>Statements</td><td>% of statements executed</td><td>Rough "how much code ran"</td></tr>
+    <tr><td>Branches</td><td>% of <code>if</code>/<code>else</code>, <code>? :</code>, <code>??</code>, <code>||</code>, <code>switch</code> paths taken</td><td>⭐ The most telling one: bugs hide in the branch you never took</td></tr>
+    <tr><td>Functions</td><td>% of functions called at least once</td><td>Finds completely untested methods</td></tr>
+    <tr><td>Lines</td><td>% of lines executed</td><td>Similar to statements</td></tr>
+  </table>
+  <p>In the report above, <code>auth.service.ts</code> lines 88–97 are uncovered. If those lines are the refresh-token reuse detection, that is a real gap in security-critical code. <em>That</em> is how coverage helps: it points to specific missing tests.</p>
+
+  <p><strong>Why 100% is not the goal.</strong> Here's a test that gives 100% coverage and catches nothing:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ executes every line of calculateOrderTotal — and asserts NOTHING
+    it('covers calculateOrderTotal', () => {
+      calculateOrderTotal([{ unitPrice: 1000, quantity: 2 }], 10);
+      try { calculateOrderTotal([], 150); } catch {}
+    });
+    // Change "1 - couponPercent / 100" to "1 + couponPercent / 100": still 100%, still green.
+
+    // ✅ the same lines, actually verified
+    it('applies a 10% coupon', () => {
+      expect(calculateOrderTotal([{ unitPrice: 1000, quantity: 2 }], 10)).toBe(1800);
+    });
+  </script>
+  <p>When coverage becomes a target ("PRs must reach 95%"), people write tests like the first one to satisfy the number. You get the cost of tests without the benefit. That's Goodhart's law: <em>when a measure becomes a target, it stops being a good measure.</em></p>
+
+  <p><strong>Configure it to measure what matters.</strong> By default, the Nest config counts every <code>.ts</code> file, including modules, DTOs and <code>main.ts</code>, which have no logic and dilute the numbers. Exclude them, and set a <em>floor</em> (a minimum that stops coverage from silently dropping), not a perfection target:</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json → jest">
+    {
+      "collectCoverageFrom": [
+        "**/*.ts",
+        "!main.ts",
+        "!**/*.module.ts",
+        "!**/*.dto.ts",
+        "!**/__mocks__/**",
+        "!test-utils/**"
+      ],
+      "coverageThreshold": {
+        "global": { "branches": 70, "functions": 80, "lines": 80, "statements": 80 },
+        "./auth/": { "branches": 90, "lines": 90 }
+      }
+    }
+  </script>
+  <p>If coverage falls below a threshold, <code>jest --coverage</code> exits with an error, so CI fails. Paths here are relative to <code>rootDir</code> (<code>src</code>), so <code>./auth/</code> means <code>src/auth/</code>. Note the stricter rule for that folder: risky code deserves more tests than a simple CRUD controller.</p>
+
+  <p><strong>Better questions than "what's the percentage?"</strong></p>
+  <ul>
+    <li>Is the <em>critical</em> code covered: auth, payments, permissions, money calculations?</li>
+    <li>Do the tests contain meaningful assertions, including the edge cases from point 7?</li>
+    <li>Does every bug fix come with a test that reproduces the bug?</li>
+    <li>Is coverage going down over time? Look at the trend and at <em>diff coverage</em> (coverage of the lines changed in this PR), which many CI tools report.</li>
+  </ul>
+  <p><strong>Mutation testing</strong> answers "would my tests notice a bug?". A tool such as <a href="https://stryker-mutator.io" target="_blank" rel="noopener">StrykerJS</a> makes small changes to your code (<code>&lt;</code> becomes <code>&lt;=</code>, <code>-</code> becomes <code>+</code>) and runs the tests. If they still pass, the "mutant survived", which shows a weak test even where line coverage is 100%. It's slow, so teams usually run it on critical modules only.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A practical setup: unit tests with coverage on every push, e2e tests on every PR, and the HTML report uploaded as a CI artifact for reviewers.</p>
+    <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/test.yml (steps)">
+      - run: npm run test:cov          # fails the job if a threshold is not met
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/lcov-report
+    </script>
+    <p>A healthy NestJS codebase often sits around 70–85% unit coverage, with services and guards near 100% and generated or wiring code (modules, DTOs, <code>main.ts</code>) excluded. The e2e suite covers the HTTP wiring that unit coverage can't see.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Chasing 100% and writing assertion-free tests to "cover" lines. The number goes up, and quality goes down.</li>
+      <li>Counting modules, DTOs and <code>main.ts</code>, which inflates or deflates the numbers meaninglessly. Configure <code>collectCoverageFrom</code>.</li>
+      <li>Looking only at line coverage. Branch coverage reveals the untested <code>else</code> where bugs hide.</li>
+      <li>Treating high coverage as proof of correctness. Coverage shows what <em>ran</em>, not what was <em>checked</em>.</li>
+      <li>No threshold at all, so coverage slowly erodes with every PR and nobody notices.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your report says <code>users.service.ts</code> has 100% lines but 75% branches. The method is below. Which branch is missing, and what test do you add?</p>
+    <script type="text/x-code" data-lang="typescript">
+      async create(dto: CreateUserDto) {
+        const passwordHash = await argon2.hash(dto.password);
+        try {
+          return await this.prisma.user.create({ /* ... */ });
+        } catch (e) {
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            throw new ConflictException('Email already registered');
+          }
+          throw e;
+        }
+      }
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <p>The condition <code>A &amp;&amp; B</code> has extra branches: (1) <code>A</code> false (not a Prisma error), (2) <code>A</code> true but <code>B</code> false (a Prisma error with another code), (3) both true. If the tests only throw a P2002 error and a plain <code>Error</code>, case 2 is missing: a <em>known</em> Prisma error with a different code must be re-thrown, not turned into 409.</p>
+      <script type="text/x-code" data-lang="typescript">
+        it('re-throws Prisma errors other than P2002 (e.g. P2003 foreign key)', async () => {
+          const fkError = new Prisma.PrismaClientKnownRequestError('Foreign key failed', {
+            code: 'P2003',
+            clientVersion: '6.0.0',
+          });
+          prismaMock.user.create.mockRejectedValue(fkError);
+
+          await expect(service.create(dto)).rejects.toBe(fkError);   // ✅ not a ConflictException
+        });
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Is 100% coverage a good goal?</summary>
+      <p>Usually not as a target. It measures execution, not verification, and the last few percent are often trivial or very expensive to test. It encourages low-value tests. Better: set a reasonable floor, demand high coverage for critical code, review the quality of assertions, and watch the trend and diff coverage.</p></details>
+    <details><summary>What is the difference between line coverage and branch coverage?</summary>
+      <p>Line coverage counts lines executed at least once. Branch coverage counts each possible path of every decision (both sides of an <code>if</code>, every <code>case</code>, short-circuit operands). A line like <code>return a ?? b</code> can be 100% line-covered while the <code>b</code> path was never tested.</p></details>
+    <details><summary>How can you check whether your tests would actually catch bugs?</summary>
+      <p>Mutation testing (for example StrykerJS) injects small bugs and checks whether a test fails. Surviving mutants point to weak or missing assertions. A simpler habit: when you write a test, briefly break the code and make sure the test turns red.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Coverage shows where tests are missing, not whether the tests are good. Exclude wiring code, set sensible thresholds (higher for critical code), and focus on meaningful assertions.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Authentication-and-Authorization.html">← Prev: 7. Authentication &amp; Authorization</a>
+  <a href="Performance-and-Debugging.html">Next: 9. Performance &amp; Debugging →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PostgreSQL Fundamentals</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 3 of 12</span>
+  </nav>
+  <h1>3. PostgreSQL Fundamentals</h1>
+  <p class="goal"><strong>Goal:</strong> Understand the relational database underneath the ORM.</p>
+  <p class="howto">How to use this page: every point uses the same small online-shop database (<code>users</code>, <code>products</code>, <code>orders</code>, <code>order_items</code>). Create it once with the script in point 1, then run every query yourself in <code>psql</code>, pgAdmin, DBeaver or TablePlus and compare your output with the result tables shown here. Do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#relational-model">Relational model</a></li>
+      <li><a href="#sql-basics">SQL basics</a></li>
+      <li><a href="#joins">Joins</a></li>
+      <li><a href="#aggregation">Aggregation</a></li>
+      <li><a href="#keys">Keys</a></li>
+      <li><a href="#indexes">Indexes</a></li>
+      <li><a href="#constraints">Constraints</a></li>
+      <li><a href="#transactions">Transactions</a></li>
+      <li><a href="#normalization">Normalization</a></li>
+      <li><a href="#views">Views</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="relational-model">
+  <div class="topic-head"><span class="num">1</span><h2>Relational model</h2></div>
+  <p class="tagline">tables, rows, columns, relationships</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A relational database is a set of very strict spreadsheets. Each <strong>table</strong> is one sheet about one kind of thing (users, products, orders). Each <strong>row</strong> is one thing (one user). Each <strong>column</strong> is one fact about it (the email), and every value in a column must have the same type. Tables don't copy each other's data. Instead, a row <em>points</em> to a row in another table by storing its id, like writing "customer #1" on an order slip instead of rewriting the customer's whole address. Those pointers are the <strong>relationships</strong>.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Why not just store JSON documents?</strong> In JavaScript you might keep a user object with an <code>orders</code> array inside it. That's easy at first, but what happens when a product's name changes? You'd have to update it inside every order of every user. The relational model avoids this by storing each fact <em>once</em> and connecting facts with ids. The database then guarantees that the connections are valid (you can't create an order for user #999 if that user doesn't exist).</p>
+
+  <p><strong>The vocabulary.</strong></p>
+  <table>
+    <tr><th>Term</th><th>Also called</th><th>In JavaScript terms</th><th>Example</th></tr>
+    <tr><td>Table</td><td>relation</td><td>an array of objects that all have the same shape</td><td><code>users</code></td></tr>
+    <tr><td>Row</td><td>record, tuple</td><td>one object in that array</td><td>the user with id 1</td></tr>
+    <tr><td>Column</td><td>field, attribute</td><td>a property, with a fixed type</td><td><code>email text</code></td></tr>
+    <tr><td>Schema</td><td>(also a namespace, default <code>public</code>)</td><td>the TypeScript interface for every table</td><td>all your <code>CREATE TABLE</code> statements</td></tr>
+    <tr><td>Primary key</td><td>PK</td><td>a unique <code>id</code> property</td><td><code>users.id</code></td></tr>
+    <tr><td>Foreign key</td><td>FK</td><td>a property holding another object's id</td><td><code>orders.user_id</code></td></tr>
+  </table>
+
+  <p><strong>The running example.</strong> This is the database used in every point of this lesson. Read it slowly. Notice the types, and notice that <code>orders</code> stores <code>user_id</code> (a pointer), not the user's name or email.</p>
+  <script type="text/x-code" data-lang="sql" data-title="schema.sql">
+    CREATE TABLE users (
+      id          integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      email       text        NOT NULL UNIQUE,
+      name        text        NOT NULL,
+      created_at  timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE products (
+      id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      name   text          NOT NULL,
+      price  numeric(10,2) NOT NULL CHECK (price >= 0),
+      stock  integer       NOT NULL DEFAULT 0 CHECK (stock >= 0)
+    );
+
+    CREATE TABLE orders (
+      id          integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+      user_id     integer       NOT NULL REFERENCES users(id),
+      status      text          NOT NULL DEFAULT 'PENDING'
+                  CHECK (status IN ('PENDING', 'PAID', 'SHIPPED', 'CANCELLED')),
+      total       numeric(10,2) NOT NULL DEFAULT 0,
+      created_at  timestamptz   NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE order_items (
+      order_id    integer       NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      product_id  integer       NOT NULL REFERENCES products(id),
+      quantity    integer       NOT NULL CHECK (quantity > 0),
+      unit_price  numeric(10,2) NOT NULL,
+      PRIMARY KEY (order_id, product_id)
+    );
+  </script>
+
+  <p>And the sample data. Order ids start at 101 so they are easy to tell apart from user and product ids:</p>
+  <script type="text/x-code" data-lang="sql" data-title="seed.sql">
+    INSERT INTO users (email, name, created_at) VALUES
+      ('an@shop.dev',   'An',   '2026-08-01'),
+      ('binh@shop.dev', 'Binh', '2026-08-10'),
+      ('chi@shop.dev',  'Chi',  '2026-08-15'),
+      ('dung@shop.dev', 'Dung', '2026-09-20');   -- Dung has no orders yet
+
+    INSERT INTO products (name, price, stock) VALUES
+      ('Keyboard',    49.00, 120),
+      ('Mouse',       19.50, 300),
+      ('Monitor',    189.00,  15),
+      ('USB-C Cable',  9.99,   0);               -- never sold, out of stock
+
+    INSERT INTO orders (id, user_id, status, total, created_at) VALUES
+      (101, 1, 'PAID',       68.50, '2026-09-01'),
+      (102, 1, 'SHIPPED',   189.00, '2026-09-03'),
+      (103, 2, 'PENDING',    19.50, '2026-09-04'),
+      (104, 3, 'CANCELLED',  49.00, '2026-09-05');
+
+    -- We inserted ids by hand, so move the id sequence past them.
+    -- Otherwise the next auto-generated order id would be 1, 2, ... and later collide with 101.
+    SELECT setval(pg_get_serial_sequence('orders', 'id'), (SELECT max(id) FROM orders));
+
+    INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
+      (101, 1, 1,  49.00),
+      (101, 2, 1,  19.50),
+      (102, 3, 1, 189.00),
+      (103, 2, 1,  19.50),
+      (104, 1, 1,  49.00);
+  </script>
+
+  <p>Running <code>SELECT * FROM users;</code> returns a table. Every query result in SQL is itself a table, which is why you can combine queries like Lego bricks:</p>
+  <table>
+    <tr><th>id</th><th>email</th><th>name</th><th>created_at</th></tr>
+    <tr><td>1</td><td>an@shop.dev</td><td>An</td><td>2026-08-01 00:00:00+00</td></tr>
+    <tr><td>2</td><td>binh@shop.dev</td><td>Binh</td><td>2026-08-10 00:00:00+00</td></tr>
+    <tr><td>3</td><td>chi@shop.dev</td><td>Chi</td><td>2026-08-15 00:00:00+00</td></tr>
+    <tr><td>4</td><td>dung@shop.dev</td><td>Dung</td><td>2026-09-20 00:00:00+00</td></tr>
+  </table>
+
+  <p><strong>The three kinds of relationships.</strong> Every relationship you will ever model is one of these:</p>
+  <table>
+    <tr><th>Kind</th><th>Example</th><th>How it's stored</th></tr>
+    <tr><td>One-to-many (1:N)</td><td>one user has many orders; each order belongs to one user</td><td>a foreign key on the "many" side: <code>orders.user_id</code></td></tr>
+    <tr><td>Many-to-many (N:M)</td><td>an order contains many products; a product appears in many orders</td><td>a <strong>join table</strong> in the middle: <code>order_items(order_id, product_id)</code></td></tr>
+    <tr><td>One-to-one (1:1)</td><td>a user has at most one profile</td><td>a foreign key that is also <code>UNIQUE</code>: <code>profiles.user_id UNIQUE</code></td></tr>
+  </table>
+  <p>Note that the join table <code>order_items</code> is not just "glue". It holds facts that belong to the <em>pair</em> (order, product): how many were bought, and at what price. That's very common in real apps.</p>
+
+  <p><strong>Some PostgreSQL types you'll use every day.</strong></p>
+  <table>
+    <tr><th>Type</th><th>Use it for</th><th>Note</th></tr>
+    <tr><td><code>integer</code> / <code>bigint</code></td><td>ids, counts, quantities</td><td><code>bigint</code> for tables that may pass 2 billion rows</td></tr>
+    <tr><td><code>numeric(10,2)</code></td><td>money</td><td>exact decimal. Never use <code>real</code>/<code>double precision</code> for money (0.1 + 0.2 problem)</td></tr>
+    <tr><td><code>text</code> / <code>varchar(n)</code></td><td>strings</td><td>in Postgres they perform the same. <code>varchar(n)</code> only adds a length limit</td></tr>
+    <tr><td><code>boolean</code></td><td>flags</td><td><code>true</code> / <code>false</code> / <code>NULL</code></td></tr>
+    <tr><td><code>timestamptz</code></td><td>points in time</td><td>stored in UTC. Prefer it over <code>timestamp</code> (no time zone)</td></tr>
+    <tr><td><code>uuid</code></td><td>public ids</td><td><code>gen_random_uuid()</code> is built in since PostgreSQL 13</td></tr>
+    <tr><td><code>jsonb</code></td><td>flexible extra data</td><td>useful, but don't hide real columns in it</td></tr>
+  </table>
+
+  <p><strong>Rows have no order.</strong> A table is a <em>set</em>, not an array. If you don't write <code>ORDER BY</code>, Postgres may return rows in any order, and that order can change after an <code>UPDATE</code>. Never rely on "the order they were inserted".</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>You will rarely type <code>CREATE TABLE</code> yourself. You describe the same tables in <code>schema.prisma</code> and Prisma generates the SQL (Lesson 4). But the tables underneath are exactly these, and knowing them lets you read migrations, debug slow queries and talk to DBAs. Here is the same model in Prisma, mapped to snake_case table and column names:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      model User {
+        id        Int      @id @default(autoincrement())
+        email     String   @unique
+        name      String
+        createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+        orders    Order[]                     // virtual: no column, just the relation
+
+        @@map("users")
+      }
+
+      model Order {
+        id        Int         @id @default(autoincrement())
+        userId    Int         @map("user_id")  // the real foreign key column
+        user      User        @relation(fields: [userId], references: [id])
+        status    String      @default("PENDING")
+        total     Decimal     @default(0) @db.Decimal(10, 2)
+        createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+        items     OrderItem[]
+
+        @@map("orders")
+      }
+    </script>
+    <p>Notice that <code>orders</code> on <code>User</code> is not a column. It's Prisma's way of saying "follow <code>orders.user_id</code> back to me". The database only stores the foreign key.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Storing lists in one column (<code>product_ids = '1,2,3'</code>). You can't join on it, index it properly or enforce that the ids exist. Use a join table.</li>
+      <li>Copying data between tables (the user's email inside every order). When it changes, the copies disagree. Store the id and join.</li>
+      <li>Using <code>float</code> for prices. Use <code>numeric</code>.</li>
+      <li>Expecting rows to come back in insertion order without <code>ORDER BY</code>.</li>
+      <li>Using <code>timestamp</code> without time zone for events. Use <code>timestamptz</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The shop wants product <strong>categories</strong>. A product can belong to several categories (a keyboard is in "Peripherals" and "Gaming"), and a category contains many products. Write the <code>CREATE TABLE</code> statements. Which kind of relationship is it?</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>It's many-to-many, so you need a <code>categories</code> table plus a join table:</p>
+      <script type="text/x-code" data-lang="sql">
+        CREATE TABLE categories (
+          id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          name  text NOT NULL UNIQUE
+        );
+
+        CREATE TABLE product_categories (
+          product_id   integer NOT NULL REFERENCES products(id)   ON DELETE CASCADE,
+          category_id  integer NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          PRIMARY KEY (product_id, category_id)   -- a product can't be in the same category twice
+        );
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you model a many-to-many relationship in a relational database?</summary>
+      <p>With a join (junction) table that holds two foreign keys, one to each side, usually with a composite primary key on the pair. Extra facts about the pair (quantity, role, joined_at) go in the join table too.</p></details>
+    <details><summary>Why is a table described as a "set" of rows? What does it mean in practice?</summary>
+      <p>Rows have no built-in order and (with a primary key) no duplicates. In practice: the order of results is undefined unless you use <code>ORDER BY</code>, and you identify rows by key, never by position.</p></details>
+    <details><summary>When would you choose a relational database over a document database?</summary>
+      <p>When data is highly connected and consistency matters: orders, payments, users, inventory. Relational databases enforce types, relationships and constraints, and support multi-row transactions and flexible joins. Document stores fit data that is read as one self-contained blob with few cross-links.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> One table per kind of thing, one row per thing, one fact per column. Connect tables with ids (foreign keys), never with copied data.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="sql-basics">
+  <div class="topic-head"><span class="num">2</span><h2>SQL basics</h2></div>
+  <p class="tagline">SELECT, WHERE, ORDER BY, LIMIT</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>SQL is how you ask the database questions. You don't tell it <em>how</em> to find the data (no loops). You describe <em>what</em> you want, like ordering at a counter: "the name and price (<code>SELECT</code>) of products (<code>FROM</code>) that cost less than 50 (<code>WHERE</code>), cheapest first (<code>ORDER BY</code>), just the top 3 (<code>LIMIT</code>)". The database works out the fastest way to get it.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>SELECT … FROM.</strong> Choose the columns you need. <code>*</code> means "all columns", which is handy while exploring but should be avoided in application code, because you fetch data you don't use and your code breaks silently when columns change.</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT name, price FROM products;
+
+    -- You can compute columns and rename them with AS
+    SELECT name,
+           price,
+           price * 1.1 AS price_with_tax
+    FROM products;
+  </script>
+  <table>
+    <tr><th>name</th><th>price</th><th>price_with_tax</th></tr>
+    <tr><td>Keyboard</td><td>49.00</td><td>53.900</td></tr>
+    <tr><td>Mouse</td><td>19.50</td><td>21.450</td></tr>
+    <tr><td>Monitor</td><td>189.00</td><td>207.900</td></tr>
+    <tr><td>USB-C Cable</td><td>9.99</td><td>10.989</td></tr>
+  </table>
+
+  <p><strong>WHERE</strong> filters rows. Only rows where the condition is <code>true</code> are kept. Combine conditions with <code>AND</code>, <code>OR</code>, <code>NOT</code>, and use brackets when you mix them.</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT id, name, price, stock
+    FROM products
+    WHERE price < 50 AND stock > 0;
+  </script>
+  <table>
+    <tr><th>id</th><th>name</th><th>price</th><th>stock</th></tr>
+    <tr><td>1</td><td>Keyboard</td><td>49.00</td><td>120</td></tr>
+    <tr><td>2</td><td>Mouse</td><td>19.50</td><td>300</td></tr>
+  </table>
+  <p>The cable costs less than 50 but has <code>stock = 0</code>, so it's filtered out.</p>
+
+  <p><strong>Useful WHERE operators:</strong></p>
+  <script type="text/x-code" data-lang="sql">
+    WHERE status = 'PAID'                         -- equal (strings use SINGLE quotes)
+    WHERE status <> 'CANCELLED'                   -- not equal (!= also works)
+    WHERE status IN ('PAID', 'SHIPPED')           -- one of a list
+    WHERE price BETWEEN 10 AND 50                 -- inclusive on both ends
+    WHERE name LIKE 'Mo%'                         -- starts with "Mo" (case-sensitive)
+    WHERE email ILIKE '%@SHOP.DEV'                -- ILIKE = case-insensitive (Postgres only)
+    WHERE created_at >= '2026-09-01'
+      AND created_at <  '2026-10-01'              -- all of September (half-open range)
+  </script>
+
+  <p><strong>NULL is special.</strong> <code>NULL</code> means "unknown". Any comparison with unknown gives unknown, not true, so the row is dropped. You must use <code>IS NULL</code> / <code>IS NOT NULL</code>:</p>
+  <script type="text/x-code" data-lang="sql">
+    -- Suppose users had an optional "phone" column
+    SELECT * FROM users WHERE phone = NULL;      -- ❌ always returns 0 rows
+    SELECT * FROM users WHERE phone IS NULL;     -- ✅ users without a phone
+
+    -- Trap: NOT IN with a NULL in the list returns nothing at all
+    SELECT * FROM products WHERE id NOT IN (1, NULL);  -- ❌ 0 rows
+
+    -- COALESCE picks the first non-NULL value — great for defaults
+    SELECT name, COALESCE(phone, 'no phone') AS phone FROM users;
+  </script>
+
+  <p><strong>ORDER BY</strong> sorts the result. <code>ASC</code> (default) is smallest first, <code>DESC</code> is largest first. Sort by several columns to break ties:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT id, user_id, status, total
+    FROM orders
+    ORDER BY total DESC, id ASC;
+  </script>
+  <table>
+    <tr><th>id</th><th>user_id</th><th>status</th><th>total</th></tr>
+    <tr><td>102</td><td>1</td><td>SHIPPED</td><td>189.00</td></tr>
+    <tr><td>101</td><td>1</td><td>PAID</td><td>68.50</td></tr>
+    <tr><td>104</td><td>3</td><td>CANCELLED</td><td>49.00</td></tr>
+    <tr><td>103</td><td>2</td><td>PENDING</td><td>19.50</td></tr>
+  </table>
+  <p>In Postgres, <code>NULL</code>s sort <em>last</em> in ascending order and <em>first</em> in descending order. You can control it with <code>NULLS FIRST</code> / <code>NULLS LAST</code>.</p>
+
+  <p><strong>LIMIT and OFFSET</strong> take a slice of the sorted result. This is how page-based pagination works: page <em>n</em> with size <em>s</em> is <code>LIMIT s OFFSET (n - 1) * s</code>.</p>
+  <script type="text/x-code" data-lang="sql">
+    -- Page 2, 2 orders per page, newest first
+    SELECT id, status, created_at
+    FROM orders
+    ORDER BY created_at DESC, id DESC
+    LIMIT 2 OFFSET 2;
+  </script>
+  <table>
+    <tr><th>id</th><th>status</th><th>created_at</th></tr>
+    <tr><td>102</td><td>SHIPPED</td><td>2026-09-03 00:00:00+00</td></tr>
+    <tr><td>101</td><td>PAID</td><td>2026-09-01 00:00:00+00</td></tr>
+  </table>
+  <p>Two rules: (1) always use <code>ORDER BY</code> with <code>LIMIT</code>, otherwise "page 2" is random; (2) include a unique column (like <code>id</code>) in the sort so ties can't swap between pages. Large <code>OFFSET</code>s are slow because Postgres still reads and throws away all the skipped rows. Lesson 4 shows cursor pagination, which fixes that.</p>
+
+  <p><strong>The order SQL is actually evaluated.</strong> You <em>write</em> <code>SELECT</code> first, but the database <em>runs</em> it almost last. This explains many confusing errors:</p>
+  <table>
+    <tr><th>Step</th><th>Clause</th><th>What happens</th></tr>
+    <tr><td>1</td><td><code>FROM</code> / <code>JOIN</code></td><td>pick the tables</td></tr>
+    <tr><td>2</td><td><code>WHERE</code></td><td>filter rows</td></tr>
+    <tr><td>3</td><td><code>GROUP BY</code> / <code>HAVING</code></td><td>group and filter groups (point 4)</td></tr>
+    <tr><td>4</td><td><code>SELECT</code></td><td>compute output columns and aliases</td></tr>
+    <tr><td>5</td><td><code>ORDER BY</code></td><td>sort (can use aliases)</td></tr>
+    <tr><td>6</td><td><code>LIMIT</code> / <code>OFFSET</code></td><td>slice</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="sql">
+    SELECT name, price * 1.1 AS gross FROM products WHERE gross > 50;
+    -- ❌ ERROR: column "gross" does not exist  (WHERE runs before SELECT)
+
+    SELECT name, price * 1.1 AS gross FROM products WHERE price * 1.1 > 50;  -- ✅
+    SELECT name, price * 1.1 AS gross FROM products ORDER BY gross DESC;     -- ✅ ORDER BY runs after SELECT
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Each Prisma call is translated into exactly this kind of SQL. Turning on query logging is the best way to learn what your code really does:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products.service.ts">
+      // PrismaService created with: super({ log: ['query'] })
+      async findCheapInStock(maxPrice: number, page = 1, limit = 20) {
+        return this.prisma.product.findMany({
+          select: { id: true, name: true, price: true },   // SELECT id, name, price
+          where: { price: { lt: maxPrice }, stock: { gt: 0 } }, // WHERE price < $1 AND stock > $2
+          orderBy: [{ price: 'asc' }, { id: 'asc' }],      // ORDER BY price ASC, id ASC
+          skip: (page - 1) * limit,                        // OFFSET $3
+          take: limit,                                     // LIMIT $4
+        });
+      }
+    </script>
+    <p>The log shows something like <code>SELECT "public"."products"."id", ... WHERE ("price" &lt; $1 AND "stock" &gt; $2) ORDER BY ... LIMIT $3 OFFSET $4</code>. The <code>$1</code>, <code>$2</code> are parameters: values are sent separately from the SQL text, which is what protects you from SQL injection.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Writing <code>= NULL</code> instead of <code>IS NULL</code>.</li>
+      <li>Using double quotes for strings. In Postgres, <code>"PAID"</code> means a <em>column</em> named PAID. Strings use single quotes: <code>'PAID'</code>.</li>
+      <li>Paginating without <code>ORDER BY</code>, or ordering by a non-unique column only, so rows repeat or vanish between pages.</li>
+      <li>Mixing <code>AND</code> and <code>OR</code> without brackets: <code>a OR b AND c</code> means <code>a OR (b AND c)</code>.</li>
+      <li>Filtering dates with <code>BETWEEN '2026-09-01' AND '2026-09-30'</code>, which misses everything after midnight on the 30th. Use <code>&gt;= start AND &lt; next_start</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a query that returns the <code>id</code>, <code>status</code> and <code>total</code> of orders that are <code>PAID</code> or <code>SHIPPED</code> and created in September 2026, biggest total first. What does it return with the sample data?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        SELECT id, status, total
+        FROM orders
+        WHERE status IN ('PAID', 'SHIPPED')
+          AND created_at >= '2026-09-01'
+          AND created_at <  '2026-10-01'
+        ORDER BY total DESC, id;
+      </script>
+      <table>
+        <tr><th>id</th><th>status</th><th>total</th></tr>
+        <tr><td>102</td><td>SHIPPED</td><td>189.00</td></tr>
+        <tr><td>101</td><td>PAID</td><td>68.50</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why can't you use a column alias from SELECT inside WHERE?</summary>
+      <p>Because of the logical evaluation order: <code>WHERE</code> runs before <code>SELECT</code>, so the alias doesn't exist yet. Repeat the expression, or wrap the query in a subquery/CTE. <code>ORDER BY</code> runs after <code>SELECT</code>, so it can use aliases.</p></details>
+    <details><summary>Why is <code>SELECT *</code> discouraged in application code?</summary>
+      <p>It fetches columns you don't need (more I/O and network, possibly sensitive data like password hashes), it can prevent index-only scans, and the result shape changes silently when someone adds or reorders columns.</p></details>
+    <details><summary>What's wrong with <code>LIMIT/OFFSET</code> pagination on big tables?</summary>
+      <p>The database must still produce and skip all <code>OFFSET</code> rows, so deep pages get slower and slower. Rows inserted or deleted between requests also shift the pages. Keyset (cursor) pagination, <code>WHERE id &lt; :lastId ORDER BY id DESC LIMIT n</code>, avoids both problems.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Written order is SELECT → FROM → WHERE → ORDER BY → LIMIT, but it runs FROM → WHERE → SELECT → ORDER BY → LIMIT. Use <code>IS NULL</code> for NULLs, and always sort before you paginate.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="joins">
+  <div class="topic-head"><span class="num">3</span><h2>Joins</h2></div>
+  <p class="tagline">INNER, LEFT, RIGHT and FULL joins</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Because data is split into tables, you need a way to put it back together for a question like "which user placed which order?". A <strong>join</strong> lines up rows from two tables that match on some condition, usually "this foreign key equals that primary key", and glues them side by side into one wider row. The join <em>type</em> decides what happens to rows that have <em>no</em> partner: drop them (INNER) or keep them with empty (<code>NULL</code>) cells (LEFT, RIGHT, FULL).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>INNER JOIN</strong>: keep only rows that have a match on both sides.</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT u.name, o.id AS order_id, o.status, o.total
+    FROM users u
+    INNER JOIN orders o ON o.user_id = u.id
+    ORDER BY o.id;
+  </script>
+  <table>
+    <tr><th>name</th><th>order_id</th><th>status</th><th>total</th></tr>
+    <tr><td>An</td><td>101</td><td>PAID</td><td>68.50</td></tr>
+    <tr><td>An</td><td>102</td><td>SHIPPED</td><td>189.00</td></tr>
+    <tr><td>Binh</td><td>103</td><td>PENDING</td><td>19.50</td></tr>
+    <tr><td>Chi</td><td>104</td><td>CANCELLED</td><td>49.00</td></tr>
+  </table>
+  <p>Three things to notice. <code>u</code> and <code>o</code> are table <em>aliases</em> (short names). An appears twice, because she matches two orders: a join produces one row <em>per matching pair</em>. And Dung is missing, because he has no orders. <code>JOIN</code> on its own means <code>INNER JOIN</code>.</p>
+
+  <p><strong>LEFT JOIN</strong>: keep <em>every</em> row from the left table. If there is no match, the right side's columns are <code>NULL</code>.</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT u.name, o.id AS order_id, o.status
+    FROM users u
+    LEFT JOIN orders o ON o.user_id = u.id
+    ORDER BY u.id, o.id;
+  </script>
+  <table>
+    <tr><th>name</th><th>order_id</th><th>status</th></tr>
+    <tr><td>An</td><td>101</td><td>PAID</td></tr>
+    <tr><td>An</td><td>102</td><td>SHIPPED</td></tr>
+    <tr><td>Binh</td><td>103</td><td>PENDING</td></tr>
+    <tr><td>Chi</td><td>104</td><td>CANCELLED</td></tr>
+    <tr><td>Dung</td><td><em>NULL</em></td><td><em>NULL</em></td></tr>
+  </table>
+  <p>This is the join you need for "all users, with their orders if they have any". A very useful trick is the <strong>anti-join</strong>: LEFT JOIN, then keep only the rows where the right side is missing.</p>
+  <script type="text/x-code" data-lang="sql">
+    -- Products that have never been ordered
+    SELECT p.id, p.name
+    FROM products p
+    LEFT JOIN order_items oi ON oi.product_id = p.id
+    WHERE oi.product_id IS NULL;
+  </script>
+  <table>
+    <tr><th>id</th><th>name</th></tr>
+    <tr><td>4</td><td>USB-C Cable</td></tr>
+  </table>
+  <p>(The same question can be written as <code>WHERE NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = p.id)</code>, which is often the clearest.)</p>
+
+  <p><strong>The ON vs WHERE trap with LEFT JOIN.</strong> A condition on the right table belongs in <code>ON</code> if you want to keep unmatched left rows. In <code>WHERE</code>, it throws away the <code>NULL</code> rows and silently turns your LEFT JOIN into an INNER JOIN:</p>
+  <script type="text/x-code" data-lang="sql">
+    -- Goal: every user + their PAID orders (if any)
+
+    -- ❌ Dung, Binh and Chi disappear: WHERE o.status = 'PAID' is unknown for NULL rows
+    SELECT u.name, o.id FROM users u
+    LEFT JOIN orders o ON o.user_id = u.id
+    WHERE o.status = 'PAID';
+
+    -- ✅ filter inside the join condition
+    SELECT u.name, o.id FROM users u
+    LEFT JOIN orders o ON o.user_id = u.id AND o.status = 'PAID'
+    ORDER BY u.id;
+  </script>
+  <table>
+    <tr><th>name</th><th>id</th></tr>
+    <tr><td>An</td><td>101</td></tr>
+    <tr><td>Binh</td><td><em>NULL</em></td></tr>
+    <tr><td>Chi</td><td><em>NULL</em></td></tr>
+    <tr><td>Dung</td><td><em>NULL</em></td></tr>
+  </table>
+
+  <p><strong>RIGHT JOIN</strong> is a mirror of LEFT JOIN: it keeps every row from the <em>right</em> table. <code>A RIGHT JOIN B</code> is the same as <code>B LEFT JOIN A</code>. Most teams just swap the tables and always write LEFT JOIN, because reading "start from this table, attach that" is easier.</p>
+  <script type="text/x-code" data-lang="sql">
+    -- These two return the same rows
+    SELECT p.name, oi.order_id FROM order_items oi RIGHT JOIN products p ON p.id = oi.product_id;
+    SELECT p.name, oi.order_id FROM products p    LEFT JOIN  order_items oi ON p.id = oi.product_id;
+  </script>
+
+  <p><strong>FULL JOIN</strong> keeps unmatched rows from <em>both</em> sides. It's rarer, and mostly used to <em>compare or reconcile</em> two data sets. Imagine the supplier sends a price list that you load into a staging table <code>price_import(product_id, new_price)</code> containing <code>(1, 45.00)</code>, <code>(2, 19.50)</code> and <code>(99, 5.00)</code>:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT p.id, p.name, p.price, i.product_id AS import_id, i.new_price
+    FROM products p
+    FULL JOIN price_import i ON i.product_id = p.id
+    ORDER BY COALESCE(p.id, i.product_id);
+  </script>
+  <table>
+    <tr><th>id</th><th>name</th><th>price</th><th>import_id</th><th>new_price</th></tr>
+    <tr><td>1</td><td>Keyboard</td><td>49.00</td><td>1</td><td>45.00</td></tr>
+    <tr><td>2</td><td>Mouse</td><td>19.50</td><td>2</td><td>19.50</td></tr>
+    <tr><td>3</td><td>Monitor</td><td>189.00</td><td><em>NULL</em></td><td><em>NULL</em></td></tr>
+    <tr><td>4</td><td>USB-C Cable</td><td>9.99</td><td><em>NULL</em></td><td><em>NULL</em></td></tr>
+    <tr><td><em>NULL</em></td><td><em>NULL</em></td><td><em>NULL</em></td><td>99</td><td>5.00</td></tr>
+  </table>
+  <p>In one query you see: prices to update (1), unchanged (2), products the supplier forgot (3, 4) and unknown products in the file (99).</p>
+
+  <table>
+    <tr><th>Join</th><th>Keeps unmatched rows from…</th><th>Typical question</th></tr>
+    <tr><td><code>INNER</code></td><td>neither side</td><td>"orders with their user"</td></tr>
+    <tr><td><code>LEFT</code></td><td>the left table</td><td>"all users, with orders if any"</td></tr>
+    <tr><td><code>RIGHT</code></td><td>the right table</td><td>same as LEFT with tables swapped</td></tr>
+    <tr><td><code>FULL</code></td><td>both tables</td><td>"compare these two lists"</td></tr>
+  </table>
+
+  <p><strong>Joining more than two tables.</strong> Joins chain. To list what is in each order, go orders → order_items → products, plus users for the name:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT o.id AS order_id, u.name AS customer, p.name AS product,
+           oi.quantity, oi.unit_price,
+           oi.quantity * oi.unit_price AS line_total
+    FROM orders o
+    JOIN users u        ON u.id = o.user_id
+    JOIN order_items oi ON oi.order_id = o.id
+    JOIN products p     ON p.id = oi.product_id
+    WHERE o.id IN (101, 102)
+    ORDER BY o.id, p.name;
+  </script>
+  <table>
+    <tr><th>order_id</th><th>customer</th><th>product</th><th>quantity</th><th>unit_price</th><th>line_total</th></tr>
+    <tr><td>101</td><td>An</td><td>Keyboard</td><td>1</td><td>49.00</td><td>49.00</td></tr>
+    <tr><td>101</td><td>An</td><td>Mouse</td><td>1</td><td>19.50</td><td>19.50</td></tr>
+    <tr><td>102</td><td>An</td><td>Monitor</td><td>1</td><td>189.00</td><td>189.00</td></tr>
+  </table>
+  <p>Notice how order 101 now appears twice: once per item. This "row multiplication" is the reason why <code>SUM(o.total)</code> over such a join gives a wrong (too big) number. Aggregate at the right level (point 4).</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>With Prisma you don't write joins by hand. <code>include</code> follows relations for you and returns <em>nested objects</em> instead of flat repeated rows:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      async findOneWithItems(orderId: number) {
+        const order = await this.prisma.order.findUnique({
+          where: { id: orderId },
+          include: {
+            user: { select: { id: true, name: true } },     // like JOIN users
+            items: { include: { product: true } },          // like JOIN order_items + products
+          },
+        });
+        if (!order) throw new NotFoundException(`Order ${orderId} not found`);
+        return order;
+        // { id: 101, user: { id: 1, name: 'An' }, items: [ { quantity: 1, product: { name: 'Keyboard' } }, ... ] }
+      }
+    </script>
+    <p>Depending on the version and settings, Prisma runs this either as a few separate queries (<code>SELECT ... FROM orders</code>, then <code>... FROM order_items WHERE order_id IN (...)</code>) or as one SQL query with joins (the <code>relationLoadStrategy: 'join'</code> option, from the <code>relationJoins</code> feature). For reports such as "users who never ordered", you'll often use relation filters (<code>where: { orders: { none: {} } }</code>) or drop to raw SQL with a real <code>LEFT JOIN</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using INNER JOIN when you need LEFT JOIN, so rows "mysteriously" disappear (users without orders, products never sold).</li>
+      <li>Putting a filter on the right table in <code>WHERE</code> after a LEFT JOIN, which turns it into an INNER JOIN.</li>
+      <li>Forgetting the <code>ON</code> condition (or writing <code>FROM a, b</code>), which produces a cross join: every row times every row.</li>
+      <li>Summing a parent column (<code>orders.total</code>) after joining children (<code>order_items</code>). The parent value is counted once per child.</li>
+      <li>Not using table aliases, then getting <code>column reference "id" is ambiguous</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>List <strong>every product</strong> with the ids of the orders it appears in. Products never ordered must still appear. Sort by product id, then order id. Write the query and the expected result.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        SELECT p.id, p.name, oi.order_id
+        FROM products p
+        LEFT JOIN order_items oi ON oi.product_id = p.id
+        ORDER BY p.id, oi.order_id;
+      </script>
+      <table>
+        <tr><th>id</th><th>name</th><th>order_id</th></tr>
+        <tr><td>1</td><td>Keyboard</td><td>101</td></tr>
+        <tr><td>1</td><td>Keyboard</td><td>104</td></tr>
+        <tr><td>2</td><td>Mouse</td><td>101</td></tr>
+        <tr><td>2</td><td>Mouse</td><td>103</td></tr>
+        <tr><td>3</td><td>Monitor</td><td>102</td></tr>
+        <tr><td>4</td><td>USB-C Cable</td><td><em>NULL</em></td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between INNER JOIN and LEFT JOIN?</summary>
+      <p>INNER JOIN returns only pairs that match on both sides. LEFT JOIN returns every row of the left table; where there is no match, the right table's columns are NULL.</p></details>
+    <details><summary>How do you find rows in table A that have no related row in table B?</summary>
+      <p>An anti-join: <code>A LEFT JOIN B ON ... WHERE B.key IS NULL</code>, or <code>WHERE NOT EXISTS (SELECT 1 FROM B WHERE B.a_id = A.id)</code>. Avoid <code>NOT IN (subquery)</code> if the subquery can return NULL, because then it returns nothing.</p></details>
+    <details><summary>Why can a join return more rows than the left table has?</summary>
+      <p>Because a join produces one output row per matching pair. If one user has three orders, that user appears three times. That's expected for 1:N joins, and it's why you must aggregate carefully after joining.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> INNER = only matches. LEFT = all of the left, NULLs where no match. Put right-table filters in <code>ON</code> for LEFT JOINs, and watch for row multiplication.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="aggregation">
+  <div class="topic-head"><span class="num">4</span><h2>Aggregation</h2></div>
+  <p class="tagline">GROUP BY, HAVING, COUNT, SUM</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Aggregation turns many rows into a few summary numbers, like a cashier counting the day's receipts. <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> and <code>MAX</code> squash rows into one value. <code>GROUP BY</code> first sorts the receipts into piles (one pile per customer, per product, per day…) and then counts <em>each pile</em> separately. <code>HAVING</code> throws away whole piles you don't care about, after counting.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Aggregates over the whole table</strong> return exactly one row:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT COUNT(*)              AS order_count,
+           SUM(total)            AS revenue,
+           ROUND(AVG(total), 2)  AS avg_order,
+           MIN(total)            AS smallest,
+           MAX(total)            AS biggest
+    FROM orders;
+  </script>
+  <table>
+    <tr><th>order_count</th><th>revenue</th><th>avg_order</th><th>smallest</th><th>biggest</th></tr>
+    <tr><td>4</td><td>326.00</td><td>81.50</td><td>19.50</td><td>189.00</td></tr>
+  </table>
+  <p>Aggregates ignore <code>NULL</code> values (except <code>COUNT(*)</code>, which counts rows). And on zero rows, <code>SUM</code> returns <code>NULL</code>, not 0. Wrap it in <code>COALESCE(SUM(x), 0)</code> when you need a number.</p>
+
+  <p><strong>GROUP BY</strong> makes one output row per group. Here: revenue per product, not counting cancelled orders.</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT p.name,
+           SUM(oi.quantity)                 AS units_sold,
+           SUM(oi.quantity * oi.unit_price) AS revenue
+    FROM order_items oi
+    JOIN orders o   ON o.id = oi.order_id
+    JOIN products p ON p.id = oi.product_id
+    WHERE o.status <> 'CANCELLED'
+    GROUP BY p.id, p.name
+    ORDER BY revenue DESC;
+  </script>
+  <table>
+    <tr><th>name</th><th>units_sold</th><th>revenue</th></tr>
+    <tr><td>Monitor</td><td>1</td><td>189.00</td></tr>
+    <tr><td>Keyboard</td><td>1</td><td>49.00</td></tr>
+    <tr><td>Mouse</td><td>2</td><td>39.00</td></tr>
+  </table>
+  <p>Order matters: <code>WHERE</code> removed the cancelled order 104 <em>before</em> grouping, so the Keyboard only counts once.</p>
+
+  <p><strong>The golden rule of GROUP BY:</strong> every column in <code>SELECT</code> must either be in <code>GROUP BY</code> or be inside an aggregate function. Otherwise, which value should Postgres show for the group?</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT user_id, status, COUNT(*) FROM orders GROUP BY user_id;
+    -- ❌ ERROR: column "orders.status" must appear in the GROUP BY clause
+    --    or be used in an aggregate function  (An has 2 orders with 2 different statuses!)
+
+    SELECT user_id, COUNT(*) FROM orders GROUP BY user_id;            -- ✅
+    SELECT user_id, status, COUNT(*) FROM orders GROUP BY user_id, status; -- ✅ one row per (user, status)
+  </script>
+  <p>A Postgres convenience: if you group by a table's primary key, you may select any other column of that table (<code>GROUP BY u.id</code> lets you select <code>u.name</code>), because the key determines them.</p>
+
+  <p><strong>COUNT(*) vs COUNT(column)</strong> matters a lot with LEFT JOIN. <code>COUNT(*)</code> counts rows; <code>COUNT(o.id)</code> counts non-NULL ids:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT u.name,
+           COUNT(*)    AS wrong_count,   -- ❌ Dung's NULL row counts as 1
+           COUNT(o.id) AS order_count,   -- ✅
+           COALESCE(SUM(o.total) FILTER (WHERE o.status <> 'CANCELLED'), 0) AS spent
+    FROM users u
+    LEFT JOIN orders o ON o.user_id = u.id
+    GROUP BY u.id
+    ORDER BY u.id;
+  </script>
+  <table>
+    <tr><th>name</th><th>wrong_count</th><th>order_count</th><th>spent</th></tr>
+    <tr><td>An</td><td>2</td><td>2</td><td>257.50</td></tr>
+    <tr><td>Binh</td><td>1</td><td>1</td><td>19.50</td></tr>
+    <tr><td>Chi</td><td>1</td><td>1</td><td>0</td></tr>
+    <tr><td>Dung</td><td>1</td><td>0</td><td>0</td></tr>
+  </table>
+  <p><code>FILTER (WHERE …)</code> is a Postgres feature that applies an aggregate to only some rows of the group. It lets you compute several conditional totals in one pass, for example <code>COUNT(*) FILTER (WHERE status = 'PAID') AS paid, COUNT(*) FILTER (WHERE status = 'PENDING') AS pending</code>.</p>
+
+  <p><strong>HAVING vs WHERE.</strong> <code>WHERE</code> filters <em>rows</em> before grouping, so it cannot use aggregates. <code>HAVING</code> filters <em>groups</em> after aggregation.</p>
+  <script type="text/x-code" data-lang="sql">
+    -- Customers who placed at least 2 orders
+    SELECT user_id, COUNT(*) AS order_count
+    FROM orders
+    WHERE status <> 'CANCELLED'          -- row filter (before grouping)
+    GROUP BY user_id
+    HAVING COUNT(*) >= 2;                -- group filter (after grouping)
+
+    -- ❌ WHERE COUNT(*) >= 2  →  ERROR: aggregate functions are not allowed in WHERE
+  </script>
+  <table>
+    <tr><th>user_id</th><th>order_count</th></tr>
+    <tr><td>1</td><td>2</td></tr>
+  </table>
+  <p>Rule of thumb: if the condition can be checked on a single row, put it in <code>WHERE</code> (it's cheaper, since fewer rows reach the grouping step). Use <code>HAVING</code> only for conditions on aggregates.</p>
+
+  <p><strong>Other handy aggregates:</strong> <code>COUNT(DISTINCT user_id)</code> (unique customers), <code>string_agg(name, ', ')</code> (join strings), <code>array_agg(id)</code>, <code>json_agg(...)</code>. And grouping by a computed value works too, e.g. revenue per day with <code>GROUP BY date_trunc('day', created_at)</code>.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma covers common cases with <code>aggregate</code>, <code>groupBy</code> and <code>_count</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="reports.service.ts">
+      // Whole-table aggregate
+      const stats = await this.prisma.order.aggregate({
+        where: { status: { not: 'CANCELLED' } },
+        _count: { _all: true },
+        _sum: { total: true },      // Prisma.Decimal | null
+        _avg: { total: true },
+      });
+
+      // GROUP BY user_id HAVING SUM(total) > 50
+      const bigSpenders = await this.prisma.order.groupBy({
+        by: ['userId'],
+        where: { status: { not: 'CANCELLED' } },
+        _sum: { total: true },
+        having: { total: { _sum: { gt: 50 } } },
+        orderBy: { _sum: { total: 'desc' } },
+      });
+
+      // Count related rows without loading them
+      const users = await this.prisma.user.findMany({
+        select: { id: true, name: true, _count: { select: { orders: true } } },
+      });
+    </script>
+    <p>For reports that need joins plus grouping (like revenue per product above), teams usually write the SQL with <code>$queryRaw</code> or put it in a database view (point 10). Note that <code>SUM</code> on a <code>numeric</code> column comes back as a <code>Prisma.Decimal</code>, and <code>COUNT</code> in raw queries comes back as a <code>bigint</code>. Convert both before returning JSON.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Selecting a column that is neither grouped nor aggregated.</li>
+      <li>Using <code>COUNT(*)</code> after a LEFT JOIN and getting 1 instead of 0 for "no children".</li>
+      <li>Forgetting that <code>SUM</code> of no rows is <code>NULL</code>. Use <code>COALESCE</code>.</li>
+      <li>Putting row conditions in <code>HAVING</code> (works, but slower) or aggregate conditions in <code>WHERE</code> (error).</li>
+      <li>Summing a parent column after joining to children, which double-counts it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>For each order status, return the number of orders and their total value, sorted by status name. Then change it to only show statuses whose total value is above 50.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        SELECT status, COUNT(*) AS orders, SUM(total) AS value
+        FROM orders
+        GROUP BY status
+        ORDER BY status;
+
+        -- Only "big" statuses
+        SELECT status, COUNT(*) AS orders, SUM(total) AS value
+        FROM orders
+        GROUP BY status
+        HAVING SUM(total) > 50
+        ORDER BY status;
+      </script>
+      <table>
+        <tr><th>status</th><th>orders</th><th>value</th></tr>
+        <tr><td>PAID</td><td>1</td><td>68.50</td></tr>
+        <tr><td>SHIPPED</td><td>1</td><td>189.00</td></tr>
+      </table>
+      <p>(The first query also returns CANCELLED 49.00 and PENDING 19.50.)</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between WHERE and HAVING?</summary>
+      <p><code>WHERE</code> filters individual rows before grouping and can't use aggregate functions. <code>HAVING</code> filters groups after aggregation and is where conditions like <code>COUNT(*) &gt; 1</code> go.</p></details>
+    <details><summary>What's the difference between <code>COUNT(*)</code>, <code>COUNT(col)</code> and <code>COUNT(DISTINCT col)</code>?</summary>
+      <p><code>COUNT(*)</code> counts rows. <code>COUNT(col)</code> counts rows where <code>col</code> is not NULL. <code>COUNT(DISTINCT col)</code> counts the different non-NULL values.</p></details>
+    <details><summary>How would you find duplicate emails in a users table?</summary>
+      <p><code>SELECT lower(email), COUNT(*) FROM users GROUP BY lower(email) HAVING COUNT(*) &gt; 1;</code> Grouping by the lower-cased email also catches duplicates that differ only by letter case.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> GROUP BY makes piles, aggregates summarize each pile, WHERE filters rows before, HAVING filters piles after. Every selected column must be grouped or aggregated.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="keys">
+  <div class="topic-head"><span class="num">5</span><h2>Keys</h2></div>
+  <p class="tagline">primary keys, foreign keys, composite keys</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A <strong>primary key</strong> is a row's ID card: unique, never empty, and it shouldn't change. A <strong>foreign key</strong> is a reference to someone else's ID card, like a parcel label that says "deliver to customer #1"; the database refuses labels for customers that don't exist. A <strong>composite key</strong> is an ID made of two or more columns together, like "seat 12 <em>in</em> row F": neither part alone is unique, but the pair is.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Primary key (PK)</strong> = <code>UNIQUE</code> + <code>NOT NULL</code>, and a table has at most one. Postgres automatically creates a unique index for it, so lookups by id are fast.</p>
+  <script type="text/x-code" data-lang="sql">
+    -- ✅ Modern way: identity column (SQL standard, PostgreSQL 10+)
+    CREATE TABLE users (
+      id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      email text NOT NULL UNIQUE
+    );
+
+    -- Older way you'll still see everywhere (and what Prisma's autoincrement() creates)
+    CREATE TABLE legacy_users (
+      id serial PRIMARY KEY      -- integer + a sequence + DEFAULT nextval(...)
+    );
+
+    -- UUID primary key — gen_random_uuid() is built in since PostgreSQL 13
+    CREATE TABLE sessions (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id integer NOT NULL REFERENCES users(id)
+    );
+  </script>
+  <p><code>GENERATED ALWAYS</code> refuses manual ids (you'd need <code>OVERRIDING SYSTEM VALUE</code>), while <code>GENERATED BY DEFAULT</code> allows them. That's why our <code>orders</code> table uses <code>BY DEFAULT</code>: the seed inserts ids 101–104 by hand.</p>
+
+  <p><strong>Surrogate vs natural keys.</strong> A <em>natural</em> key is real-world data that happens to be unique (an email, a tax number). A <em>surrogate</em> key is a meaningless generated number or UUID. Prefer surrogate primary keys: emails change, and changing a PK means updating every foreign key that points to it. Keep natural identifiers as <code>UNIQUE</code> columns instead.</p>
+  <table>
+    <tr><th>Choice</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td><code>integer</code>/<code>bigint</code> identity</td><td>small, fast, readable in logs</td><td>guessable in URLs (<code>/orders/102</code> → try 103), reveals volume</td></tr>
+    <tr><td><code>uuid</code> (v4 random)</td><td>not guessable, can be generated by the app</td><td>16 bytes, random order makes indexes less cache-friendly</td></tr>
+    <tr><td><code>uuid</code> v7 (time-ordered)</td><td>not guessable, sorted by time, index-friendly</td><td>generated by the app/ORM, or <code>uuidv7()</code> (built in from PostgreSQL 18)</td></tr>
+  </table>
+
+  <p><strong>Foreign key (FK)</strong>: a column whose value must exist as a key in another table (or be <code>NULL</code>, if the column allows it). This is called <em>referential integrity</em>.</p>
+  <script type="text/x-code" data-lang="sql">
+    INSERT INTO orders (user_id, total) VALUES (999, 10);
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    ERROR:  insert or update on table "orders" violates foreign key constraint "orders_user_id_fkey"
+    DETAIL:  Key (user_id)=(999) is not present in table "users".
+  </script>
+  <p>The FK also protects the other direction. Try deleting An, who has orders:</p>
+  <script type="text/x-code" data-lang="sql">
+    DELETE FROM users WHERE id = 1;
+    -- ERROR: update or delete on table "users" violates foreign key constraint
+    --        "orders_user_id_fkey" on table "orders"
+  </script>
+
+  <p><strong>ON DELETE actions</strong> decide what happens to children when the parent is deleted:</p>
+  <table>
+    <tr><th>Action</th><th>Effect</th><th>Good for</th></tr>
+    <tr><td><code>NO ACTION</code> (default) / <code>RESTRICT</code></td><td>refuse the delete while children exist</td><td>valuable history: you must not delete a user who has orders</td></tr>
+    <tr><td><code>CASCADE</code></td><td>delete the children too</td><td>parts that can't live alone: <code>order_items</code> of a deleted order</td></tr>
+    <tr><td><code>SET NULL</code></td><td>set the FK to NULL (column must be nullable)</td><td>optional links: <code>products.category_id</code> when a category is removed</td></tr>
+    <tr><td><code>SET DEFAULT</code></td><td>set the FK to its default</td><td>rare</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="sql">
+    DELETE FROM orders WHERE id = 104;
+    -- ✅ works, and order_items row (104, 1) is deleted automatically (ON DELETE CASCADE)
+  </script>
+
+  <p><strong>Composite keys.</strong> In <code>order_items</code>, a row is identified by the <em>pair</em> <code>(order_id, product_id)</code>. The composite PK also enforces a business rule: the same product can't appear twice in one order (you increase <code>quantity</code> instead).</p>
+  <script type="text/x-code" data-lang="sql">
+    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+    VALUES (101, 1, 2, 49.00);
+    -- ERROR: duplicate key value violates unique constraint "order_items_pkey"
+    -- DETAIL: Key (order_id, product_id)=(101, 1) already exists.
+  </script>
+  <p>Column order inside a composite key matters for its index: <code>(order_id, product_id)</code> makes "all items of order 101" fast, but not "all orders that contain product 1". For that, add a separate index on <code>product_id</code>.</p>
+
+  <p><strong>Important: Postgres does not index foreign keys automatically.</strong> It indexes primary keys and unique constraints, but not <code>orders.user_id</code>. Without an index, "orders of user 1" scans the whole table, and every <code>DELETE FROM users</code> scans <code>orders</code> to check for children. Almost every FK column deserves an index:</p>
+  <script type="text/x-code" data-lang="sql">
+    CREATE INDEX orders_user_id_idx ON orders (user_id);
+    CREATE INDEX order_items_product_id_idx ON order_items (product_id);
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>In Prisma, <code>@id</code> is the PK, <code>@relation</code> creates the FK, <code>@@id</code> makes a composite key and <code>onDelete</code> sets the action:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      model OrderItem {
+        orderId   Int     @map("order_id")
+        productId Int     @map("product_id")
+        quantity  Int
+        unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+
+        order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+        product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+        @@id([orderId, productId])   // composite primary key
+        @@index([productId])         // FK index Prisma does NOT add for you on PostgreSQL
+        @@map("order_items")
+      }
+    </script>
+    <p>Key violations surface as Prisma errors you should translate into HTTP errors, rather than letting them become a 500:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="order-items.service.ts">
+      import { Prisma } from '@prisma/client';
+
+      async addItem(orderId: number, productId: number, quantity: number, unitPrice: Prisma.Decimal) {
+        try {
+          return await this.prisma.orderItem.create({
+            data: { orderId, productId, quantity, unitPrice },
+          });
+        } catch (e) {
+          if (e instanceof Prisma.PrismaClientKnownRequestError) {
+            if (e.code === 'P2002') throw new ConflictException('Product already in this order'); // composite PK
+            if (e.code === 'P2003') throw new BadRequestException('Order or product does not exist'); // FK
+          }
+          throw e;
+        }
+      }
+
+      // Looking up by a composite key uses a generated "field1_field2" name:
+      // this.prisma.orderItem.findUnique({ where: { orderId_productId: { orderId, productId } } })
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using email (or any changeable business value) as the primary key.</li>
+      <li>Forgetting to index foreign key columns, then wondering why joins and deletes are slow.</li>
+      <li>Using <code>ON DELETE CASCADE</code> everywhere. Deleting one user could silently wipe years of orders and invoices.</li>
+      <li>Skipping foreign keys "for speed" and relying on the app to keep data consistent. Orphan rows always appear eventually.</li>
+      <li>Exposing sequential ids in public URLs without an authorization check (users can guess other ids).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Design a <code>reviews</code> table: a user can review a product, with a rating from 1 to 5 and a comment. A user can review each product only once. If the product is deleted, its reviews go too. If the user is deleted, keep the review but without an author. Write the SQL.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        CREATE TABLE reviews (
+          id          integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          product_id  integer NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+          user_id     integer          REFERENCES users(id)    ON DELETE SET NULL,  -- nullable!
+          rating      smallint NOT NULL CHECK (rating BETWEEN 1 AND 5),
+          comment     text,
+          created_at  timestamptz NOT NULL DEFAULT now(),
+          UNIQUE (user_id, product_id)          -- one review per user per product
+        );
+        CREATE INDEX reviews_product_id_idx ON reviews (product_id);
+      </script>
+      <p>We used a surrogate <code>id</code> instead of a composite PK on <code>(user_id, product_id)</code> because <code>user_id</code> can become NULL, and PK columns can never be NULL. Note that the UNIQUE index starts with <code>user_id</code>, so we also index <code>product_id</code> for "all reviews of a product".</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between a primary key and a unique constraint?</summary>
+      <p>Both enforce uniqueness and create a unique index. A PK also implies NOT NULL, there can be only one per table, and it's the row's main identity that foreign keys normally reference. A table can have many UNIQUE constraints, and their columns may be NULL.</p></details>
+    <details><summary>Does PostgreSQL create indexes on foreign keys automatically?</summary>
+      <p>No. It indexes PKs and UNIQUE constraints only. You should usually add an index on FK columns yourself, both for joins/filters and to make deletes on the parent table fast.</p></details>
+    <details><summary>Integer ids or UUIDs?</summary>
+      <p>Integers are compact and fast but guessable and centrally generated. UUIDs are unguessable and can be created anywhere (good for distributed systems and public URLs) but are bigger; random v4 UUIDs also fragment B-tree indexes, which time-ordered UUIDv7 avoids. Many apps use integer PKs internally and expose a separate UUID or slug publicly.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> PK = stable identity (prefer surrogate). FK = guaranteed valid reference (index it, and choose ON DELETE on purpose). Composite key = identity made of a pair.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="indexes">
+  <div class="topic-head"><span class="num">6</span><h2>Indexes</h2></div>
+  <p class="tagline">when and why to index a column</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>An index is like the index at the back of a book. Without it, to find every page that mentions "Postgres", you read the whole book (a <em>sequential scan</em>). With it, you look up the word, which is sorted alphabetically, and jump straight to pages 12, 87 and 203. The cost: the index takes space, and every time you add or change a page, the index must be updated too. So you index the things you <em>search by often</em>, not everything.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Seeing the difference with EXPLAIN.</strong> Indexes don't matter with 4 rows, so first generate a realistic amount of data:</p>
+  <script type="text/x-code" data-lang="sql">
+    DROP INDEX IF EXISTS orders_user_id_idx;   -- in case you created it in point 5
+
+    -- 10,000 extra users and 1,000,000 orders spread across them
+    INSERT INTO users (email, name)
+    SELECT 'user' || g || '@shop.dev', 'User ' || g FROM generate_series(1, 10000) g;
+
+    INSERT INTO orders (user_id, status, total, created_at)
+    SELECT (random() * 9999)::int + 5,
+           (ARRAY['PENDING','PAID','SHIPPED','CANCELLED'])[1 + (random() * 3)::int],
+           round((random() * 500)::numeric, 2),
+           now() - random() * interval '365 days'
+    FROM generate_series(1, 1000000);
+
+    ANALYZE orders;   -- refresh the planner's statistics
+
+    EXPLAIN ANALYZE SELECT * FROM orders WHERE user_id = 42;
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="output (trimmed — your numbers will differ)">
+    Gather  (cost=1000.00..14612.43 rows=100 width=37) (actual time=0.41..48.92 rows=97 loops=1)
+      Workers Planned: 2
+      ->  Parallel Seq Scan on orders  (actual time=1.02..44.80 rows=32 loops=3)
+            Filter: (user_id = 42)
+            Rows Removed by Filter: 333301
+    Execution Time: 49.10 ms
+  </script>
+  <p>"Seq Scan" and "Rows Removed by Filter: 333301" (per worker) mean Postgres read a million rows to return 97. Now add an index and run it again:</p>
+  <script type="text/x-code" data-lang="sql">
+    CREATE INDEX orders_user_id_idx ON orders (user_id);
+    EXPLAIN ANALYZE SELECT * FROM orders WHERE user_id = 42;
+  </script>
+  <script type="text/x-code" data-lang="plaintext" data-title="output (trimmed)">
+    Bitmap Heap Scan on orders  (cost=5.20..380.12 rows=100 width=37) (actual time=0.05..0.21 rows=97 loops=1)
+      Recheck Cond: (user_id = 42)
+      ->  Bitmap Index Scan on orders_user_id_idx  (actual time=0.03..0.03 rows=97 loops=1)
+            Index Cond: (user_id = 42)
+    Execution Time: 0.25 ms
+  </script>
+  <p>From about 49 ms to 0.25 ms: roughly 200 times faster. <code>EXPLAIN</code> shows the plan; <code>EXPLAIN ANALYZE</code> actually runs the query and shows real timings (so be careful running it on <code>UPDATE</code>/<code>DELETE</code>).</p>
+
+  <p><strong>How a B-tree index works.</strong> The default index type is a B-tree: a sorted, balanced tree of the column's values, each pointing to the row's location. Finding a value takes a few steps even with millions of rows (like a binary search). Because it's sorted, a B-tree helps with <code>=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>BETWEEN</code>, <code>IN</code>, <code>ORDER BY</code>, and <code>LIKE 'abc%'</code> (prefix only, with the right collation or operator class).</p>
+
+  <p><strong>When to add an index:</strong></p>
+  <ul>
+    <li>Columns you filter by often in <code>WHERE</code> (<code>orders.status</code>, <code>users.email</code>).</li>
+    <li>Foreign keys used in joins (<code>orders.user_id</code>, <code>order_items.product_id</code>).</li>
+    <li>Columns you <code>ORDER BY</code> together with <code>LIMIT</code> (newest orders first).</li>
+    <li>Columns that must be unique: use a <code>UNIQUE</code> constraint, which creates a unique index.</li>
+  </ul>
+  <p><strong>When <em>not</em> to:</strong></p>
+  <ul>
+    <li>Small tables (a few thousand rows): a sequential scan is already fast.</li>
+    <li>Columns with very few distinct values, if the query returns a big share of the table (e.g. <code>is_active</code> where 95% are true). Postgres will ignore the index anyway.</li>
+    <li>Columns you never search by. Every index slows down every <code>INSERT</code>, and every <code>UPDATE</code> of that column, and uses disk.</li>
+  </ul>
+
+  <p><strong>Composite (multi-column) indexes.</strong> The column order matters. An index on <code>(user_id, created_at)</code> is sorted by <code>user_id</code> first, then by <code>created_at</code> within each user. It's perfect for "this user's latest orders":</p>
+  <script type="text/x-code" data-lang="sql">
+    CREATE INDEX orders_user_created_idx ON orders (user_id, created_at DESC);
+
+    -- ✅ uses the index for both the filter AND the sort (no separate sort step)
+    SELECT id, total FROM orders WHERE user_id = 42 ORDER BY created_at DESC LIMIT 10;
+
+    -- ✅ also uses it: user_id is the leading column
+    SELECT count(*) FROM orders WHERE user_id = 42;
+
+    -- ❌ can't use it efficiently: created_at alone is not the leading column
+    SELECT * FROM orders WHERE created_at > now() - interval '1 day';
+  </script>
+  <p>This is the <em>leftmost prefix</em> rule: an index on (A, B, C) helps queries on A, on A + B, and on A + B + C, but not on B or C alone. Put equality columns first and range/sort columns last. Note that this composite index also makes the plain <code>orders_user_id_idx</code> redundant, so you could drop it.</p>
+
+  <p><strong>Special-purpose indexes in Postgres:</strong></p>
+  <script type="text/x-code" data-lang="sql">
+    -- Partial index: only index the rows you search for. Small and fast.
+    CREATE INDEX orders_pending_idx ON orders (created_at) WHERE status = 'PENDING';
+    -- used by: SELECT ... WHERE status = 'PENDING' AND created_at < now() - interval '1 hour'
+
+    -- Expression index: index the result of a function
+    CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email));
+    -- used by: SELECT ... WHERE lower(email) = lower('An@Shop.dev')  (and makes emails case-insensitively unique)
+
+    -- GIN index: for jsonb, arrays and full-text search
+    CREATE INDEX products_tags_idx ON products USING gin (tags);   -- if products had a text[] "tags" column
+
+    -- In production: build without locking writes to the table
+    CREATE INDEX CONCURRENTLY orders_status_idx ON orders (status);
+  </script>
+  <p>Also note: an index on <code>email</code> does <em>not</em> help <code>WHERE lower(email) = …</code> or <code>WHERE email ILIKE '%gmail%'</code>. When you wrap a column in a function, or search with a leading wildcard, a normal B-tree can't be used.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Declare indexes in <code>schema.prisma</code> and Prisma creates them in the migration. Base your indexes on the queries your services actually run:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      model Order {
+        id        Int      @id @default(autoincrement())
+        userId    Int      @map("user_id")
+        status    String
+        createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+        // ...
+
+        // serves: findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
+        @@index([userId, createdAt(sort: Desc)])
+        @@index([status])
+        @@map("orders")
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      // This is the query the composite index above was designed for
+      findRecentForUser(userId: number) {
+        return this.prisma.order.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        });
+      }
+    </script>
+    <p>Partial and expression indexes (like <code>lower(email)</code>) can't be fully described in the Prisma schema in most versions, so you add them by hand in a migration created with <code>prisma migrate dev --create-only</code> (Lesson 4). When an endpoint is slow, enable query logging, copy the SQL and run <code>EXPLAIN ANALYZE</code> on it.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Indexing every column "just in case". Writes get slower, and the planner ignores most of them.</li>
+      <li>Wrong column order in a composite index (range column first, equality column second).</li>
+      <li>Forgetting to index foreign keys.</li>
+      <li>Wrapping an indexed column in a function (<code>WHERE date(created_at) = …</code>) and expecting the index to be used. Rewrite it as a range.</li>
+      <li>Running plain <code>CREATE INDEX</code> on a large production table during traffic. It blocks writes; use <code>CONCURRENTLY</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>The admin dashboard runs this query every few seconds: <code>SELECT id, user_id, total FROM orders WHERE status = 'PAID' ORDER BY created_at DESC LIMIT 20;</code>. Which index would you create, and how would you check that it's used?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        -- Equality column first, sort column second
+        CREATE INDEX orders_status_created_idx ON orders (status, created_at DESC);
+
+        -- or, if only PAID is ever queried this way, a smaller partial index:
+        -- CREATE INDEX orders_paid_created_idx ON orders (created_at DESC) WHERE status = 'PAID';
+
+        EXPLAIN ANALYZE
+        SELECT id, user_id, total FROM orders
+        WHERE status = 'PAID' ORDER BY created_at DESC LIMIT 20;
+        -- Expect "Index Scan using orders_status_created_idx" and no separate "Sort" node.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why not index every column?</summary>
+      <p>Each index costs disk space and memory, and must be updated on every insert and on updates of indexed columns, which slows writes. The planner also won't use indexes that aren't selective. Index based on real query patterns.</p></details>
+    <details><summary>Explain the leftmost prefix rule for composite indexes.</summary>
+      <p>A B-tree on (A, B) is sorted by A, then B. It can be used for conditions on A, or A and B, and for <code>WHERE A = ? ORDER BY B</code>, but not efficiently for conditions on B alone, just like a phone book sorted by last name can't find everyone named "An" quickly.</p></details>
+    <details><summary>A query has an index on its column but still does a Seq Scan. Why?</summary>
+      <p>Possible reasons: the query returns a large fraction of the table (a seq scan is cheaper); the column is wrapped in a function or cast; a leading-wildcard <code>LIKE</code>; outdated statistics (run <code>ANALYZE</code>); a type mismatch between the column and the parameter; or the table is simply small.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Index what you filter, join and sort by, especially foreign keys. Put equality columns before range columns, and prove it works with <code>EXPLAIN ANALYZE</code>.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="constraints">
+  <div class="topic-head"><span class="num">7</span><h2>Constraints</h2></div>
+  <p class="tagline">NOT NULL, UNIQUE, CHECK, DEFAULT</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Constraints are rules the database enforces on every single write, no matter who writes: your NestJS app, a script, a colleague in pgAdmin, or a bug. Think of them as a bouncer at the door of each table. <code>NOT NULL</code> says "you must bring this". <code>UNIQUE</code> says "nobody else can have the same one". <code>CHECK</code> says "it must follow this rule". <code>DEFAULT</code> isn't a rule but a helper: "if you didn't bring one, here's the standard one".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>NOT NULL.</strong> By default, every column accepts <code>NULL</code>. Mark a column <code>NOT NULL</code> whenever a missing value would be a bug. Most columns should be NOT NULL; nullable should be a conscious decision ("a user may have no phone number").</p>
+  <script type="text/x-code" data-lang="sql">
+    INSERT INTO users (email) VALUES ('eve@shop.dev');
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    ERROR:  null value in column "name" of relation "users" violates not-null constraint
+    DETAIL:  Failing row contains (5, eve@shop.dev, null, 2026-10-05 09:12:44+00).
+  </script>
+
+  <p><strong>UNIQUE.</strong> No two rows may have the same value (or the same <em>combination</em> of values, for a multi-column UNIQUE). It's enforced by a unique index, so it also makes lookups by that column fast.</p>
+  <script type="text/x-code" data-lang="sql">
+    INSERT INTO users (email, name) VALUES ('an@shop.dev', 'Another An');
+    -- ERROR: duplicate key value violates unique constraint "users_email_key"
+    -- DETAIL: Key (email)=(an@shop.dev) already exists.
+
+    -- Multi-column: a product name must be unique *within* a category
+    ALTER TABLE products ADD COLUMN category_id integer;
+    ALTER TABLE products ADD CONSTRAINT products_category_name_key UNIQUE (category_id, name);
+  </script>
+  <p>Two details trip people up. First, UNIQUE is case-sensitive: <code>An@shop.dev</code> and <code>an@shop.dev</code> are different values. Use a unique index on <code>lower(email)</code> (point 6), or store emails lower-cased. Second, <code>NULL</code>s are considered different from each other, so many rows can have <code>NULL</code> in a UNIQUE column. Since PostgreSQL 15 you can change that with <code>UNIQUE NULLS NOT DISTINCT</code>.</p>
+
+  <p><strong>CHECK.</strong> Any boolean expression on the row. The row is rejected if it evaluates to <code>false</code> (note: <code>NULL</code> passes, so combine with NOT NULL when needed).</p>
+  <script type="text/x-code" data-lang="sql">
+    UPDATE products SET price = -5 WHERE id = 1;
+    -- ERROR: new row for relation "products" violates check constraint "products_price_check"
+
+    UPDATE orders SET status = 'LOST' WHERE id = 103;
+    -- ERROR: new row for relation "orders" violates check constraint "orders_status_check"
+
+    -- A table-level CHECK can compare several columns of the same row
+    ALTER TABLE orders ADD COLUMN shipped_at timestamptz;
+    ALTER TABLE orders ADD CONSTRAINT orders_shipped_after_created
+      CHECK (shipped_at IS NULL OR shipped_at >= created_at);
+  </script>
+  <p>CHECK can only look at the current row. It can't check other rows or other tables ("stock must cover all pending orders"). That's the job of foreign keys, unique constraints, transactions or application logic. For a fixed list of values, Postgres also offers enum <em>types</em> (<code>CREATE TYPE order_status AS ENUM ('PENDING', 'PAID', ...)</code>), which is what Prisma enums become.</p>
+
+  <p><strong>DEFAULT.</strong> The value used when an <code>INSERT</code> doesn't mention the column:</p>
+  <script type="text/x-code" data-lang="sql">
+    INSERT INTO orders (user_id) VALUES (4) RETURNING id, status, total, created_at;
+  </script>
+  <table>
+    <tr><th>id</th><th>status</th><th>total</th><th>created_at</th></tr>
+    <tr><td>105</td><td>PENDING</td><td>0.00</td><td>2026-10-05 09:15:02.31+00</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="sql">
+    -- ⚠️ A DEFAULT is NOT used if you explicitly send NULL:
+    INSERT INTO orders (user_id, status) VALUES (4, NULL);
+    -- ERROR: null value in column "status" ... violates not-null constraint
+
+    -- Use the keyword DEFAULT (or simply leave the column out)
+    INSERT INTO orders (user_id, status) VALUES (4, DEFAULT);   -- ✅ 'PENDING'
+  </script>
+  <p>Common defaults: <code>now()</code> for timestamps, <code>gen_random_uuid()</code> for UUIDs, <code>false</code> for flags, <code>0</code> for counters, an initial status for state machines. <code>RETURNING</code> (used above) is a Postgres feature that gives you back the inserted row, including generated ids and defaults, without a second query.</p>
+
+  <p><strong>Why put rules in the database if the app already validates?</strong> Because the app is not the only writer, and because of <em>race conditions</em>. Two sign-up requests for the same email arrive at the same millisecond: both run <code>findUnique</code>, both see "no user", both insert. Only the UNIQUE constraint can stop the second insert. App validation gives nice error messages; constraints give guarantees. Use both.</p>
+  <table>
+    <tr><th>Constraint</th><th>SQLSTATE code</th><th>Prisma error</th><th>Typical HTTP response</th></tr>
+    <tr><td>NOT NULL</td><td><code>23502</code></td><td>usually caught earlier by Prisma's validation</td><td>400</td></tr>
+    <tr><td>UNIQUE</td><td><code>23505</code></td><td><code>P2002</code></td><td>409 Conflict</td></tr>
+    <tr><td>FOREIGN KEY</td><td><code>23503</code></td><td><code>P2003</code></td><td>400 / 409</td></tr>
+    <tr><td>CHECK</td><td><code>23514</code></td><td>generic (no dedicated code in most versions)</td><td>400</td></tr>
+  </table>
+
+  <p><strong>Adding a constraint to a big existing table.</strong> <code>ALTER TABLE … ADD CONSTRAINT</code> checks every existing row, which can take a while and fails if old data breaks the rule. Postgres lets you split it: <code>ADD CONSTRAINT … NOT VALID</code> (applies to new writes immediately) and later <code>VALIDATE CONSTRAINT</code> (checks old rows without blocking writes).</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma maps required fields to <code>NOT NULL</code>, <code>@unique</code>/<code>@@unique</code> to UNIQUE and <code>@default</code> to DEFAULT. CHECK constraints can't be written in <code>schema.prisma</code>, so you add them to the generated migration SQL by hand:</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      model Product {
+        id    Int     @id @default(autoincrement())
+        name  String                                  // NOT NULL
+        sku   String  @unique                          // UNIQUE
+        price Decimal @db.Decimal(10, 2)
+        stock Int     @default(0)                      // DEFAULT 0
+        notes String?                                  // nullable (the "?")
+      }
+    </script>
+    <script type="text/x-code" data-lang="sql" data-title="prisma/migrations/20261005_add_product_checks/migration.sql">
+      -- added manually after: npx prisma migrate dev --create-only --name add_product_checks
+      ALTER TABLE "Product" ADD CONSTRAINT "product_price_non_negative" CHECK ("price" >= 0);
+      ALTER TABLE "Product" ADD CONSTRAINT "product_stock_non_negative" CHECK ("stock" >= 0);
+    </script>
+    <p>Then translate constraint errors into proper HTTP responses in one place, with a global exception filter:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma-exception.filter.ts">
+      import { ArgumentsHost, Catch, ConflictException, BadRequestException } from '@nestjs/common';
+      import { BaseExceptionFilter } from '@nestjs/core';
+      import { Prisma } from '@prisma/client';
+
+      // Register in main.ts:
+      // app.useGlobalFilters(new PrismaExceptionFilter(app.get(HttpAdapterHost).httpAdapter));
+      @Catch(Prisma.PrismaClientKnownRequestError)
+      export class PrismaExceptionFilter extends BaseExceptionFilter {
+        catch(e: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+          if (e.code === 'P2002') {
+            const fields = (e.meta?.target as string[] | undefined)?.join(', ') ?? 'field';
+            return super.catch(new ConflictException(`${fields} already exists`), host);
+          }
+          if (e.code === 'P2003') {
+            return super.catch(new BadRequestException('Related record does not exist'), host);
+          }
+          return super.catch(e, host);   // anything else → default handling (500)
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Relying only on <code>class-validator</code> and "check then insert" for uniqueness. Under concurrency, only a UNIQUE constraint is safe.</li>
+      <li>Leaving columns nullable by default, then writing <code>?.</code> and <code>?? ''</code> everywhere in the code.</li>
+      <li>Sending <code>NULL</code> explicitly and expecting the DEFAULT to apply.</li>
+      <li>Forgetting that UNIQUE is case-sensitive for emails and usernames.</li>
+      <li>Returning a 500 to the client when a constraint fails, instead of a clear 400/409.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a <code>coupons</code> table: a <code>code</code> that is required and unique, a <code>discount_percent</code> between 1 and 90, an optional <code>expires_at</code>, an <code>is_active</code> flag that defaults to true, and a <code>created_at</code> that defaults to now. Then write one INSERT that fails and say which constraint stops it.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        CREATE TABLE coupons (
+          id                integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          code              text        NOT NULL UNIQUE,
+          discount_percent  integer     NOT NULL CHECK (discount_percent BETWEEN 1 AND 90),
+          expires_at        timestamptz,                         -- nullable: "never expires"
+          is_active         boolean     NOT NULL DEFAULT true,
+          created_at        timestamptz NOT NULL DEFAULT now()
+        );
+
+        INSERT INTO coupons (code, discount_percent) VALUES ('WELCOME10', 10);  -- ✅
+        INSERT INTO coupons (code, discount_percent) VALUES ('HALFOFF', 95);    -- ❌ CHECK (discount_percent)
+        INSERT INTO coupons (code, discount_percent) VALUES ('WELCOME10', 5);   -- ❌ UNIQUE (code)
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>The app already validates input. Why add database constraints?</summary>
+      <p>Because other writers exist (scripts, admin tools, other services, future code), and because validation in the app can't prevent race conditions: two concurrent requests can both pass a "does it exist?" check. Constraints are enforced atomically by the database on every write.</p></details>
+    <details><summary>Can a UNIQUE column contain several NULLs?</summary>
+      <p>Yes, by default in PostgreSQL, because NULL is "unknown" and two unknowns are not considered equal. Since PostgreSQL 15 you can declare <code>UNIQUE NULLS NOT DISTINCT</code> to allow only one NULL.</p></details>
+    <details><summary>What can't a CHECK constraint do?</summary>
+      <p>It can only use values of the row being written. It can't query other rows or tables. For cross-row rules, use UNIQUE/exclusion constraints, foreign keys, triggers, or transactional application logic.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Make columns NOT NULL unless missing is meaningful, use UNIQUE for anything that must not repeat, CHECK for simple row rules, DEFAULT for sensible starting values, and map constraint errors to clear HTTP responses.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="transactions">
+  <div class="topic-head"><span class="num">8</span><h2>Transactions</h2></div>
+  <p class="tagline">ACID, COMMIT, ROLLBACK</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A transaction groups several changes into one "all or nothing" package. Think of a bank transfer: taking money from account A and adding it to account B must both happen, or neither. If the power goes out in between, you don't want the money to have vanished. <code>BEGIN</code> opens the package, <code>COMMIT</code> seals and delivers it, and <code>ROLLBACK</code> throws it away as if nothing happened.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The problem.</strong> Placing an order is several statements: create the order, add its items, reduce stock, set the total. If the app crashes after reducing stock but before adding the item, you have stock missing and an empty order. Wrap them in a transaction:</p>
+  <script type="text/x-code" data-lang="sql">
+    BEGIN;
+
+    INSERT INTO orders (user_id, status) VALUES (2, 'PENDING') RETURNING id;   -- → 105
+
+    UPDATE products SET stock = stock - 1
+    WHERE id = 3 AND stock >= 1;                                             -- → UPDATE 1
+
+    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+    VALUES (105, 3, 1, 189.00);
+
+    UPDATE orders SET total = 189.00 WHERE id = 105;
+
+    COMMIT;   -- all four changes become visible to everyone at the same moment
+  </script>
+  <p>If anything goes wrong, run <code>ROLLBACK;</code> instead and every change since <code>BEGIN</code> is undone. Also, if a statement fails inside a transaction, Postgres refuses any further commands (<code>ERROR: current transaction is aborted, commands ignored until end of transaction block</code>) until you roll back. A half-done transaction can never be committed by accident.</p>
+  <p>Without <code>BEGIN</code>, Postgres runs in <em>autocommit</em> mode: every single statement is its own tiny transaction. A single <code>UPDATE</code> touching 1,000 rows is still all-or-nothing; you only need <code>BEGIN</code> to group <em>several</em> statements.</p>
+
+  <p><strong>ACID</strong>: the four guarantees a transaction gives you.</p>
+  <table>
+    <tr><th>Letter</th><th>Meaning</th><th>In our shop</th></tr>
+    <tr><td><strong>A</strong>tomicity</td><td>all statements succeed, or none take effect</td><td>never an order without its items</td></tr>
+    <tr><td><strong>C</strong>onsistency</td><td>the database moves from one valid state to another; all constraints hold at commit</td><td>stock never goes below 0 (CHECK), items always point to real products (FK)</td></tr>
+    <tr><td><strong>I</strong>solation</td><td>concurrent transactions don't see each other's unfinished work</td><td>another request never sees order 105 with total 0 halfway through</td></tr>
+    <tr><td><strong>D</strong>urability</td><td>once committed, it survives a crash (written to the WAL on disk)</td><td>a confirmed order isn't lost if the server reboots</td></tr>
+  </table>
+
+  <p><strong>Concurrency: the "last monitor" problem.</strong> Only 1 monitor is left, and two customers click "Buy" at the same time. A naive read-then-write sells it twice:</p>
+  <script type="text/x-code" data-lang="sql">
+    -- ❌ Both transactions run this at the same time:
+    SELECT stock FROM products WHERE id = 3;        -- both see 1
+    -- app code: "1 >= 1, ok!"
+    UPDATE products SET stock = 0 WHERE id = 3;     -- both write 0 → two orders, one monitor
+  </script>
+  <p>Two safe patterns:</p>
+  <script type="text/x-code" data-lang="sql">
+    -- ✅ 1. Atomic conditional update: check and change in ONE statement
+    UPDATE products SET stock = stock - 1
+    WHERE id = 3 AND stock >= 1;
+    -- The first transaction gets "UPDATE 1". The second one waits for the row lock,
+    -- re-checks the condition, and gets "UPDATE 0" → the app knows it's sold out.
+
+    -- ✅ 2. Pessimistic lock: lock the row while you decide
+    BEGIN;
+    SELECT stock FROM products WHERE id = 3 FOR UPDATE;   -- other transactions wait here
+    -- ... app logic ...
+    UPDATE products SET stock = stock - 1 WHERE id = 3;
+    COMMIT;                                               -- lock released
+  </script>
+  <p>A third pattern, <em>optimistic locking</em>, adds a <code>version</code> column and updates with <code>WHERE id = 3 AND version = 7</code>; if 0 rows change, someone else won and you retry. Lesson 4 shows it with Prisma.</p>
+
+  <p><strong>Isolation levels</strong> control how much concurrent transactions can see of each other:</p>
+  <table>
+    <tr><th>Level</th><th>What you see</th><th>Use when</th></tr>
+    <tr><td><code>READ COMMITTED</code> (Postgres default)</td><td>each <em>statement</em> sees data committed before it started</td><td>almost always; combine with atomic updates or <code>FOR UPDATE</code></td></tr>
+    <tr><td><code>REPEATABLE READ</code></td><td>the whole transaction sees one snapshot from its first query</td><td>consistent reports across several queries</td></tr>
+    <tr><td><code>SERIALIZABLE</code></td><td>as if transactions ran one after another; conflicts fail with error <code>40001</code></td><td>complex invariants; the app must <strong>retry</strong> failed transactions</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="sql">
+    BEGIN ISOLATION LEVEL SERIALIZABLE;
+    -- ...
+    COMMIT;   -- may fail with: could not serialize access due to read/write dependencies
+  </script>
+
+  <p><strong>Savepoints</strong> let you undo part of a transaction:</p>
+  <script type="text/x-code" data-lang="sql">
+    BEGIN;
+    INSERT INTO orders (user_id) VALUES (1);
+    SAVEPOINT before_coupon;
+    UPDATE coupons SET is_active = false WHERE code = 'WELCOME10';
+    ROLLBACK TO SAVEPOINT before_coupon;   -- undo only the coupon change
+    COMMIT;                                -- the order is still saved
+  </script>
+
+  <p><strong>Keep transactions short.</strong> While a transaction is open, it holds locks and keeps old row versions alive. Never wait for user input, an HTTP call to a payment provider, or sending an email inside a transaction.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma's interactive transaction gives you a <code>tx</code> client. Every query through <code>tx</code> runs inside one database transaction; if the callback throws, Prisma sends <code>ROLLBACK</code>. (Lesson 4 covers all the options.)</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      async placeOrder(userId: number, productId: number, quantity: number) {
+        return this.prisma.$transaction(async (tx) => {
+          // Atomic conditional update — the SQL pattern from above
+          const { count } = await tx.product.updateMany({
+            where: { id: productId, stock: { gte: quantity } },
+            data: { stock: { decrement: quantity } },
+          });
+          if (count === 0) throw new ConflictException('Not enough stock'); // → ROLLBACK
+
+          const product = await tx.product.findUniqueOrThrow({ where: { id: productId } });
+          const total = product.price.mul(quantity);       // Prisma.Decimal math
+
+          return tx.order.create({
+            data: {
+              userId,
+              total,
+              items: { create: { productId, quantity, unitPrice: product.price } },
+            },
+            include: { items: true },
+          });
+        }); // ← COMMIT happens here if nothing threw
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Running related writes as separate queries without a transaction ("it never fails locally").</li>
+      <li>Read-then-write without a lock or atomic update, which loses updates under concurrency (overselling, double-spending).</li>
+      <li>Calling external APIs or doing slow work inside a transaction, holding locks for seconds.</li>
+      <li>Using <code>SERIALIZABLE</code> without retry logic for error <code>40001</code>.</li>
+      <li>Using the global <code>prisma</code> client instead of <code>tx</code> inside <code>$transaction</code>. That query runs <em>outside</em> the transaction.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write the SQL to cancel order 103 safely: set its status to <code>CANCELLED</code> and put its items' quantities back into product stock. It must be all-or-nothing, and must only work if the order is still <code>PENDING</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        BEGIN;
+
+        UPDATE orders SET status = 'CANCELLED'
+        WHERE id = 103 AND status = 'PENDING';
+        -- If this says "UPDATE 0", the order isn't pending anymore → ROLLBACK; and stop.
+
+        UPDATE products p
+        SET stock = p.stock + oi.quantity
+        FROM order_items oi
+        WHERE oi.order_id = 103 AND oi.product_id = p.id;   -- Mouse stock 300 → 301
+
+        COMMIT;
+      </script>
+      <p>The <code>AND status = 'PENDING'</code> condition makes the status change atomic too: if two admins click "cancel" at once, only one update matches, so stock is restored only once.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Explain ACID.</summary>
+      <p>Atomicity: all or nothing. Consistency: constraints hold before and after. Isolation: concurrent transactions don't see each other's uncommitted changes (to a degree set by the isolation level). Durability: committed data survives crashes.</p></details>
+    <details><summary>How do you prevent two users from buying the last item at the same time?</summary>
+      <p>Make the check and the write one atomic operation: <code>UPDATE products SET stock = stock - 1 WHERE id = ? AND stock &gt;= 1</code> and check the affected row count. Alternatives: <code>SELECT … FOR UPDATE</code> inside a transaction, optimistic locking with a version column, or SERIALIZABLE isolation with retries.</p></details>
+    <details><summary>What is PostgreSQL's default isolation level, and what does it allow?</summary>
+      <p>READ COMMITTED. It never shows uncommitted data, but two queries in the same transaction can see different data if another transaction commits in between (non-repeatable reads), and read-then-write logic can lose updates unless you lock or use atomic updates.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Group related writes in one transaction, keep it short, and make check-and-update a single atomic statement (or lock the row) whenever concurrent requests can race.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="normalization">
+  <div class="topic-head"><span class="num">9</span><h2>Normalization</h2></div>
+  <p class="tagline">1NF, 2NF, 3NF and denormalization trade-offs</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Normalization is tidying up your tables so that <strong>every fact is stored in exactly one place</strong>. If a customer's email is written on 500 order rows, changing it means 500 updates, and missing one leaves the data contradicting itself. The "normal forms" (1NF, 2NF, 3NF) are a checklist for finding facts stored in the wrong place. <em>Denormalization</em> is deliberately breaking the rule, copying a fact to make reading faster, and accepting the work of keeping the copies in sync.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Start from a messy spreadsheet.</strong> This is what an export from a quick prototype might look like:</p>
+  <table>
+    <tr><th>order_id</th><th>customer_email</th><th>customer_name</th><th>products</th><th>total</th></tr>
+    <tr><td>101</td><td>an@shop.dev</td><td>An</td><td>Keyboard x1 @49.00, Mouse x1 @19.50</td><td>68.50</td></tr>
+    <tr><td>102</td><td>an@shop.dev</td><td>An</td><td>Monitor x1 @189.00</td><td>189.00</td></tr>
+    <tr><td>103</td><td>binh@shop.dev</td><td>Binh</td><td>Mouse x1 @19.50</td><td>19.50</td></tr>
+  </table>
+  <p>Problems (called <em>anomalies</em>):</p>
+  <ul>
+    <li><strong>Update anomaly</strong>: An changes her name, so you must update several rows. Miss one and she has two names.</li>
+    <li><strong>Insert anomaly</strong>: you can't record a new product, or a new customer, until someone orders it.</li>
+    <li><strong>Delete anomaly</strong>: delete order 103 and you lose the only record that Binh exists.</li>
+    <li>And you can't query "how many mice were sold?" without parsing strings.</li>
+  </ul>
+
+  <p><strong>First Normal Form (1NF): one value per cell, no repeating groups.</strong> The <code>products</code> column holds a list, so split it into one row per order line:</p>
+  <table>
+    <tr><th>order_id</th><th>product_name</th><th>customer_email</th><th>customer_name</th><th>quantity</th><th>unit_price</th></tr>
+    <tr><td>101</td><td>Keyboard</td><td>an@shop.dev</td><td>An</td><td>1</td><td>49.00</td></tr>
+    <tr><td>101</td><td>Mouse</td><td>an@shop.dev</td><td>An</td><td>1</td><td>19.50</td></tr>
+    <tr><td>102</td><td>Monitor</td><td>an@shop.dev</td><td>An</td><td>1</td><td>189.00</td></tr>
+    <tr><td>103</td><td>Mouse</td><td>binh@shop.dev</td><td>Binh</td><td>1</td><td>19.50</td></tr>
+  </table>
+  <p>Now we can query items, but the customer data is repeated even more. The key of this table is the pair <code>(order_id, product_name)</code>.</p>
+
+  <p><strong>Second Normal Form (2NF): every non-key column depends on the <em>whole</em> key.</strong> This only matters for composite keys. Ask, for each column: "do I need <em>both</em> parts of the key to know this?"</p>
+  <ul>
+    <li><code>quantity</code>: needs both (how many Mice <em>in order 101</em>). ✅ stays.</li>
+    <li><code>customer_email</code>, <code>customer_name</code>: depend only on <code>order_id</code>. ❌ move to an <code>orders</code> table.</li>
+    <li>The product's details (its current price, stock): depend only on the product. ❌ move to a <code>products</code> table with its own <code>id</code>.</li>
+  </ul>
+  <script type="text/x-code" data-lang="plaintext">
+    orders(id, customer_email, customer_name)                 ← one row per order
+    products(id, name, price, stock)                          ← one row per product
+    order_items(order_id, product_id, quantity, unit_price)   ← one row per line
+  </script>
+
+  <p><strong>Third Normal Form (3NF): no column depends on another non-key column.</strong> In <code>orders</code>, <code>customer_name</code> depends on <code>customer_email</code> (the customer), not on the order. That's a <em>transitive</em> dependency: order → customer → name. Move customer facts to <code>users</code>, and keep only <code>user_id</code> in orders:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    users(id, email, name)
+    orders(id, user_id → users.id, status, created_at)
+    products(id, name, price, stock)
+    order_items(order_id → orders.id, product_id → products.id, quantity, unit_price)
+  </script>
+  <p>That's exactly our running schema. The classic summary: every non-key column must depend on <strong>"the key, the whole key, and nothing but the key"</strong> (1NF, 2NF, 3NF).</p>
+
+  <p><strong>Wait, isn't <code>order_items.unit_price</code> a copy of <code>products.price</code>?</strong> No, and this is an important design insight. <code>products.price</code> is "what it costs <em>today</em>". <code>order_items.unit_price</code> is "what <em>this customer paid</em> on that day". They are different facts. If you joined to <code>products.price</code> instead, every old order and invoice would change when you raise a price. The same applies to the shipping address on an order: it's a snapshot, not a duplicate of the user's current address.</p>
+
+  <p><strong>Denormalization: copying data on purpose.</strong> A fully normalized schema sometimes makes common reads expensive. Our <code>orders.total</code> is a real denormalization: it could always be computed with <code>SUM(quantity * unit_price)</code>, but storing it makes "list my orders with totals" a single cheap query.</p>
+  <table>
+    <tr><th>Denormalization</th><th>Gain</th><th>Cost</th></tr>
+    <tr><td><code>orders.total</code></td><td>no join + SUM when listing orders</td><td>must be updated whenever items change (same transaction)</td></tr>
+    <tr><td><code>products.review_count</code>, <code>avg_rating</code></td><td>sort/filter products by rating cheaply</td><td>updated on every review; can drift if a write path forgets</td></tr>
+    <tr><td><code>orders.customer_email</code> copy</td><td>search orders by email without a join</td><td>stale if the user changes email (unless that's intended as a snapshot)</td></tr>
+    <tr><td>Materialized view / reporting table</td><td>fast dashboards</td><td>data is only as fresh as the last refresh</td></tr>
+  </table>
+  <p>The rule: <strong>normalize first</strong>, then denormalize a specific thing when you have a measured performance problem, and document how the copy is kept in sync.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>A normalized Prisma schema looks like the running example. The denormalized <code>total</code> must be kept correct inside the same transaction that changes items, and the price must be <em>snapshotted</em>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      async addItem(orderId: number, productId: number, quantity: number) {
+        return this.prisma.$transaction(async (tx) => {
+          const product = await tx.product.findUniqueOrThrow({ where: { id: productId } });
+
+          await tx.orderItem.create({
+            data: {
+              orderId,
+              productId,
+              quantity,
+              unitPrice: product.price,   // ✅ snapshot today's price into the order line
+            },
+          });
+
+          // ✅ keep the denormalized total in sync, in the same transaction
+          const lineTotal = product.price.mul(quantity);
+          return tx.order.update({
+            where: { id: orderId },
+            data: { total: { increment: lineTotal } },
+          });
+        });
+      }
+
+      // ❌ Don't compute invoice totals from product.price later — it changes over time.
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Storing comma-separated lists or JSON arrays of ids instead of a join table (breaks 1NF).</li>
+      <li>Repeating user data (name, email) in orders "for convenience" without treating it as a deliberate snapshot.</li>
+      <li>Over-normalizing: splitting things like <code>first_name</code> into a separate table, or creating lookup tables for values that never change, adding joins with no benefit.</li>
+      <li>Not snapshotting prices on order lines, so historical orders change when the catalog changes.</li>
+      <li>Denormalizing without a single, transactional place that updates the copy.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A colleague proposes this table: <code>enrollments(student_id, course_id, student_name, course_title, teacher_name, teacher_email, grade)</code> with key <code>(student_id, course_id)</code>. Each course has one teacher. Which normal forms does it break, and how would you split it?</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><code>student_name</code> depends only on <code>student_id</code>, and <code>course_title</code> and <code>teacher_name</code> only on <code>course_id</code>: partial dependencies, so it breaks <strong>2NF</strong>.</li>
+        <li><code>teacher_email</code> depends on the teacher, who depends on the course: a transitive dependency, so it breaks <strong>3NF</strong>.</li>
+      </ul>
+      <script type="text/x-code" data-lang="plaintext">
+        students(id, name)
+        teachers(id, name, email)
+        courses(id, title, teacher_id → teachers.id)
+        enrollments(student_id → students.id, course_id → courses.id, grade)   PK (student_id, course_id)
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Explain 1NF, 2NF and 3NF in one sentence each.</summary>
+      <p>1NF: every cell holds a single value and there are no repeating groups. 2NF: 1NF, and no non-key column depends on only part of a composite key. 3NF: 2NF, and no non-key column depends on another non-key column.</p></details>
+    <details><summary>When would you denormalize?</summary>
+      <p>When a measured, frequent read is too slow or complex in normalized form, e.g. order totals, counters, or dashboards, and the cost of keeping the copy consistent (in a transaction, trigger, or periodic refresh) is acceptable.</p></details>
+    <details><summary>Is storing <code>unit_price</code> on order items a normalization violation?</summary>
+      <p>No. It's a different fact: the historical price paid at purchase time, which must not change when the product's current price changes. It's a snapshot, not a duplicate.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Each fact in one place: "the key, the whole key, and nothing but the key". Snapshot historical values, and denormalize only on purpose, with a clear way to keep the copy correct.</div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="topic" id="views">
+  <div class="topic-head"><span class="num">10</span><h2>Views</h2></div>
+  <p class="tagline">simplify complex or repeated queries</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A view is a <strong>saved query with a name</strong> that you can use like a table. It's like a saved filter in your email client: the emails aren't copied anywhere, the filter just runs every time you open it. A <em>materialized</em> view is different: it's like taking a photo of the results. Reading it is instant, but the photo gets old until you take a new one (refresh it).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Creating a view.</strong> Many screens need "orders with customer name, item count and items total". Instead of repeating the join + group in many places, name it once:</p>
+  <script type="text/x-code" data-lang="sql">
+    CREATE VIEW order_summaries AS
+    SELECT o.id,
+           o.user_id,
+           u.name                                           AS customer,
+           o.status,
+           o.created_at,
+           COUNT(oi.product_id)::int                        AS item_count,
+           COALESCE(SUM(oi.quantity * oi.unit_price), 0)    AS items_total
+    FROM orders o
+    JOIN users u             ON u.id = o.user_id
+    LEFT JOIN order_items oi ON oi.order_id = o.id
+    GROUP BY o.id, u.name;
+  </script>
+  <p>Now use it exactly like a table:</p>
+  <script type="text/x-code" data-lang="sql">
+    SELECT id, customer, status, item_count, items_total
+    FROM order_summaries
+    WHERE status <> 'CANCELLED'
+    ORDER BY id;
+  </script>
+  <table>
+    <tr><th>id</th><th>customer</th><th>status</th><th>item_count</th><th>items_total</th></tr>
+    <tr><td>101</td><td>An</td><td>PAID</td><td>2</td><td>68.50</td></tr>
+    <tr><td>102</td><td>An</td><td>SHIPPED</td><td>1</td><td>189.00</td></tr>
+    <tr><td>103</td><td>Binh</td><td>PENDING</td><td>1</td><td>19.50</td></tr>
+  </table>
+  <p>(Results with the original sample data.) We cast <code>COUNT</code> to <code>int</code> because <code>COUNT</code> returns <code>bigint</code>, which becomes a <code>BigInt</code> in JavaScript and can't be put into JSON directly.</p>
+
+  <p><strong>A view stores no data.</strong> Postgres replaces the view name with its query and optimizes the whole thing together, so your <code>WHERE</code> is pushed into it where possible. A view is never slower than the query it contains, but also not faster. Its value is <em>reuse</em>, <em>readability</em> and <em>a stable interface</em>.</p>
+
+  <p><strong>Common uses:</strong></p>
+  <script type="text/x-code" data-lang="sql">
+    -- 1. Hide sensitive columns: give a reporting user access to the view, not the table
+    CREATE VIEW public_users AS
+    SELECT id, name, created_at FROM users;     -- no email, no password_hash
+    GRANT SELECT ON public_users TO reporting_role;
+
+    -- 2. Encode a business definition once ("active customer" = ordered in the last 90 days)
+    CREATE VIEW active_customers AS
+    SELECT DISTINCT u.*
+    FROM users u
+    JOIN orders o ON o.user_id = u.id
+    WHERE o.created_at > now() - interval '90 days'
+      AND o.status <> 'CANCELLED';
+
+    -- 3. Change a view later (you can add columns at the end; otherwise DROP and CREATE)
+    CREATE OR REPLACE VIEW public_users AS
+    SELECT id, name, created_at, (created_at > now() - interval '30 days') AS is_new
+    FROM users;
+
+    DROP VIEW active_customers;
+  </script>
+  <p>Simple views (one table, no GROUP BY/DISTINCT) are even <em>updatable</em>: <code>UPDATE public_users SET name = 'An N.' WHERE id = 1</code> updates the <code>users</code> table. Complex views like <code>order_summaries</code> are read-only.</p>
+
+  <p><strong>Materialized views</strong> store the result physically. Use them for expensive aggregations that can be a little stale, like dashboard statistics:</p>
+  <script type="text/x-code" data-lang="sql">
+    CREATE MATERIALIZED VIEW product_sales AS
+    SELECT p.id AS product_id,
+           p.name,
+           COALESCE(SUM(s.quantity), 0)::int                AS units_sold,
+           COALESCE(SUM(s.quantity * s.unit_price), 0)      AS revenue
+    FROM products p
+    LEFT JOIN (                                   -- only lines of non-cancelled orders
+      SELECT oi.product_id, oi.quantity, oi.unit_price
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE o.status <> 'CANCELLED'
+    ) s ON s.product_id = p.id
+    GROUP BY p.id, p.name;
+
+    -- Needed for CONCURRENTLY, and makes lookups fast
+    CREATE UNIQUE INDEX product_sales_product_id_idx ON product_sales (product_id);
+
+    SELECT * FROM product_sales ORDER BY revenue DESC;   -- instant: reads stored rows
+
+    -- Re-run the query and replace the stored data.
+    -- CONCURRENTLY lets readers keep reading during the refresh.
+    REFRESH MATERIALIZED VIEW CONCURRENTLY product_sales;
+  </script>
+  <table>
+    <tr><th>product_id</th><th>name</th><th>units_sold</th><th>revenue</th></tr>
+    <tr><td>3</td><td>Monitor</td><td>1</td><td>189.00</td></tr>
+    <tr><td>1</td><td>Keyboard</td><td>1</td><td>49.00</td></tr>
+    <tr><td>2</td><td>Mouse</td><td>2</td><td>39.00</td></tr>
+    <tr><td>4</td><td>USB-C Cable</td><td>0</td><td>0</td></tr>
+  </table>
+
+  <table>
+    <tr><th></th><th>View</th><th>Materialized view</th></tr>
+    <tr><td>Stores data?</td><td>no, runs the query every time</td><td>yes, a snapshot</td></tr>
+    <tr><td>Freshness</td><td>always current</td><td>as of the last <code>REFRESH</code></td></tr>
+    <tr><td>Read speed</td><td>same as the underlying query</td><td>fast (and can be indexed)</td></tr>
+    <tr><td>Good for</td><td>reuse, security, simplifying joins</td><td>heavy reports and dashboards</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Prisma doesn't create views for you. You write the <code>CREATE VIEW</code> in a migration (<code>prisma migrate dev --create-only</code>), then either query it with raw SQL, or describe it with Prisma's <code>view</code> keyword (a preview feature: add <code>previewFeatures = ["views"]</code> to the generator):</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      view OrderSummary {
+        id         Int      @unique
+        userId     Int      @map("user_id")
+        customer   String
+        status     String
+        createdAt  DateTime @map("created_at")
+        itemCount  Int      @map("item_count")
+        itemsTotal Decimal  @map("items_total")
+
+        @@map("order_summaries")
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      // Read-only, but fully typed — like a normal model
+      listSummaries(userId: number) {
+        return this.prisma.orderSummary.findMany({
+          where: { userId, status: { not: 'CANCELLED' } },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
+    </script>
+    <p>Materialized views need a refresh. A simple approach is a scheduled job with <code>@nestjs/schedule</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="stats.scheduler.ts">
+      import { Injectable } from '@nestjs/common';
+      import { Cron, CronExpression } from '@nestjs/schedule';
+      import { PrismaService } from '../prisma/prisma.service';
+
+      @Injectable()
+      export class StatsScheduler {
+        constructor(private readonly prisma: PrismaService) {}
+
+        @Cron(CronExpression.EVERY_10_MINUTES)
+        async refreshProductSales() {
+          await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY product_sales`;
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Expecting a normal view to make a slow query fast. It runs the same query; use indexes or a materialized view.</li>
+      <li>Forgetting to refresh a materialized view, then wondering why the dashboard shows yesterday's numbers.</li>
+      <li>Using <code>REFRESH … CONCURRENTLY</code> without a unique index on the materialized view (it fails).</li>
+      <li>Stacking views on views on views, until nobody can understand or optimize the final query.</li>
+      <li>Changing a table that a view depends on, and being surprised that Postgres blocks the <code>DROP COLUMN</code> (the view must be dropped/recreated first).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Create a view <code>customer_stats</code> with, for every user (including users with no orders): <code>user_id</code>, <code>name</code>, <code>order_count</code> and <code>total_spent</code> (non-cancelled orders only, 0 if none). Then query the customers who spent more than 50.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="sql">
+        CREATE VIEW customer_stats AS
+        SELECT u.id AS user_id,
+               u.name,
+               COUNT(o.id)::int                AS order_count,
+               COALESCE(SUM(o.total), 0)       AS total_spent
+        FROM users u
+        LEFT JOIN orders o
+               ON o.user_id = u.id AND o.status <> 'CANCELLED'   -- filter in ON, not WHERE!
+        GROUP BY u.id, u.name;
+
+        SELECT * FROM customer_stats WHERE total_spent > 50;
+      </script>
+      <table>
+        <tr><th>user_id</th><th>name</th><th>order_count</th><th>total_spent</th></tr>
+        <tr><td>1</td><td>An</td><td>2</td><td>257.50</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between a view and a materialized view?</summary>
+      <p>A view is a stored query that runs every time you select from it, so it's always fresh but not faster. A materialized view stores the query result on disk, so it's fast and indexable, but stale until <code>REFRESH MATERIALIZED VIEW</code> runs.</p></details>
+    <details><summary>Why would you use a view at all?</summary>
+      <p>To name and reuse a complex query, to encode a business definition in one place, to give a stable interface while tables change underneath, and to restrict access to certain columns or rows.</p></details>
+    <details><summary>How do you refresh a materialized view without blocking readers?</summary>
+      <p><code>REFRESH MATERIALIZED VIEW CONCURRENTLY name;</code> It requires a unique index on the materialized view and is slower than a normal refresh, but reads can continue during it.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A view is a named query (always fresh, no speed gain). A materialized view is a stored snapshot (fast, needs refreshing). Use them to stop repeating complex SQL.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="NestJS-Fundamentals.html">← Prev: 2. NestJS Fundamentals</a>
+  <a href="Prisma-ORM.html">Next: 4. Prisma ORM →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

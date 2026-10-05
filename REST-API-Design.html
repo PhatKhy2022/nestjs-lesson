@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>REST API Design</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 6 of 12</span>
+  </nav>
+  <h1>6. REST API Design</h1>
+  <p class="goal"><strong>Goal:</strong> Design APIs that are predictable and easy to consume.</p>
+  <p class="howto">How to use this page: read each point top to bottom, type the examples yourself in a local NestJS + Prisma project, and call your endpoints with a tool like <code>curl</code>, Postman or the VS Code REST Client (the <code>http</code> blocks below are written in that format). Do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud. The examples continue the shop from Lesson 5: users, products and orders.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#rest-principles">REST principles</a></li>
+      <li><a href="#status-codes">Status codes</a></li>
+      <li><a href="#request-validation">Request validation</a></li>
+      <li><a href="#pagination">Pagination</a></li>
+      <li><a href="#filtering-sorting">Filtering &amp; sorting</a></li>
+      <li><a href="#error-response-design">Error response design</a></li>
+      <li><a href="#api-versioning">API versioning</a></li>
+      <li><a href="#swagger-openapi">Swagger / OpenAPI</a></li>
+      <li><a href="#idempotency">Idempotency</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="rest-principles">
+  <div class="topic-head"><span class="num">1</span><h2>REST principles</h2></div>
+  <p class="tagline">resources, verbs and statelessness</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of a library. Every book has a fixed <strong>address</strong> on a shelf (that's a <em>resource</em> and its URL). There are only a few things you can do with a book: look at it, add a new one, replace it, change a page, or remove it (those are the HTTP <em>verbs</em>). And the librarian doesn't remember you between visits: every time, you show your library card again (that's <em>statelessness</em>). Because every library follows the same rules, you can walk into any library and know what to do. A REST API gives developers that same feeling.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>1. Resources are nouns, identified by URLs.</strong> A resource is a "thing" your API manages: a user, an order, a product. Use plural nouns and IDs. The URL says <em>what</em>, never <em>what to do</em>:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    ✅ Good (nouns)                     ❌ Bad (verbs in the URL)
+    GET    /orders                       GET  /getAllOrders
+    GET    /orders/42                    POST /createOrder
+    POST   /orders                       POST /orders/42/delete
+    PATCH  /orders/42                    GET  /updateOrderStatus?id=42&status=PAID
+    DELETE /orders/42
+    GET    /users/7/orders               (orders that belong to user 7)
+  </script>
+  <p>Keep nesting shallow: <code>/users/7/orders</code> is fine, but <code>/users/7/orders/42/items/3/product</code> is too deep. Once a resource has its own ID, give it a top-level URL (<code>/orders/42</code>).</p>
+
+  <p><strong>2. Verbs (HTTP methods) say what to do.</strong> Each method has a meaning that clients, proxies and caches rely on:</p>
+  <table>
+    <tr><th>Method</th><th>Meaning</th><th>Safe?</th><th>Idempotent?</th><th>Typical success</th></tr>
+    <tr><td><code>GET</code></td><td>Read a resource or a list</td><td>Yes</td><td>Yes</td><td>200</td></tr>
+    <tr><td><code>POST</code></td><td>Create a new resource (or run an action)</td><td>No</td><td>No</td><td>201</td></tr>
+    <tr><td><code>PUT</code></td><td>Replace the whole resource</td><td>No</td><td>Yes</td><td>200</td></tr>
+    <tr><td><code>PATCH</code></td><td>Change some fields</td><td>No</td><td>Not guaranteed</td><td>200</td></tr>
+    <tr><td><code>DELETE</code></td><td>Remove a resource</td><td>No</td><td>Yes</td><td>204</td></tr>
+  </table>
+  <p><em>Safe</em> means "doesn't change anything on the server", so GET must never create or delete data. <em>Idempotent</em> means "doing it twice has the same effect as doing it once": deleting order 42 twice still leaves order 42 deleted. (More on this in the Idempotency topic.)</p>
+
+  <p>A full exchange looks like this:</p>
+  <script type="text/x-code" data-lang="http" data-title="request">
+    POST /orders HTTP/1.1
+    Host: api.shop.dev
+    Authorization: Bearer eyJhbGciOi...
+    Content-Type: application/json
+
+    {
+      "items": [
+        { "productId": 3, "quantity": 2 }
+      ]
+    }
+  </script>
+  <script type="text/x-code" data-lang="http" data-title="response">
+    HTTP/1.1 201 Created
+    Location: /orders/42
+    Content-Type: application/json
+
+    {
+      "id": 42,
+      "status": "PENDING",
+      "total": "30.00",
+      "items": [{ "productId": 3, "quantity": 2, "unitPrice": "15.00" }]
+    }
+  </script>
+
+  <p><strong>3. Statelessness.</strong> Every request carries everything the server needs to handle it: who you are (a token), what you want (URL, method), and the data (body, query). The server does not keep a "conversation" in memory between requests. Why does this matter? Because then <em>any</em> of your 5 server instances can handle <em>any</em> request, so you can scale horizontally and restart servers without logging everyone out.</p>
+  <script type="text/x-code" data-lang="http">
+    # ❌ stateful: the server must remember "step 1" for this client
+    POST /checkout/step1   { "items": [...] }
+    POST /checkout/step2   { "address": "..." }   ← which cart? stored in server memory
+
+    # ✅ stateless: each request is complete; state lives in the database, not server memory
+    POST /orders                    { "items": [...] }       → 201, id 42
+    PATCH /orders/42                { "shippingAddress": "..." }
+  </script>
+
+  <p><strong>4. Actions that aren't CRUD.</strong> Some operations don't fit a simple verb, like "cancel an order" or "pay an order". Two common options: model it as a field change (<code>PATCH /orders/42 { "status": "CANCELLED" }</code>), or as a sub-resource action (<code>POST /orders/42/cancel</code>). The second is clearer when the action has its own rules and side effects (refunds, emails). Both are widely used. Pick one style and stay consistent.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Nest's decorators map directly onto REST: one controller per resource, one method per verb + path.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @Controller('orders')
+      export class OrdersController {
+        constructor(private readonly ordersService: OrdersService) {}
+
+        @Get()                       // GET /orders
+        list(@CurrentUser() user: AuthUser) {
+          return this.ordersService.listForUser(user.id);
+        }
+
+        @Get(':id')                  // GET /orders/42
+        findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+          return this.ordersService.getOrder(user.id, id);
+        }
+
+        @Post()                      // POST /orders → 201 by default in Nest
+        create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
+          return this.ordersService.placeOrder(user.id, dto);
+        }
+
+        @Post(':id/cancel')          // POST /orders/42/cancel — an action
+        @HttpCode(HttpStatus.OK)     // it doesn't create anything, so 200 instead of 201
+        cancel(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+          return this.ordersService.cancelOrder(user.id, id);
+        }
+
+        @Delete(':id')               // DELETE /orders/42
+        @HttpCode(HttpStatus.NO_CONTENT)
+        async remove(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+          await this.ordersService.deleteDraft(user.id, id);
+        }
+      }
+    </script>
+    <p>Statelessness in Nest usually means JWT authentication (Lesson 7): the token is sent with every request and a guard verifies it, with no server-side session memory needed.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Verbs in URLs (<code>/createOrder</code>, <code>/orders/delete/42</code>). The HTTP method already is the verb.</li>
+      <li>Changing data in a <code>GET</code> handler (e.g. <code>GET /orders/42/confirm</code>). Browsers, crawlers and prefetchers may call GET URLs on their own.</li>
+      <li>Mixing singular and plural (<code>/order/42</code> and <code>/products</code>). Use plural everywhere.</li>
+      <li>Storing per-user state in server memory (a <code>Map</code> in a service), which breaks as soon as you run two instances.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Design the endpoints (method + URL + success status) for product reviews: list reviews of a product, read one review, write a review for a product, edit your review's text, delete your review, and mark a review as "helpful".</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="plaintext">
+        GET    /products/3/reviews          200  list reviews of product 3
+        GET    /reviews/15                  200  one review (has its own id → top-level)
+        POST   /products/3/reviews          201  create (product id comes from the URL)
+        PATCH  /reviews/15                  200  edit text
+        DELETE /reviews/15                  204  delete
+        POST   /reviews/15/helpful          200  an action (or PUT /reviews/15/helpful-votes/me → 204, idempotent)
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does "stateless" mean in REST, and why is it useful?</summary>
+      <p>Each request contains all the information needed to process it, and the server keeps no client session in memory between requests. Any server instance can then handle any request, which makes horizontal scaling, load balancing and restarts simple.</p></details>
+    <details><summary>What's the difference between PUT and PATCH?</summary>
+      <p>PUT replaces the whole resource with the body you send (missing fields are reset), and it's idempotent. PATCH applies a partial change to only the fields sent. In practice most APIs use PATCH for updates.</p></details>
+    <details><summary>What do "safe" and "idempotent" mean for HTTP methods?</summary>
+      <p>Safe methods (GET, HEAD, OPTIONS) don't change server state. Idempotent methods (GET, PUT, DELETE and the safe ones) can be repeated with the same effect as doing them once. POST is neither by default.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> URLs are plural nouns, HTTP methods are the verbs, every request is self-contained, and the same patterns are used everywhere in the API.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="status-codes">
+  <div class="topic-head"><span class="num">2</span><h2>Status codes</h2></div>
+  <p class="tagline">200, 201, 400, 401, 403, 404, 409, 422, 500</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A status code is the <strong>first word</strong> of the server's answer, before any details. Like a traffic light: the client's code can decide what to do just by looking at it. 2xx means "done", 4xx means "<em>you</em> (the client) did something wrong, fix your request", and 5xx means "<em>I</em> (the server) broke, try again later". If you always answer "200 OK" and put the error in the body, it's like a traffic light that's always green with a note taped to it.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <table>
+    <tr><th>Code</th><th>Name</th><th>Use it when</th><th>Shop example</th></tr>
+    <tr><td><strong>200</strong></td><td>OK</td><td>Successful read, update or action that returns data</td><td><code>GET /orders/42</code>, <code>PATCH /orders/42</code></td></tr>
+    <tr><td><strong>201</strong></td><td>Created</td><td>A new resource was created</td><td><code>POST /orders</code> (add a <code>Location</code> header)</td></tr>
+    <tr><td>204</td><td>No Content</td><td>Success with no body</td><td><code>DELETE /orders/42</code></td></tr>
+    <tr><td><strong>400</strong></td><td>Bad Request</td><td>The request is malformed or fails validation</td><td><code>quantity: "abc"</code>, invalid JSON</td></tr>
+    <tr><td><strong>401</strong></td><td>Unauthorized</td><td>Not authenticated: no token, expired or invalid token</td><td>Missing <code>Authorization</code> header</td></tr>
+    <tr><td><strong>403</strong></td><td>Forbidden</td><td>Authenticated, but not allowed</td><td>A normal user calls <code>DELETE /products/3</code></td></tr>
+    <tr><td><strong>404</strong></td><td>Not Found</td><td>The resource doesn't exist (or the user may not know it exists)</td><td><code>GET /orders/999</code></td></tr>
+    <tr><td><strong>409</strong></td><td>Conflict</td><td>The request conflicts with the current state</td><td>Email already registered, cancelling a shipped order</td></tr>
+    <tr><td><strong>422</strong></td><td>Unprocessable Content</td><td>Syntax is fine, but the content breaks a business rule</td><td>Order total below the payment minimum</td></tr>
+    <tr><td>429</td><td>Too Many Requests</td><td>Rate limit hit</td><td>Login brute-force protection</td></tr>
+    <tr><td><strong>500</strong></td><td>Internal Server Error</td><td>An unexpected bug or crash on the server</td><td>Unhandled exception, DB down</td></tr>
+  </table>
+
+  <p><strong>401 vs 403</strong> is a classic interview question. 401 = "I don't know who you are" (log in). 403 = "I know who you are, and the answer is no" (logging in again won't help).</p>
+
+  <p><strong>404 to hide existence.</strong> If user 7 asks for order 42 that belongs to user 9, return <strong>404</strong>, not 403. A 403 confirms that order 42 exists, which leaks information (and lets attackers enumerate IDs).</p>
+  <script type="text/x-code" data-lang="http">
+    GET /orders/42
+    Authorization: Bearer <token of user 7>
+
+    HTTP/1.1 404 Not Found
+    Content-Type: application/json
+
+    { "statusCode": 404, "message": "Order not found", "error": "Not Found" }
+  </script>
+
+  <p><strong>400 vs 422.</strong> Teams differ here. A common split: <strong>400</strong> for input that is wrong in shape or type (missing field, wrong type, bad JSON), and <strong>422</strong> for well-formed input that breaks a rule ("you can't order more than 10 of a limited item"). Nest's <code>ValidationPipe</code> returns 400 by default. Whichever you choose, document it and be consistent.</p>
+
+  <p><strong>409 Conflict</strong> fits "the request is valid, but the current state of the resource doesn't allow it": duplicate unique values, state transitions that aren't allowed, or version mismatches.</p>
+  <script type="text/x-code" data-lang="http">
+    POST /users
+    Content-Type: application/json
+
+    { "email": "an@shop.dev", "password": "correct-horse-battery" }
+
+    HTTP/1.1 409 Conflict
+    Content-Type: application/json
+
+    { "statusCode": 409, "message": "Email is already registered", "error": "Conflict" }
+  </script>
+
+  <p><strong>500 is never "on purpose".</strong> You don't throw 500 for business situations. A 500 means a bug or an outage. Log it with full details on the server, and return a generic message to the client. Never leak stack traces or SQL errors.</p>
+
+  <p><strong>How Nest picks the status code.</strong> Nest's defaults are: <code>POST</code> → 201, every other method → 200. Change it with <code>@HttpCode()</code>. For errors, throw Nest's built-in exceptions:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import {
+      BadRequestException,        // 400
+      UnauthorizedException,      // 401
+      ForbiddenException,         // 403
+      NotFoundException,          // 404
+      ConflictException,          // 409
+      UnprocessableEntityException, // 422
+      InternalServerErrorException, // 500
+    } from '@nestjs/common';
+
+    throw new ConflictException('Email is already registered');
+    // → 409 { "statusCode": 409, "message": "Email is already registered", "error": "Conflict" }
+
+    // Any error that is NOT an HttpException becomes:
+    // → 500 { "statusCode": 500, "message": "Internal server error" }  (details only in logs)
+  </script>
+
+  <p><strong>Prisma errors → correct status codes.</strong> Unhandled Prisma errors become 500, but some are really client errors. The two you'll see most: <code>P2002</code> (unique constraint failed → 409) and <code>P2025</code> (record to update or delete not found → 404). Handle them in one global filter instead of <code>try/catch</code> everywhere:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
+    import { ArgumentsHost, Catch, HttpStatus } from '@nestjs/common';
+    import { BaseExceptionFilter } from '@nestjs/core';
+    import { Prisma } from '@prisma/client';
+    import { Response } from 'express';
+
+    @Catch(Prisma.PrismaClientKnownRequestError)
+    export class PrismaExceptionFilter extends BaseExceptionFilter {
+      catch(e: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+        const res = host.switchToHttp().getResponse<Response>();
+        switch (e.code) {
+          case 'P2002':
+            return res.status(HttpStatus.CONFLICT).json({
+              statusCode: 409, error: 'Conflict', message: 'A record with this value already exists',
+            });
+          case 'P2025':
+            return res.status(HttpStatus.NOT_FOUND).json({
+              statusCode: 404, error: 'Not Found', message: 'Record not found',
+            });
+          default:
+            return super.catch(e, host); // let Nest turn the rest into a 500
+        }
+      }
+    }
+
+    // main.ts
+    const { httpAdapter } = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new PrismaExceptionFilter(httpAdapter));
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Set codes on the controller, throw exceptions from services, and return a <code>Location</code> header for created resources when clients need it:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @Post()
+      async create(
+        @CurrentUser() user: AuthUser,
+        @Body() dto: CreateOrderDto,
+        @Res({ passthrough: true }) res: Response, // passthrough: Nest still sends the return value
+      ) {
+        const order = await this.ordersService.placeOrder(user.id, dto);
+        res.location(`/orders/${order.id}`);
+        return order; // 201 Created
+      }
+
+      @Delete(':id')
+      @HttpCode(HttpStatus.NO_CONTENT)
+      async remove(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number): Promise<void> {
+        await this.ordersService.deleteDraft(user.id, id); // 204, empty body
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Returning <code>200</code> with <code>{ "success": false }</code> for errors. Clients, monitoring and retries all rely on the status code.</li>
+      <li>Using 401 when you mean 403, or the reverse.</li>
+      <li>Letting a Prisma unique-constraint error bubble up as a 500. That's a client conflict (409), not a server bug.</li>
+      <li>Using <code>@Res()</code> without <code>passthrough: true</code>. Nest then stops handling the response for you, and interceptors and serialization are skipped.</li>
+      <li>Returning 404 for an empty list. <code>GET /orders?status=PAID</code> with no matches is <code>200</code> with <code>[]</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Pick the status code for each: (a) <code>POST /orders</code> succeeds; (b) <code>GET /orders/42</code> without a token; (c) a user tries to cancel an order that has already shipped; (d) <code>POST /orders</code> with <code>"quantity": -1</code>; (e) a normal user calls <code>GET /admin/reports</code>; (f) the database is unreachable; (g) <code>GET /products?category=shoes</code> finds nothing.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li>(a) <strong>201</strong> Created, ideally with <code>Location: /orders/43</code>.</li>
+        <li>(b) <strong>401</strong> Unauthorized: not authenticated.</li>
+        <li>(c) <strong>409</strong> Conflict: the order's current state doesn't allow it. (422 is also defended by some teams. Be consistent.)</li>
+        <li>(d) <strong>400</strong> Bad Request from <code>ValidationPipe</code> (or 422 if you configured validation errors that way).</li>
+        <li>(e) <strong>403</strong> Forbidden: authenticated but lacks the role.</li>
+        <li>(f) <strong>500</strong> (or <strong>503</strong> Service Unavailable if you detect it explicitly, e.g. in a health check).</li>
+        <li>(g) <strong>200</strong> with an empty list.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between 401 and 403?</summary>
+      <p>401 means the client is not authenticated (missing, expired or invalid credentials). 403 means the client is authenticated but doesn't have permission. Re-authenticating can fix a 401, but not a 403.</p></details>
+    <details><summary>When would you return 404 instead of 403?</summary>
+      <p>When revealing that a resource exists would leak information, for example another user's order. Returning 404 for "not yours" and "doesn't exist" makes them indistinguishable.</p></details>
+    <details><summary>When do you use 409 vs 422?</summary>
+      <p>409 when the request conflicts with the current state of the resource (duplicate email, invalid state transition, version mismatch). 422 when the request is syntactically valid but its content violates validation or business rules. Many APIs use 400 for validation; the key is to document the choice.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> The status code is the answer, and the body is the explanation. Use 2xx for success, 4xx for client mistakes, and 5xx only for real server failures, and map Prisma errors to the right 4xx.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="request-validation">
+  <div class="topic-head"><span class="num">3</span><h2>Request validation</h2></div>
+  <p class="tagline">class-validator with pipes</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A pipe is like a <strong>security scanner at a building entrance</strong>. Every visitor (every piece of incoming data) goes through it before reaching the office (your controller method). The scanner can do two things: <em>transform</em> (put your coat in a tray, i.e. turn the string <code>"42"</code> into the number <code>42</code>) and <em>validate</em> (stop you if you carry something forbidden). If it stops you, you never reach the office, and your controller code never runs with bad data.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>Lesson 5 covered <em>writing</em> DTOs. Here we focus on the <strong>pipes</strong> that run them, and on validating every part of a request: body, route params, query string and headers.</p>
+
+  <p><strong>Where pipes run.</strong> In Nest's request lifecycle, pipes run right before your handler, after guards:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Request → Middleware → Guards → Interceptors (before) → Pipes → Controller handler
+                                                              ↑
+                                         validation + transformation happens here
+  </script>
+
+  <p><strong>1. The global ValidationPipe</strong> validates every <code>@Body()</code>, <code>@Query()</code> and <code>@Param()</code> that is typed with a DTO class:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,              // drop unknown properties
+        forbidNonWhitelisted: true,   // ...or reject them with 400
+        transform: true,              // plain object → DTO instance, "42" → 42 for typed params
+        transformOptions: {
+          enableImplicitConversion: false, // be explicit with @Type() instead (safer)
+        },
+        stopAtFirstError: false,      // report all problems at once
+      }),
+    );
+  </script>
+
+  <p><strong>2. Built-in parse pipes for single values.</strong> Route params and query values always arrive as <em>strings</em>. Parse pipes convert and validate them in one step:</p>
+  <script type="text/x-code" data-lang="typescript">
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number) {}            // "42" → 42, "abc" → 400
+
+    @Get('by-ref/:ref')
+    byRef(@Param('ref', new ParseUUIDPipe({ version: '4' })) ref: string) {}
+
+    @Get()
+    list(
+      @Query('status', new ParseEnumPipe(OrderStatus, { optional: true })) status?: OrderStatus,
+      @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1, // pipes run left to right
+    ) {}
+  </script>
+  <script type="text/x-code" data-lang="http">
+    GET /orders/abc
+
+    HTTP/1.1 400 Bad Request
+    Content-Type: application/json
+
+    { "message": "Validation failed (numeric string is expected)", "error": "Bad Request", "statusCode": 400 }
+  </script>
+  <p>Other built-ins: <code>ParseBoolPipe</code>, <code>ParseFloatPipe</code>, <code>ParseArrayPipe</code>, <code>ParseFilePipe</code> (uploads), and in Nest 11 <code>ParseDatePipe</code>.</p>
+
+  <p><strong>3. Query DTOs.</strong> When an endpoint has several query parameters, group them in a class. Because query values are strings, add <code>@Type(() =&gt; Number)</code> so they're converted before validation:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
+    import { Type } from 'class-transformer';
+    import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+    import { OrderStatus } from '@prisma/client';
+
+    export class ListOrdersQuery {
+      @IsOptional()
+      @IsEnum(OrderStatus)
+      status?: OrderStatus;
+
+      @IsOptional()
+      @Type(() => Number)   // "2" → 2
+      @IsInt()
+      @Min(1)
+      page: number = 1;
+
+      @IsOptional()
+      @Type(() => Number)
+      @IsInt()
+      @Min(1)
+      @Max(100)             // never let clients ask for 1,000,000 rows
+      limit: number = 20;
+    }
+
+    // controller
+    @Get()
+    list(@CurrentUser() user: AuthUser, @Query() query: ListOrdersQuery) {
+      return this.ordersService.list(user.id, query); // query.page is a real number
+    }
+  </script>
+  <p>⚠️ Watch out for booleans: <code>@Type(() =&gt; Boolean)</code> turns the string <code>"false"</code> into <code>true</code> (any non-empty string is truthy). Use <code>@Transform(({ value }) =&gt; value === 'true')</code> instead.</p>
+
+  <p><strong>4. Custom validators</strong> for rules class-validator doesn't have. Example: a delivery date must be at least tomorrow:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/validators/is-future-date.validator.ts">
+    import { registerDecorator, ValidationArguments, ValidationOptions } from 'class-validator';
+
+    export function IsFutureDate(minDaysAhead = 1, options?: ValidationOptions) {
+      return function (object: object, propertyName: string) {
+        registerDecorator({
+          name: 'isFutureDate',
+          target: object.constructor,
+          propertyName,
+          constraints: [minDaysAhead],
+          options: { message: `${propertyName} must be at least ${minDaysAhead} day(s) in the future`, ...options },
+          validator: {
+            validate(value: unknown, args: ValidationArguments) {
+              if (!(value instanceof Date) || isNaN(value.getTime())) return false;
+              const [days] = args.constraints as [number];
+              return value.getTime() >= Date.now() + days * 24 * 60 * 60 * 1000;
+            },
+          },
+        });
+      };
+    }
+
+    // usage in a DTO
+    export class ScheduleDeliveryDto {
+      @Type(() => Date)    // "2026-10-10" → Date
+      @IsFutureDate(1)
+      deliveryDate!: Date;
+    }
+  </script>
+
+  <p><strong>5. Custom pipes</strong> for transformation + validation of a single value, e.g. turning <code>"PAID,SHIPPED"</code> into a validated array:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/pipes/parse-enum-list.pipe.ts">
+    @Injectable()
+    export class ParseEnumListPipe<T extends Record<string, string>> implements PipeTransform<string | undefined, T[keyof T][] | undefined> {
+      constructor(private readonly enumObj: T) {}
+
+      transform(value: string | undefined): T[keyof T][] | undefined {
+        if (value === undefined || value === '') return undefined;
+        const allowed: string[] = Object.values(this.enumObj);
+        const parts = value.split(',').map((s) => s.trim());
+        const invalid = parts.filter((p) => !allowed.includes(p));
+        if (invalid.length) {
+          throw new BadRequestException(`Invalid values: ${invalid.join(', ')}. Allowed: ${allowed.join(', ')}`);
+        }
+        return parts as T[keyof T][];
+      }
+    }
+
+    // usage: GET /orders?status=PAID,SHIPPED
+    @Get()
+    list(@Query('status', new ParseEnumListPipe(OrderStatus)) statuses?: OrderStatus[]) {}
+  </script>
+
+  <p><strong>6. Changing the error status or shape.</strong> If your team uses 422 for validation errors, or wants a field-by-field list, configure the pipe:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { ValidationError } from 'class-validator';
+
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY, // 422 instead of 400
+      exceptionFactory: (errors) => {
+        // flatten nested errors into [{ field: 'items.0.quantity', messages: [...] }]
+        const flatten = (errs: ValidationError[], parent = ''): { field: string; messages: string[] }[] =>
+          errs.flatMap((e) => {
+            const field = parent ? `${parent}.${e.property}` : e.property;
+            const own = e.constraints ? [{ field, messages: Object.values(e.constraints) }] : [];
+            return [...own, ...flatten(e.children ?? [], field)];
+          });
+        return new UnprocessableEntityException({ message: 'Validation failed', errors: flatten(errors) });
+      },
+    });
+  </script>
+  <script type="text/x-code" data-lang="http">
+    POST /orders
+    Content-Type: application/json
+
+    { "items": [{ "productId": 3, "quantity": 0 }], "coupon": "X" }
+
+    HTTP/1.1 422 Unprocessable Entity
+    Content-Type: application/json
+
+    {
+      "message": "Validation failed",
+      "errors": [
+        { "field": "items.0.quantity", "messages": ["quantity must be a positive number"] },
+        { "field": "coupon", "messages": ["property coupon should not exist"] }
+      ]
+    }
+  </script>
+  <p>(Note: <code>exceptionFactory</code> replaces the default exception, so the exception you return decides the status code.)</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Register the ValidationPipe globally, but do it through the <code>APP_PIPE</code> provider when you want it to also apply in e2e tests that build the app from <code>AppModule</code> (pipes registered in <code>main.ts</code> are not part of the module):</p>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+      import { APP_PIPE } from '@nestjs/core';
+
+      @Module({
+        providers: [
+          {
+            provide: APP_PIPE,
+            useValue: new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+          },
+        ],
+      })
+      export class AppModule {}
+    </script>
+    <p>Validation in pipes covers <em>input format</em>. Rules that need the database ("does product 3 exist?", "is there enough stock?") belong in the service, because pipes shouldn't run business queries.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting <code>@Type(() =&gt; Number)</code> in query DTOs. <code>@IsInt()</code> then fails on <code>"2"</code>, because query values are strings.</li>
+      <li>Using <code>@Type(() =&gt; Boolean)</code> for <code>?active=false</code>, which becomes <code>true</code>.</li>
+      <li>No <code>@Max()</code> on <code>limit</code>, letting a client request millions of rows.</li>
+      <li>Putting database lookups in a pipe or a validator, which mixes business rules into the HTTP layer and makes errors hard to control.</li>
+      <li>Registering the pipe only in <code>main.ts</code> and wondering why e2e tests don't validate.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>SearchProductsQuery</code> DTO for <code>GET /products</code> with: optional <code>q</code> (string, 2–50 chars, trimmed), optional <code>minPrice</code> and <code>maxPrice</code> (integers in cents, at least 0), optional <code>inStock</code> (boolean from <code>"true"</code>/<code>"false"</code>), and <code>limit</code> (1–50, default 20).</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { Transform, Type } from 'class-transformer';
+        import { IsBoolean, IsInt, IsOptional, IsString, Length, Max, Min } from 'class-validator';
+
+        export class SearchProductsQuery {
+          @IsOptional()
+          @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+          @IsString()
+          @Length(2, 50)
+          q?: string;
+
+          @IsOptional() @Type(() => Number) @IsInt() @Min(0)
+          minPrice?: number;
+
+          @IsOptional() @Type(() => Number) @IsInt() @Min(0)
+          maxPrice?: number;
+
+          @IsOptional()
+          @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+          @IsBoolean()
+          inStock?: boolean;
+
+          @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+          limit: number = 20;
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is a pipe in NestJS, and what are its two uses?</summary>
+      <p>A class implementing <code>PipeTransform</code> that runs on handler arguments before the handler executes. It's used for transformation (e.g. string to number) and validation (throw an exception if the input is invalid).</p></details>
+    <details><summary>What does <code>transform: true</code> do in ValidationPipe?</summary>
+      <p>It converts the incoming plain object into an instance of the DTO class (applying <code>@Type</code>, <code>@Transform</code> and default values) and converts primitive params to their declared types. Without it, you get the raw plain object.</p></details>
+    <details><summary>Where would you validate "the product must exist"?</summary>
+      <p>In the service, not in a pipe. It needs a database query and is a business rule. Pipes should validate the format and shape of input only.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Validate every input at the door with pipes: a global ValidationPipe for DTOs, parse pipes for single values, <code>@Type</code> for query strings, and business checks in the service.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="pagination">
+  <div class="topic-head"><span class="num">4</span><h2>Pagination</h2></div>
+  <p class="tagline">offset-based vs cursor-based pagination</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Pagination is reading a big list one page at a time. <strong>Offset pagination</strong> is like a book with page numbers: "jump to page 5". Easy, but if someone adds pages at the front while you read, the content shifts, and in a huge book finding page 50,000 is slow. <strong>Cursor pagination</strong> is like a bookmark: "continue after <em>this</em> line". You can't jump to page 5, but you never skip or repeat lines, and continuing is always fast.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Why paginate at all?</strong> <code>GET /orders</code> returning every order works with 20 rows and kills the server with 2 million: huge memory use, a slow query, and a slow response. Every list endpoint should be paginated from day one, with a maximum page size.</p>
+
+  <p><strong>1. Offset-based pagination</strong> uses <code>page</code> and <code>limit</code> (or <code>offset</code> and <code>limit</code>). In SQL that's <code>LIMIT 20 OFFSET 40</code>; in Prisma, <code>take</code> and <code>skip</code>:</p>
+  <script type="text/x-code" data-lang="http">
+    GET /orders?page=3&limit=20
+
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+      "data": [ { "id": 160, "status": "PAID", "total": "30.00" }, "...19 more" ],
+      "meta": { "page": 3, "limit": 20, "total": 1243, "totalPages": 63 }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.repository.ts">
+    async listPaged(userId: number, page: number, limit: number) {
+      const where = { userId };
+      // run both queries in one round trip and a consistent snapshot
+      const [items, total] = await this.prisma.$transaction([
+        this.prisma.order.findMany({
+          where,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], // id as tie-breaker → stable order
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+      return { items, total };
+    }
+  </script>
+  <p><strong>Problems with offset:</strong> (1) <em>Slow deep pages</em>: <code>OFFSET 100000</code> makes PostgreSQL read and throw away 100,000 rows. (2) <em>Shifting data</em>: if a new order arrives while the user is on page 1, page 2 starts with the last item of page 1 again (duplicate); if one is deleted, an item is skipped. (3) <code>count()</code> on big tables is expensive.</p>
+
+  <p><strong>2. Cursor-based (keyset) pagination</strong> says "give me the next N items <em>after</em> this one". The cursor is the position of the last item the client saw:</p>
+  <script type="text/x-code" data-lang="http">
+    GET /orders?limit=20
+
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+      "data": [ { "id": 980, "...": "..." }, "...", { "id": 961, "...": "..." } ],
+      "meta": { "nextCursor": "961", "hasMore": true }
+    }
+
+    GET /orders?limit=20&cursor=961     ← the client passes nextCursor back
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.repository.ts">
+    async listAfter(userId: number, limit: number, cursor?: number) {
+      const rows = await this.prisma.order.findMany({
+        where: { userId },
+        orderBy: { id: 'desc' },           // must be unique + stable
+        take: limit + 1,                   // fetch one extra to know if there's a next page
+        ...(cursor !== undefined && {
+          cursor: { id: cursor },          // start AT this row...
+          skip: 1,                         // ...and skip it (the client already has it)
+        }),
+      });
+
+      const hasMore = rows.length > limit;
+      const items = hasMore ? rows.slice(0, limit) : rows;
+      return {
+        items,
+        nextCursor: hasMore ? String(items[items.length - 1].id) : null,
+        hasMore,
+      };
+    }
+  </script>
+  <p>Under the hood this becomes <code>WHERE id &lt; 961 ORDER BY id DESC LIMIT 21</code>, which PostgreSQL answers with an index lookup: just as fast for the millionth row as for the first.</p>
+
+  <p><strong>Sorting by something other than id?</strong> The cursor must contain every column in the sort, and the sort must end with a unique column. For "newest first" use <code>(createdAt, id)</code>. Encode it so clients treat it as an opaque token:</p>
+  <script type="text/x-code" data-lang="typescript">
+    type OrderCursor = { createdAt: string; id: number };
+
+    const encodeCursor = (c: OrderCursor) => Buffer.from(JSON.stringify(c)).toString('base64url');
+    const decodeCursor = (s: string): OrderCursor => {
+      try {
+        return JSON.parse(Buffer.from(s, 'base64url').toString('utf8')) as OrderCursor;
+      } catch {
+        throw new BadRequestException('Invalid cursor');
+      }
+    };
+
+    // WHERE (createdAt, id) < (cursor.createdAt, cursor.id), written for Prisma:
+    const after = cursor ? decodeCursor(cursor) : undefined;
+    const rows = await this.prisma.order.findMany({
+      where: {
+        userId,
+        ...(after && {
+          OR: [
+            { createdAt: { lt: new Date(after.createdAt) } },
+            { createdAt: new Date(after.createdAt), id: { lt: after.id } },
+          ],
+        }),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+    });
+  </script>
+  <p>Add a matching index so PostgreSQL can walk it: <code>@@index([userId, createdAt(sort: Desc), id(sort: Desc)])</code> in the Prisma schema.</p>
+
+  <table>
+    <tr><th></th><th>Offset (<code>page</code>/<code>limit</code>)</th><th>Cursor (<code>cursor</code>/<code>limit</code>)</th></tr>
+    <tr><td>Jump to page N</td><td>✅ Yes</td><td>❌ No (only next / previous)</td></tr>
+    <tr><td>Total count / page numbers</td><td>✅ Easy</td><td>Usually not shown</td></tr>
+    <tr><td>Speed on deep pages</td><td>❌ Gets slower</td><td>✅ Constant</td></tr>
+    <tr><td>Stable when data changes</td><td>❌ Duplicates / skips</td><td>✅ Stable</td></tr>
+    <tr><td>Best for</td><td>Admin tables, small/medium datasets</td><td>Infinite scroll, feeds, mobile apps, large tables, syncing</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Make pagination reusable: a shared query DTO and a generic response type, so every list endpoint looks the same:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="common/pagination/pagination.ts">
+      export class PageQuery {
+        @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+        page: number = 1;
+
+        @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
+        limit: number = 20;
+
+        get skip(): number { return (this.page - 1) * this.limit; }
+      }
+
+      export interface Paginated<T> {
+        data: T[];
+        meta: { page: number; limit: number; total: number; totalPages: number };
+      }
+
+      export function paginate<T>(data: T[], total: number, q: PageQuery): Paginated<T> {
+        return { data, meta: { page: q.page, limit: q.limit, total, totalPages: Math.ceil(total / q.limit) } };
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
+      async list(userId: number, q: PageQuery): Promise<Paginated<OrderSummaryDto>> {
+        const { items, total } = await this.ordersRepo.listPaged(userId, q.page, q.limit);
+        return paginate(items.map(toOrderSummary), total, q);
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>No maximum <code>limit</code>. One request with <code>limit=1000000</code> can take the server down.</li>
+      <li>Paginating without a stable <code>orderBy</code>. PostgreSQL doesn't guarantee row order without one, so pages overlap randomly. Always end the sort with a unique column (<code>id</code>).</li>
+      <li>Fetching everything and slicing in JavaScript (<code>rows.slice(skip, skip + limit)</code>). Paginate in the database.</li>
+      <li>Exposing raw cursor internals that clients start to construct themselves. Make cursors opaque (base64url).</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A mobile app shows the product catalog with infinite scroll, sorted by price ascending (many products share the same price). Which pagination style do you choose? Write the Prisma query for the next page, given the last item's <code>priceCents</code> and <code>id</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Cursor-based: infinite scroll never jumps to page N, and products may be added while scrolling. Because price isn't unique, the cursor is <code>(priceCents, id)</code>:</p>
+      <script type="text/x-code" data-lang="typescript">
+        async catalogAfter(limit: number, after?: { priceCents: number; id: number }) {
+          const rows = await this.prisma.product.findMany({
+            where: after
+              ? {
+                  OR: [
+                    { priceCents: { gt: after.priceCents } },
+                    { priceCents: after.priceCents, id: { gt: after.id } },
+                  ],
+                }
+              : undefined,
+            orderBy: [{ priceCents: 'asc' }, { id: 'asc' }],
+            take: limit + 1,
+          });
+          const hasMore = rows.length > limit;
+          const items = rows.slice(0, limit);
+          const last = items.at(-1);
+          return {
+            data: items,
+            meta: {
+              hasMore,
+              nextCursor: hasMore && last ? encodeCursor({ priceCents: last.priceCents, id: last.id }) : null,
+            },
+          };
+        }
+        // index: @@index([priceCents, id])
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why is offset pagination slow on large tables?</summary>
+      <p>The database must read and discard all the skipped rows before returning the page, so <code>OFFSET 100000</code> scans at least 100,000 rows. Cursor pagination uses an indexed <code>WHERE</code> condition to start directly at the right place.</p></details>
+    <details><summary>Why can offset pagination return duplicates?</summary>
+      <p>If rows are inserted or deleted between page requests, all following rows shift position. A new row at the top pushes the last item of page 1 onto page 2, so the client sees it twice.</p></details>
+    <details><summary>What makes a good cursor?</summary>
+      <p>It encodes the values of all sort columns of the last item, ending with a unique column so ordering is total. It's opaque to clients (e.g. base64url), and the sort columns are backed by an index.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Paginate every list with a maximum limit and a stable sort. Use offset for admin tables that need page numbers, and cursors for feeds, infinite scroll and big tables.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="filtering-sorting">
+  <div class="topic-head"><span class="num">5</span><h2>Filtering &amp; sorting</h2></div>
+  <p class="tagline">designing query parameters</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Filtering and sorting are like the filter panel on a shopping website: "only shoes, size 42, under $100, cheapest first". The <strong>query string</strong> (everything after <code>?</code> in the URL) is that panel. A good design is one where a developer can <em>guess</em> the parameter names, and where your server only accepts filters it knows how to run safely and fast.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Design the URL first.</strong> Before writing code, write down what clients will send. Here is a common, readable convention:</p>
+  <script type="text/x-code" data-lang="http">
+    # exact match
+    GET /orders?status=PAID
+
+    # several values (comma-separated)
+    GET /orders?status=PAID,SHIPPED
+
+    # ranges: min/max or from/to suffixes
+    GET /orders?minTotal=1000&maxTotal=5000&createdFrom=2026-09-01&createdTo=2026-09-30
+
+    # free-text search
+    GET /products?q=keyboard
+
+    # sorting: field name, "-" prefix = descending; several fields with commas
+    GET /orders?sort=-createdAt
+    GET /products?sort=priceCents,-createdAt
+
+    # everything combined with pagination
+    GET /orders?status=PAID&sort=-createdAt&page=2&limit=20
+  </script>
+  <p>Rules of thumb: use <code>camelCase</code> names that match your JSON fields, use the same name for the same idea everywhere (<code>q</code> for search on every resource), and keep filters flat. Other styles exist (<code>?filter[status]=PAID</code>, <code>?sort_by=createdAt&amp;order=desc</code>). Any is fine if it's consistent across the whole API.</p>
+
+  <p><strong>Step 1: a query DTO that validates every parameter.</strong> Notice <code>@IsIn</code> on the sort: clients can only sort by fields we allow.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
+    import { OrderStatus } from '@prisma/client';
+    import { Transform, Type } from 'class-transformer';
+    import { IsDate, IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+
+    const SORTABLE = ['createdAt', '-createdAt', 'totalCents', '-totalCents'] as const;
+    type OrderSort = (typeof SORTABLE)[number];
+
+    const toArray = ({ value }: { value: unknown }) =>
+      typeof value === 'string' ? value.split(',').map((v) => v.trim()).filter(Boolean) : value;
+
+    export class ListOrdersQuery {
+      @IsOptional()
+      @Transform(toArray)                          // "PAID,SHIPPED" → ['PAID', 'SHIPPED']
+      @IsEnum(OrderStatus, { each: true })
+      status?: OrderStatus[];
+
+      @IsOptional() @Type(() => Number) @IsInt() @Min(0)
+      minTotal?: number;
+
+      @IsOptional() @Type(() => Number) @IsInt() @Min(0)
+      maxTotal?: number;
+
+      @IsOptional() @Type(() => Date) @IsDate()
+      createdFrom?: Date;
+
+      @IsOptional() @Type(() => Date) @IsDate()
+      createdTo?: Date;
+
+      @IsOptional()
+      @IsIn(SORTABLE)                              // ✅ whitelist of sortable fields
+      sort: OrderSort = '-createdAt';
+
+      @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+      page: number = 1;
+
+      @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
+      limit: number = 20;
+    }
+  </script>
+
+  <p><strong>Step 2: translate the query into a Prisma <code>where</code> and <code>orderBy</code>.</strong> Build the filter only from fields that were actually sent. Prisma ignores keys whose value is <code>undefined</code>, which makes this tidy:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.repository.ts">
+    import { Prisma } from '@prisma/client';
+
+    function buildWhere(userId: number, q: ListOrdersQuery): Prisma.OrderWhereInput {
+      return {
+        userId,                                              // ✅ always scope to the owner
+        status: q.status?.length ? { in: q.status } : undefined,
+        totalCents: { gte: q.minTotal, lte: q.maxTotal },    // undefined bounds are ignored
+        createdAt: { gte: q.createdFrom, lte: q.createdTo },
+      };
+    }
+
+    function buildOrderBy(sort: OrderSort): Prisma.OrderOrderByWithRelationInput[] {
+      const dir: Prisma.SortOrder = sort.startsWith('-') ? 'desc' : 'asc';
+      const primary: Prisma.OrderOrderByWithRelationInput =
+        sort.endsWith('createdAt') ? { createdAt: dir } : { totalCents: dir };
+      return [primary, { id: 'desc' }]; // id = stable tie-breaker
+    }
+
+    async list(userId: number, q: ListOrdersQuery) {
+      const where = buildWhere(userId, q);
+      const [items, total] = await this.prisma.$transaction([
+        this.prisma.order.findMany({
+          where,
+          orderBy: buildOrderBy(q.sort),
+          skip: (q.page - 1) * q.limit,
+          take: q.limit,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+      return { items, total };
+    }
+  </script>
+
+  <p><strong>Why whitelist sort fields?</strong> If you pass any client string into <code>orderBy</code>, a client can sort by <code>passwordHash</code> and learn things from the order (a side-channel leak), or sort by an unindexed column on a huge table and make every request slow. With raw SQL, it could even be SQL injection. Only allow what you've decided is safe and indexed.</p>
+
+  <p><strong>Text search.</strong> For simple cases, Prisma's <code>contains</code> with <code>mode: 'insensitive'</code> works in PostgreSQL (it becomes <code>ILIKE '%keyboard%'</code>):</p>
+  <script type="text/x-code" data-lang="typescript">
+    where: q.q
+      ? { OR: [
+          { name: { contains: q.q, mode: 'insensitive' } },
+          { description: { contains: q.q, mode: 'insensitive' } },
+        ] }
+      : undefined,
+  </script>
+  <p><code>ILIKE '%…%'</code> can't use a normal B-tree index, so it gets slow on large tables. Options later: a <code>pg_trgm</code> GIN index, or PostgreSQL full-text search with a raw query (Lesson 4).</p>
+
+  <p><strong>Indexes follow your filters.</strong> Every filter and sort you allow is a promise to make it fast. Add matching indexes:</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    model Order {
+      // ...fields
+      @@index([userId, createdAt(sort: Desc)])  // "my orders, newest first"
+      @@index([userId, status])                 // "my PAID orders"
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The controller stays one line. Everything is validated before it reaches the service:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      @Get()
+      list(@CurrentUser() user: AuthUser, @Query() query: ListOrdersQuery) {
+        return this.ordersService.list(user.id, query);
+      }
+    </script>
+    <script type="text/x-code" data-lang="http">
+      GET /orders?status=PAID,SHIPPED&minTotal=1000&sort=-totalCents&limit=2
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "data": [
+          { "id": 77, "status": "SHIPPED", "total": "120.00", "createdAt": "2026-09-28T10:12:00.000Z" },
+          { "id": 51, "status": "PAID", "total": "89.90", "createdAt": "2026-09-12T08:01:00.000Z" }
+        ],
+        "meta": { "page": 1, "limit": 2, "total": 9, "totalPages": 5 }
+      }
+    </script>
+    <script type="text/x-code" data-lang="http">
+      GET /orders?sort=passwordHash
+
+      HTTP/1.1 400 Bad Request
+      Content-Type: application/json
+
+      {
+        "message": ["sort must be one of the following values: createdAt, -createdAt, totalCents, -totalCents"],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Passing client input straight into <code>orderBy</code> or <code>where</code> (<code>where: query</code>). Clients can then filter or sort by any column, including private ones.</li>
+      <li>Forgetting to scope by owner (<code>userId</code>) when building filters, so <code>GET /orders?status=PAID</code> returns everyone's orders.</li>
+      <li>Allowing filters and sorts without indexes, so the endpoint is fast in development and slow in production.</li>
+      <li>Inventing a different convention per endpoint (<code>sortBy</code> here, <code>order</code> there, <code>sort</code> elsewhere).</li>
+      <li>Not handling dates carefully: <code>createdTo=2026-09-30</code> means midnight at the <em>start</em> of the 30th. Document it, or treat it as exclusive "before".</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Design <code>GET /products</code> filtering: by category slug (<code>category</code>), price range in cents, <code>inStock</code> (boolean), search <code>q</code>, and sorting by <code>priceCents</code>, <code>name</code> or <code>createdAt</code> in either direction. Write the <code>where</code> builder. Assume <code>Product</code> has a <code>category</code> relation with a <code>slug</code> field.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        const PRODUCT_SORTS = ['priceCents', '-priceCents', 'name', '-name', 'createdAt', '-createdAt'] as const;
+
+        export class ListProductsQuery {
+          @IsOptional() @IsString() @Matches(/^[a-z0-9-]+$/) category?: string;
+          @IsOptional() @Type(() => Number) @IsInt() @Min(0) minPrice?: number;
+          @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxPrice?: number;
+          @IsOptional()
+          @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+          @IsBoolean()
+          inStock?: boolean;
+          @IsOptional() @IsString() @Length(2, 50) q?: string;
+          @IsOptional() @IsIn(PRODUCT_SORTS) sort: (typeof PRODUCT_SORTS)[number] = 'name';
+        }
+
+        function buildProductWhere(q: ListProductsQuery): Prisma.ProductWhereInput {
+          return {
+            category: q.category ? { slug: q.category } : undefined,
+            priceCents: { gte: q.minPrice, lte: q.maxPrice },
+            stock: q.inStock === true ? { gt: 0 } : q.inStock === false ? 0 : undefined,
+            OR: q.q ? [{ name: { contains: q.q, mode: 'insensitive' } }] : undefined,
+          };
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you design sorting in a REST API?</summary>
+      <p>A single <code>sort</code> parameter with field names and a <code>-</code> prefix for descending (e.g. <code>sort=-createdAt,name</code>), validated against a whitelist of sortable, indexed fields, with a unique tie-breaker such as <code>id</code> appended on the server for stable ordering.</p></details>
+    <details><summary>Why not pass the query object directly into Prisma's <code>where</code>?</summary>
+      <p>It lets clients filter on any column, including private or unindexed ones, and changes your API whenever the schema changes. Explicitly mapping validated parameters to a <code>where</code> keeps the API contract controlled and safe.</p></details>
+    <details><summary>Filters or a separate search endpoint?</summary>
+      <p>Simple attribute filters belong on the collection (<code>GET /products?category=shoes</code>). Complex search with relevance ranking and many options can justify a dedicated endpoint (<code>GET /search?q=…</code>) or a search engine. Start with filters.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Design query parameters to be guessable and consistent, validate them in a query DTO, whitelist sort fields, always scope by owner, and back every filter with an index.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="error-response-design">
+  <div class="topic-head"><span class="num">6</span><h2>Error response design</h2></div>
+  <p class="tagline">a consistent error shape</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine every shop in a mall wrote receipts in a different format: one in a table, one as a poem, one on a napkin. Accountants would go mad. When every error from your API has <strong>the same shape</strong>, frontend developers write <em>one</em> error handler and it works for every endpoint. A good error also says <em>what</em> went wrong in a machine-readable way (a code), <em>why</em> in human words (a message), and <em>where</em> (which field).</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The problem: Nest's defaults are inconsistent.</strong> Without a plan, you get several shapes from the same API:</p>
+  <script type="text/x-code" data-lang="json" data-title="three different shapes ❌">
+    { "statusCode": 404, "message": "Order not found", "error": "Not Found" }
+
+    { "statusCode": 400, "message": ["items.0.quantity must be a positive number"], "error": "Bad Request" }
+
+    { "statusCode": 409, "code": "OUT_OF_STOCK", "message": "Product 3 is out of stock" }
+  </script>
+  <p>Sometimes <code>message</code> is a string, sometimes an array, and only some errors have a <code>code</code>. The frontend has to guess.</p>
+
+  <p><strong>Step 1: define one shape.</strong> A good error body has:</p>
+  <table>
+    <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td><code>statusCode</code></td><td>Same as the HTTP status (handy in logs)</td><td><code>409</code></td></tr>
+    <tr><td><code>code</code></td><td>Stable, machine-readable reason. Clients branch on this, never on message text.</td><td><code>"OUT_OF_STOCK"</code></td></tr>
+    <tr><td><code>message</code></td><td>Human-readable summary, always a string</td><td><code>"Product 3 is out of stock"</code></td></tr>
+    <tr><td><code>details</code></td><td>Optional list of field errors</td><td><code>[{ "field": "items.0.quantity", "message": "..." }]</code></td></tr>
+    <tr><td><code>path</code>, <code>timestamp</code></td><td>Context for debugging</td><td><code>"/orders"</code></td></tr>
+    <tr><td><code>requestId</code></td><td>Lets support find the exact log line</td><td><code>"f3a9c1..."</code></td></tr>
+  </table>
+  <script type="text/x-code" data-lang="typescript" data-title="common/errors/api-error.ts">
+    export interface ApiErrorBody {
+      statusCode: number;
+      code: string;
+      message: string;
+      details?: { field: string; message: string }[];
+      path: string;
+      timestamp: string;
+      requestId?: string;
+    }
+  </script>
+
+  <p><strong>Step 2: one global filter that catches everything</strong> and produces that shape, whether the error is a Nest <code>HttpException</code>, a domain error from Lesson 5, a Prisma error, or an unexpected crash:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/filters/all-exceptions.filter.ts">
+    import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+    import { Prisma } from '@prisma/client';
+    import { Request, Response } from 'express';
+    import { DomainError } from '../../orders/domain/order.errors'; // from Lesson 5
+    import { DOMAIN_STATUS } from './domain-status';               // e.g. { OUT_OF_STOCK: 409, ... }
+
+    @Catch() // no argument = catch everything
+    export class AllExceptionsFilter implements ExceptionFilter {
+      private readonly logger = new Logger(AllExceptionsFilter.name);
+
+      catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const req = ctx.getRequest<Request>();
+        const res = ctx.getResponse<Response>();
+
+        const { statusCode, code, message, details } = this.normalize(exception);
+
+        if (statusCode >= 500) {
+          // full details go to the logs, never to the client
+          this.logger.error(`${req.method} ${req.url}`, exception instanceof Error ? exception.stack : String(exception));
+        }
+
+        const body: ApiErrorBody = {
+          statusCode,
+          code,
+          message,
+          ...(details && { details }),
+          path: req.url,
+          timestamp: new Date().toISOString(),
+          requestId: req.header('x-request-id'),
+        };
+        res.status(statusCode).json(body);
+      }
+
+      private normalize(e: unknown): Pick<ApiErrorBody, 'statusCode' | 'code' | 'message' | 'details'> {
+        if (e instanceof DomainError) {
+          const statusCode = DOMAIN_STATUS[e.code] ?? HttpStatus.UNPROCESSABLE_ENTITY;
+          return { statusCode, code: e.code, message: e.message };
+        }
+
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === 'P2002') return { statusCode: 409, code: 'ALREADY_EXISTS', message: 'A record with this value already exists' };
+          if (e.code === 'P2025') return { statusCode: 404, code: 'NOT_FOUND', message: 'Record not found' };
+        }
+
+        if (e instanceof HttpException) {
+          const statusCode = e.getStatus();
+          const response = e.getResponse();
+          // our own validation format (see exceptionFactory below)
+          if (typeof response === 'object' && response !== null && 'details' in response) {
+            const r = response as { message: string; details: { field: string; message: string }[] };
+            return { statusCode, code: 'VALIDATION_FAILED', message: r.message, details: r.details };
+          }
+          return { statusCode, code: HttpStatus[statusCode] ?? 'ERROR', message: e.message };
+        }
+
+        return { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Something went wrong. Please try again later.' };
+      }
+    }
+  </script>
+  <p><code>HttpStatus[404]</code> gives <code>"NOT_FOUND"</code>, because <code>HttpStatus</code> is a numeric enum with reverse mapping (Lesson 1). That gives every Nest exception a sensible default code.</p>
+
+  <p><strong>Step 3: give business errors their own codes.</strong> Throw exceptions with an explicit code when the client needs to react differently:</p>
+  <script type="text/x-code" data-lang="typescript">
+    throw new ConflictException('Email is already registered');
+    // → code: "CONFLICT" (generic)
+
+    throw new OutOfStockError(3);  // domain error from Lesson 5
+    // → code: "OUT_OF_STOCK" (specific: the UI can highlight that product)
+  </script>
+
+  <p><strong>Step 4: field-level validation details</strong> via the ValidationPipe's <code>exceptionFactory</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const details = flattenValidationErrors(errors); // [{ field, message }]
+        return new BadRequestException({ message: 'Request validation failed', details });
+      },
+    });
+  </script>
+
+  <p><strong>The result, from the client's side:</strong> every error looks the same.</p>
+  <script type="text/x-code" data-lang="http">
+    POST /orders
+    Content-Type: application/json
+
+    { "items": [{ "productId": 3, "quantity": 0 }] }
+
+    HTTP/1.1 400 Bad Request
+    Content-Type: application/json
+
+    {
+      "statusCode": 400,
+      "code": "VALIDATION_FAILED",
+      "message": "Request validation failed",
+      "details": [{ "field": "items.0.quantity", "message": "quantity must be a positive number" }],
+      "path": "/orders",
+      "timestamp": "2026-10-05T09:30:12.481Z",
+      "requestId": "f3a9c1d2"
+    }
+  </script>
+  <script type="text/x-code" data-lang="http">
+    HTTP/1.1 409 Conflict
+    Content-Type: application/json
+
+    {
+      "statusCode": 409,
+      "code": "OUT_OF_STOCK",
+      "message": "Product 3 is out of stock",
+      "path": "/orders",
+      "timestamp": "2026-10-05T09:31:02.110Z"
+    }
+  </script>
+
+  <p><strong>A standard alternative: RFC 9457 "Problem Details".</strong> There's an official standard error format, served with <code>Content-Type: application/problem+json</code>. It uses <code>type</code> (a URI identifying the error kind), <code>title</code>, <code>status</code>, <code>detail</code> and <code>instance</code>, plus any extra fields you need. If you're designing a public API, consider adopting it so clients can use generic tooling:</p>
+  <script type="text/x-code" data-lang="json" data-title="application/problem+json">
+    {
+      "type": "https://api.shop.dev/errors/out-of-stock",
+      "title": "Product out of stock",
+      "status": 409,
+      "detail": "Product 3 is out of stock",
+      "instance": "/orders",
+      "productId": 3
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Register the filter globally so no endpoint is forgotten. Using <code>APP_FILTER</code> makes it part of the module, so e2e tests get it too, and lets the filter inject providers (a logger, config):</p>
+    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+      import { APP_FILTER } from '@nestjs/core';
+
+      @Module({
+        providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
+      })
+      export class AppModule {}
+    </script>
+    <p>Document the error codes (a list in your README or Swagger) and treat them as part of the API contract: renaming <code>OUT_OF_STOCK</code> is a breaking change, just like renaming a field.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Leaking internals in 500 responses: stack traces, SQL, Prisma messages with table names. Log them and send a generic message.</li>
+      <li>Clients parsing <code>message</code> text to decide what to do. Messages change and get translated, so provide a stable <code>code</code>.</li>
+      <li><code>message</code> being a string sometimes and an array other times.</li>
+      <li>Catching errors in every controller with <code>try/catch</code> and formatting them by hand. Use one global filter.</li>
+      <li>Returning different shapes for errors thrown by guards (401/403) vs services. A <code>@Catch()</code>-all filter handles both.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write the <code>flattenValidationErrors</code> helper used above. It receives class-validator's <code>ValidationError[]</code> (which can be nested via <code>children</code>) and returns <code>{ field, message }[]</code> with dotted paths like <code>items.0.quantity</code>, one entry per failed constraint.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { ValidationError } from 'class-validator';
+
+        export function flattenValidationErrors(
+          errors: ValidationError[],
+          parentPath = '',
+        ): { field: string; message: string }[] {
+          return errors.flatMap((error) => {
+            const field = parentPath ? `${parentPath}.${error.property}` : error.property;
+            const own = Object.values(error.constraints ?? {}).map((message) => ({ field, message }));
+            const nested = flattenValidationErrors(error.children ?? [], field);
+            return [...own, ...nested];
+          });
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What should a good API error response contain?</summary>
+      <p>The HTTP status, a stable machine-readable error code, a human-readable message, optional field-level details for validation, and context such as path, timestamp and a request ID for tracing. It should never contain stack traces or internal details.</p></details>
+    <details><summary>How do you make all errors in a NestJS app use the same format?</summary>
+      <p>Register a global exception filter with <code>@Catch()</code> (all exceptions) via <code>APP_FILTER</code>. It normalizes HttpExceptions, domain errors, ORM errors and unknown errors into one body. Combine it with a ValidationPipe <code>exceptionFactory</code> for field details.</p></details>
+    <details><summary>What is RFC 9457?</summary>
+      <p>The "Problem Details for HTTP APIs" standard (it replaced RFC 7807). It defines a JSON error format with <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code> and <code>instance</code>, served as <code>application/problem+json</code>, and allows extension fields.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> One error shape for the whole API, produced by one global filter: a status, a stable code, a clear message, field details when useful, and never internal secrets.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="api-versioning">
+  <div class="topic-head"><span class="num">7</span><h2>API versioning</h2></div>
+  <p class="tagline">URI, header or media-type versioning</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>When a phone maker changes the charger plug, old phones still need the old charger for a while. An API is the same: mobile apps installed months ago keep calling your API the old way, and you can't force everyone to update on the same day. <strong>Versioning</strong> lets you serve the old "plug" and the new one side by side, then retire the old one slowly, with warning.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Breaking vs non-breaking changes.</strong> You only need a new version for <em>breaking</em> changes:</p>
+  <table>
+    <tr><th>Non-breaking (no new version)</th><th>Breaking (new version needed)</th></tr>
+    <tr><td>Adding a new endpoint</td><td>Removing or renaming an endpoint</td></tr>
+    <tr><td>Adding an <em>optional</em> request field</td><td>Making a field required, or adding a required one</td></tr>
+    <tr><td>Adding a field to a response</td><td>Removing or renaming a response field</td></tr>
+    <tr><td>Adding a new enum value (if clients handle unknowns)</td><td>Changing a field's type (<code>total: 3000</code> → <code>total: "30.00"</code>)</td></tr>
+    <tr><td>Making validation <em>less</em> strict</td><td>Changing status codes or error codes clients rely on</td></tr>
+  </table>
+  <p>Example: v1 returned <code>totalCents: 3000</code>, and v2 returns <code>total: { amount: "30.00", currency: "USD" }</code>. Old app versions would break, so this needs v2.</p>
+
+  <p><strong>The three main strategies:</strong></p>
+  <script type="text/x-code" data-lang="http" data-title="1. URI versioning">
+    GET /v1/orders/42
+    GET /v2/orders/42
+  </script>
+  <script type="text/x-code" data-lang="http" data-title="2. Header versioning">
+    GET /orders/42
+    X-API-Version: 2
+  </script>
+  <script type="text/x-code" data-lang="http" data-title="3. Media-type versioning">
+    GET /orders/42
+    Accept: application/json;v=2
+  </script>
+  <table>
+    <tr><th>Strategy</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td>URI</td><td>Visible, easy to test in a browser, easy to route and cache, easiest for clients</td><td>"The same resource" has several URLs (purists dislike it)</td></tr>
+    <tr><td>Header</td><td>Clean URLs</td><td>Invisible in links; caches and proxies need <code>Vary: X-API-Version</code>; easy to forget</td></tr>
+    <tr><td>Media type</td><td>Most "RESTful": version is part of content negotiation</td><td>Hardest for clients and tooling; rarely used outside big public APIs</td></tr>
+  </table>
+  <p>Most teams pick <strong>URI versioning</strong> because it's the most obvious for everyone.</p>
+
+  <p><strong>Enabling versioning in Nest.</strong> Nest supports all of these out of the box:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts — URI versioning">
+    import { VersioningType } from '@nestjs/common';
+
+    const app = await NestFactory.create(AppModule);
+    app.setGlobalPrefix('api');
+    app.enableVersioning({
+      type: VersioningType.URI,   // → /api/v1/orders
+      defaultVersion: '1',        // controllers without a version are v1
+    });
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="other types">
+    // Header: X-API-Version: 2
+    app.enableVersioning({ type: VersioningType.HEADER, header: 'X-API-Version', defaultVersion: '1' });
+
+    // Media type: Accept: application/json;v=2
+    app.enableVersioning({ type: VersioningType.MEDIA_TYPE, key: 'v=', defaultVersion: '1' });
+  </script>
+
+  <p><strong>Versioning a whole controller or a single route:</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+    import { Controller, Get, Param, ParseIntPipe, Version } from '@nestjs/common';
+
+    @Controller({ path: 'orders', version: '1' })
+    export class OrdersV1Controller {
+      constructor(private readonly ordersService: OrdersService) {}
+
+      @Get(':id')                                   // GET /api/v1/orders/42
+      async findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+        const order = await this.ordersService.getOrder(user.id, id);
+        return OrderV1Mapper.toDto(order);          // { totalCents: 3000 }
+      }
+    }
+
+    @Controller({ path: 'orders', version: '2' })
+    export class OrdersV2Controller {
+      constructor(private readonly ordersService: OrdersService) {}
+
+      @Get(':id')                                   // GET /api/v2/orders/42
+      async findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+        const order = await this.ordersService.getOrder(user.id, id);
+        return OrderV2Mapper.toDto(order);          // { total: { amount: "30.00", currency: "USD" } }
+      }
+    }
+  </script>
+  <p>Notice that <strong>both versions share the same service</strong>. Only the HTTP shape (controller + mapper) differs. This is where the layered architecture and mappers from Lesson 5 pay off: a new API version doesn't duplicate business logic.</p>
+
+  <p>For a single route, use <code>@Version()</code>. And <code>VERSION_NEUTRAL</code> marks routes that answer for every version (health checks, for example):</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { VERSION_NEUTRAL } from '@nestjs/common';
+
+    @Controller('products')
+    export class ProductsController {
+      @Get()                 // default version (v1)
+      listV1() {}
+
+      @Version('2')
+      @Get()                 // GET /api/v2/products
+      listV2() {}
+    }
+
+    @Controller({ path: 'health', version: VERSION_NEUTRAL })
+    export class HealthController {
+      @Get() check() { return { status: 'ok' }; }  // /api/health
+    }
+  </script>
+
+  <p><strong>Retiring old versions.</strong> Announce, warn, then remove. Standard response headers tell clients in advance:</p>
+  <script type="text/x-code" data-lang="http">
+    GET /api/v1/orders/42
+
+    HTTP/1.1 200 OK
+    Deprecation: @1767225600
+    Sunset: Thu, 30 Apr 2027 00:00:00 GMT
+    Link: <https://docs.shop.dev/migrations/v2>; rel="deprecation"
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="v1 controller">
+    @Controller({ path: 'orders', version: '1' })
+    export class OrdersV1Controller {
+      @Get(':id')
+      @Header('Deprecation', '@1767225600')              // RFC 9745: deprecated since this Unix time
+      @Header('Sunset', 'Thu, 30 Apr 2027 00:00:00 GMT') // RFC 8594: planned removal date
+      findOne(@Param('id', ParseIntPipe) id: number) { /* ... */ }
+    }
+  </script>
+  <p><code>@Header()</code> is a <em>method</em> decorator, so it goes on each handler. To mark a whole controller at once, set the headers in a small interceptor and apply it with <code>@UseInterceptors()</code> on the class. Track how much traffic still hits v1 in your logs before deleting it.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Typical setup: <code>setGlobalPrefix('api')</code> + URI versioning with <code>defaultVersion: '1'</code> from day one, even if you only ever have v1. Adding versioning later changes every URL, which is itself a breaking change. Keep version-specific code in the HTTP layer only:</p>
+    <script type="text/x-code" data-lang="plaintext" data-title="src/orders/">
+      orders/
+      ├── http/
+      │   ├── v1/orders-v1.controller.ts + order-v1.mapper.ts
+      │   └── v2/orders-v2.controller.ts + order-v2.mapper.ts
+      ├── orders.service.ts      ← shared by both versions
+      └── orders.module.ts       ← controllers: [OrdersV1Controller, OrdersV2Controller]
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Creating a new version for non-breaking changes (adding a field). Versions are expensive to maintain, so use them only for breaking changes.</li>
+      <li>Copy-pasting the whole service for v2. Version the HTTP layer (controllers, DTOs, mappers), not the business logic.</li>
+      <li>Making breaking changes silently "because only our app uses it". Old mobile app versions live for years.</li>
+      <li>Keeping old versions forever with no deprecation plan or usage tracking.</li>
+      <li>Header versioning behind a CDN without <code>Vary</code>, so cached v1 responses are served to v2 clients.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>v1 of <code>GET /api/v1/users/me</code> returns <code>{ id, name, email }</code>. Product wants to split <code>name</code> into <code>firstName</code> and <code>lastName</code>. (a) Is this breaking? (b) Can you avoid a new version? (c) If you do add v2, sketch the controllers.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>(a) Removing <code>name</code> is breaking. (b) Yes: <em>add</em> <code>firstName</code> and <code>lastName</code> and keep <code>name</code> (computed) in v1. Adding fields is non-breaking. (c) If <code>name</code> must go:</p>
+      <script type="text/x-code" data-lang="typescript">
+        @Controller({ path: 'users', version: '1' })
+        export class UsersV1Controller {
+          constructor(private readonly users: UsersService) {}
+          @Get('me')
+          async me(@CurrentUser() u: AuthUser) {
+            const user = await this.users.getById(u.id);
+            return { id: user.id, name: `${user.firstName} ${user.lastName}`.trim(), email: user.email };
+          }
+        }
+
+        @Controller({ path: 'users', version: '2' })
+        export class UsersV2Controller {
+          constructor(private readonly users: UsersService) {}
+          @Get('me')
+          async me(@CurrentUser() u: AuthUser) {
+            const user = await this.users.getById(u.id);
+            return { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email };
+          }
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Which versioning strategies exist, and which would you choose?</summary>
+      <p>URI (<code>/v1/...</code>), custom header (<code>X-API-Version</code>), media type (<code>Accept: application/json;v=2</code>), and sometimes a query parameter. I'd usually choose URI versioning: it's explicit, easy to test, works well with caches and docs, and Nest supports it with <code>VersioningType.URI</code>.</p></details>
+    <details><summary>What counts as a breaking change?</summary>
+      <p>Anything that can make an existing, correct client fail: removing or renaming fields or endpoints, changing types or formats, adding required inputs, tightening validation, or changing status and error codes. Adding optional inputs, new endpoints or new response fields is non-breaking.</p></details>
+    <details><summary>How do you avoid duplicating logic across API versions?</summary>
+      <p>Keep versions in the HTTP layer only. Different controllers, DTOs and mappers per version all call the same services and domain model.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Version only for breaking changes, prefer URI versioning, turn it on from day one, keep versions in the HTTP layer, and retire old versions with Deprecation/Sunset headers.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="swagger-openapi">
+  <div class="topic-head"><span class="num">8</span><h2>Swagger / OpenAPI</h2></div>
+  <p class="tagline">@nestjs/swagger documentation</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p><strong>OpenAPI</strong> is a standard "menu" for an API, written in JSON or YAML: every endpoint, what to send, what you get back, and what errors can happen. <strong>Swagger UI</strong> is a web page that displays that menu nicely and lets you try each dish right there. With <code>@nestjs/swagger</code>, Nest writes the menu <em>from your code</em>, so the documentation can't silently drift away from what the API really does.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Step 1: install and set up.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npm i @nestjs/swagger
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      app.setGlobalPrefix('api');
+      app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+
+      const config = new DocumentBuilder()
+        .setTitle('Shop API')
+        .setDescription('Orders, products and users')
+        .setVersion('1.0')
+        .addBearerAuth()                 // adds the "Authorize" button for JWTs
+        .build();
+
+      const documentFactory = () => SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup('docs', app, documentFactory);
+      // UI:   http://localhost:3000/docs
+      // JSON: http://localhost:3000/docs-json   (feed this to client generators)
+
+      await app.listen(3000);
+    }
+    bootstrap();
+  </script>
+  <p>Already, every route appears in the UI. But request and response bodies are empty, because TypeScript types don't exist at runtime. Swagger needs metadata.</p>
+
+  <p><strong>Step 2: describe DTOs with <code>@ApiProperty</code>.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/dto/create-order.dto.ts">
+    import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+    export class OrderItemDto {
+      @ApiProperty({ example: 3, description: 'Product id' })
+      @IsInt() @IsPositive()
+      productId!: number;
+
+      @ApiProperty({ example: 2, minimum: 1, maximum: 100 })
+      @IsInt() @IsPositive() @Max(100)
+      quantity!: number;
+    }
+
+    export class CreateOrderDto {
+      @ApiProperty({ type: [OrderItemDto] })      // arrays: wrap the type in []
+      @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => OrderItemDto)
+      items!: OrderItemDto[];
+
+      @ApiPropertyOptional({ example: 'Leave at the front door', maxLength: 500 })
+      @IsOptional() @IsString() @MaxLength(500)
+      note?: string;
+    }
+  </script>
+
+  <p><strong>Step 3 (recommended): let the CLI plugin do most of it.</strong> Writing <code>@ApiProperty</code> on every field is repetitive. The Nest CLI plugin reads your TypeScript types, <code>?</code> optional marks, and even class-validator decorators and JSDoc comments at build time:</p>
+  <script type="text/x-code" data-lang="json" data-title="nest-cli.json">
+    {
+      "collection": "@nestjs/schematics",
+      "sourceRoot": "src",
+      "compilerOptions": {
+        "plugins": [
+          {
+            "name": "@nestjs/swagger",
+            "options": { "classValidatorShim": true, "introspectComments": true }
+          }
+        ]
+      }
+    }
+  </script>
+  <p>With the plugin, files named <code>*.dto.ts</code> and <code>*.entity.ts</code> get properties documented automatically. You only add <code>@ApiProperty</code> to add examples or override something.</p>
+
+  <p><strong>Step 4: document controllers</strong>: grouping, auth, responses and errors:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.controller.ts">
+    import {
+      ApiBearerAuth, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse,
+      ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse,
+    } from '@nestjs/swagger';
+
+    @ApiTags('orders')                   // groups endpoints in the UI
+    @ApiBearerAuth()                     // shows the lock icon, sends the token when you "Try it out"
+    @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Missing or invalid token' })
+    @Controller('orders')
+    export class OrdersController {
+      @Post()
+      @ApiOperation({ summary: 'Place an order' })
+      @ApiCreatedResponse({ type: OrderResponseDto })
+      @ApiConflictResponse({ type: ApiErrorDto, description: 'OUT_OF_STOCK: a product has insufficient stock' })
+      create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto): Promise<OrderResponseDto> {
+        return this.ordersService.placeOrder(user.id, dto);
+      }
+
+      @Get(':id')
+      @ApiOperation({ summary: 'Get one of my orders' })
+      @ApiOkResponse({ type: OrderResponseDto })
+      @ApiNotFoundResponse({ type: ApiErrorDto })
+      findOne(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+        return this.ordersService.getOrder(user.id, id);
+      }
+    }
+  </script>
+  <p><code>ApiErrorDto</code> is simply a class version of the error shape from the previous topic, so the documented error format matches what the global filter really sends.</p>
+
+  <p><strong>Step 5: generic responses</strong> such as <code>Paginated&lt;T&gt;</code>. Swagger can't read TypeScript generics, so you describe the schema with <code>getSchemaPath</code>:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/pagination/api-paginated-response.decorator.ts">
+    import { applyDecorators, Type } from '@nestjs/common';
+    import { ApiExtraModels, ApiOkResponse, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+
+    export class PageMetaDto {
+      @ApiProperty() page!: number;
+      @ApiProperty() limit!: number;
+      @ApiProperty() total!: number;
+      @ApiProperty() totalPages!: number;
+    }
+
+    export const ApiPaginatedResponse = <T extends Type<unknown>>(model: T) =>
+      applyDecorators(
+        ApiExtraModels(PageMetaDto, model),
+        ApiOkResponse({
+          schema: {
+            type: 'object',
+            properties: {
+              data: { type: 'array', items: { $ref: getSchemaPath(model) } },
+              meta: { $ref: getSchemaPath(PageMetaDto) },
+            },
+          },
+        }),
+      );
+
+    // usage
+    @Get()
+    @ApiPaginatedResponse(OrderSummaryDto)
+    list(@CurrentUser() user: AuthUser, @Query() query: ListOrdersQuery) { /* ... */ }
+  </script>
+
+  <p><strong>Step 6: use mapped types from <code>@nestjs/swagger</code></strong>, not from <code>@nestjs/mapped-types</code>, so derived DTOs keep their documentation:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { PartialType, PickType } from '@nestjs/swagger'; // ✅ copies validation AND Swagger metadata
+
+    export class UpdateProductDto extends PartialType(CreateProductDto) {}
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>The OpenAPI JSON is a <em>contract</em> you can use beyond the docs page:</p>
+    <ul>
+      <li><strong>Generate typed clients</strong> for the frontend (e.g. <code>openapi-typescript</code> or <code>orval</code> from <code>/docs-json</code>), so a renamed field becomes a frontend compile error instead of a production bug.</li>
+      <li><strong>Check for breaking changes in CI</strong> by diffing the JSON between branches (tools like <code>oasdiff</code>).</li>
+      <li><strong>Protect or disable</strong> the docs in production if the API is private:</li>
+    </ul>
+    <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+      if (config.get('NODE_ENV') !== 'production') {
+        SwaggerModule.setup('docs', app, documentFactory);
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Declaring DTOs as interfaces or types. Swagger (like validation) can't see them at runtime. Use classes.</li>
+      <li>Importing <code>PartialType</code> from <code>@nestjs/mapped-types</code> in a Swagger project. Derived DTOs then show up empty in the docs.</li>
+      <li>Documenting only success responses. Clients need to know about 400/401/404/409 and their error codes too.</li>
+      <li>Forgetting <code>type: [ItemDto]</code> for arrays or <code>enum: OrderStatus</code> for enums when not using the CLI plugin.</li>
+      <li>Writing docs by hand in a separate YAML file that slowly stops matching the code.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Document <code>PATCH /orders/:id/status</code> (admin only). It takes <code>{ "status": "SHIPPED" }</code>, returns the updated order, and can fail with 404 (not found) or 409 (invalid transition). Write the DTO and the decorated controller method.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        export class UpdateOrderStatusDto {
+          @ApiProperty({ enum: OrderStatus, example: OrderStatus.SHIPPED })
+          @IsEnum(OrderStatus)
+          status!: OrderStatus;
+        }
+
+        @Patch(':id/status')
+        @Roles('ADMIN')
+        @ApiOperation({ summary: 'Change order status (admin)' })
+        @ApiParam({ name: 'id', type: Number, example: 42 })
+        @ApiOkResponse({ type: OrderResponseDto })
+        @ApiForbiddenResponse({ type: ApiErrorDto, description: 'Not an admin' })
+        @ApiNotFoundResponse({ type: ApiErrorDto })
+        @ApiConflictResponse({ type: ApiErrorDto, description: 'INVALID_ORDER_TRANSITION' })
+        updateStatus(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateOrderStatusDto) {
+          return this.ordersAdminService.changeStatus(id, dto.status);
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What's the difference between OpenAPI and Swagger?</summary>
+      <p>OpenAPI is the specification format (a JSON/YAML description of an API). Swagger is the name of the original project and of tools around it, such as Swagger UI, which renders an OpenAPI document as interactive docs.</p></details>
+    <details><summary>What does the <code>@nestjs/swagger</code> CLI plugin do?</summary>
+      <p>At compile time, it analyzes DTO and entity classes and adds <code>@ApiProperty</code> metadata automatically from TypeScript types, optional markers, class-validator decorators and comments. That removes most of the manual decorators.</p></details>
+    <details><summary>How do you document a generic paginated response?</summary>
+      <p>Register the models with <code>@ApiExtraModels</code>, then describe the schema manually with <code>getSchemaPath(model)</code> for the <code>data</code> array, usually wrapped in a custom decorator built with <code>applyDecorators</code>.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Generate the docs from code: set up <code>SwaggerModule</code>, enable the CLI plugin, document errors as well as successes, and treat the OpenAPI JSON as a contract for clients and CI.</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="topic" id="idempotency">
+  <div class="topic-head"><span class="num">9</span><h2>Idempotency</h2></div>
+  <p class="tagline">safe retries for POST/PUT requests</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>You press the elevator button five times. The elevator still comes <em>once</em>. That button is <strong>idempotent</strong>: pressing it again doesn't do anything extra. Now imagine a "Pay $50" button where the network drops after you tap it. Did it go through? If you tap again and it charges you twice, that's a real problem. Idempotency in an API means the client can <strong>safely retry</strong> a request, and the server makes sure the action happens only once.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Why retries happen.</strong> Networks fail in the worst place: <em>after</em> the server did the work but <em>before</em> the client got the answer. Mobile apps, HTTP clients and load balancers retry automatically. Users double-click. Without protection:</p>
+  <script type="text/x-code" data-lang="http">
+    POST /orders           → server creates order 42, response lost on a flaky 4G connection
+    POST /orders (retry)   → server creates order 43 😱 the customer is charged twice
+  </script>
+
+  <p><strong>Which methods are already idempotent?</strong></p>
+  <table>
+    <tr><th>Method</th><th>Idempotent by definition?</th><th>Why</th></tr>
+    <tr><td><code>GET</code></td><td>Yes</td><td>Reading changes nothing</td></tr>
+    <tr><td><code>PUT /users/7/avatar</code></td><td>Yes</td><td>"Set it to X" twice gives the same result</td></tr>
+    <tr><td><code>DELETE /orders/42</code></td><td>Yes</td><td>Deleted twice is still deleted (2nd call may return 404, but the <em>state</em> is the same)</td></tr>
+    <tr><td><code>PATCH /products/3 { stock: 10 }</code></td><td>Depends</td><td>Setting a value is idempotent…</td></tr>
+    <tr><td><code>PATCH /products/3 { stockDelta: +5 }</code></td><td>No</td><td>…but "add 5" twice adds 10</td></tr>
+    <tr><td><code>POST /orders</code></td><td>No</td><td>Each call creates a new resource</td></tr>
+  </table>
+  <p>Note: "idempotent" is a promise you must <em>implement</em>. A PUT handler that also appends to a history table or sends an email each time isn't truly idempotent.</p>
+
+  <p><strong>Solution 1: design idempotent operations.</strong> Prefer "set to" over "change by", and use upserts:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ not idempotent: retry adds the item twice
+    await this.prisma.cartItem.create({ data: { cartId, productId, quantity: 1 } });
+
+    // ✅ idempotent: "the cart contains product 3 with quantity 2", however many times it's called
+    // (requires @@unique([cartId, productId]) on CartItem)
+    await this.prisma.cartItem.upsert({
+      where: { cartId_productId: { cartId, productId } },
+      create: { cartId, productId, quantity: 2 },
+      update: { quantity: 2 },
+    });
+  </script>
+
+  <p><strong>Solution 2: the <code>Idempotency-Key</code> header</strong> for operations that must be POST (create an order, charge a card). This is what Stripe and many payment APIs use. The client generates a unique key (a UUID) <em>once per user action</em> and sends the same key on every retry:</p>
+  <script type="text/x-code" data-lang="http">
+    POST /orders
+    Authorization: Bearer eyJ...
+    Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+    Content-Type: application/json
+
+    { "items": [{ "productId": 3, "quantity": 2 }] }
+
+    HTTP/1.1 201 Created
+    { "id": 42, "status": "PENDING", "total": "30.00" }
+  </script>
+  <script type="text/x-code" data-lang="http" data-title="retry with the same key → same answer, no new order">
+    POST /orders
+    Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+    Content-Type: application/json
+
+    { "items": [{ "productId": 3, "quantity": 2 }] }
+
+    HTTP/1.1 201 Created
+    Idempotent-Replayed: true
+    { "id": 42, "status": "PENDING", "total": "30.00" }
+  </script>
+
+  <p>The server's rules:</p>
+  <ol>
+    <li><strong>New key</strong> → reserve it, run the operation, store the response, return it.</li>
+    <li><strong>Known key, finished</strong> → return the stored response without running anything.</li>
+    <li><strong>Known key, still running</strong> (two retries racing) → <code>409 Conflict</code>: "in progress, retry later".</li>
+    <li><strong>Known key, different body</strong> → <code>422</code>: the client reused a key for a different request, which is a client bug.</li>
+  </ol>
+
+  <p><strong>Step 1: a table to remember keys.</strong> The composite primary key is what makes it safe under concurrency: PostgreSQL guarantees only one insert wins.</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    model IdempotencyKey {
+      userId       Int
+      key          String
+      requestHash  String
+      responseBody Json?
+      completedAt  DateTime?
+      createdAt    DateTime  @default(now())
+
+      @@id([userId, key])        // keys are scoped per user
+      @@index([createdAt])       // for the cleanup job
+    }
+  </script>
+
+  <p><strong>Step 2: an interceptor</strong> that wraps any handler you mark with it:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/idempotency/idempotency.interceptor.ts">
+    import {
+      BadRequestException, CallHandler, ConflictException, ExecutionContext,
+      Injectable, NestInterceptor, UnprocessableEntityException,
+    } from '@nestjs/common';
+    import { Prisma } from '@prisma/client';
+    import { createHash } from 'node:crypto';
+    import { Request, Response } from 'express';
+    import { Observable, catchError, concatMap, from, of, throwError } from 'rxjs';
+
+    @Injectable()
+    export class IdempotencyInterceptor implements NestInterceptor {
+      constructor(private readonly prisma: PrismaService) {}
+
+      async intercept(ctx: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+        const http = ctx.switchToHttp();
+        const req = http.getRequest<Request & { user: AuthUser }>();
+        const res = http.getResponse<Response>();
+
+        const key = req.header('Idempotency-Key');
+        if (!key || key.length > 100) {
+          throw new BadRequestException('A valid Idempotency-Key header is required');
+        }
+        const userId = req.user.id;
+        const id = { userId_key: { userId, key } };
+        const requestHash = createHash('sha256').update(JSON.stringify(req.body ?? {})).digest('hex');
+
+        // 1. Try to reserve the key. Only one concurrent request can succeed.
+        try {
+          await this.prisma.idempotencyKey.create({ data: { userId, key, requestHash } });
+        } catch (e) {
+          if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
+
+          // 2. The key already exists: replay, or refuse.
+          const existing = await this.prisma.idempotencyKey.findUnique({ where: id });
+          if (!existing) throw new ConflictException('Please retry');
+          if (existing.requestHash !== requestHash) {
+            throw new UnprocessableEntityException('Idempotency-Key was already used with a different request body');
+          }
+          if (!existing.completedAt) {
+            throw new ConflictException('A request with this Idempotency-Key is still being processed');
+          }
+          res.setHeader('Idempotent-Replayed', 'true');
+          return of(existing.responseBody); // the handler does NOT run again
+        }
+
+        // 3. First time: run the handler, then store its response.
+        return next.handle().pipe(
+          concatMap(async (body) => {
+            await this.prisma.idempotencyKey.update({
+              where: id,
+              data: {
+                responseBody: JSON.parse(JSON.stringify(body ?? null)) as Prisma.InputJsonValue,
+                completedAt: new Date(),
+              },
+            });
+            return body;
+          }),
+          // 4. If the handler failed, release the key so the client can retry.
+          catchError((err) =>
+            from(this.prisma.idempotencyKey.delete({ where: id })).pipe(
+              concatMap(() => throwError(() => err)),
+            ),
+          ),
+        );
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+    @Post()
+    @UseInterceptors(IdempotencyInterceptor)
+    create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
+      return this.ordersService.placeOrder(user.id, dto);
+    }
+  </script>
+  <p>Two details: the replay returns the same status code because Nest applies the route's status (201 for this POST) to the replayed body as well; and keys should expire. A daily job can delete rows older than 24 hours (<code>deleteMany({ where: { createdAt: { lt: cutoff } } })</code>), which is why <code>createdAt</code> is indexed.</p>
+
+  <p><strong>Solution 3: a natural unique constraint.</strong> Sometimes the data itself has a unique business identity, and the database can enforce "only once" without a separate table. For example, a payment webhook carries the provider's event id:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // schema: model Payment { ... providerEventId String @unique }
+    try {
+      await this.prisma.payment.create({ data: { orderId, amountCents, providerEventId: event.id } });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        return; // ✅ already processed this webhook: do nothing, return 200 so the provider stops retrying
+      }
+      throw e;
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Use the <code>Idempotency-Key</code> interceptor on the few endpoints where duplicates cost money or trust: placing orders, payments, refunds, sending invitations. Webhook handlers use a unique constraint on the provider's event id. On the client side, generate the key when the user starts the action (e.g. on the "Place order" screen with <code>crypto.randomUUID()</code>), and reuse it for every retry of that action.</p>
+    <p>For critical flows, also consider putting the order creation and the "mark key completed" update in the <em>same</em> database transaction, so a crash between the two can't leave a created order with a released key.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Check-then-insert without a unique constraint (<code>findUnique</code>, then <code>create</code>). Two simultaneous retries both see "not found" and both run. Let the database's unique constraint decide.</li>
+      <li>Keys that are global instead of per user, so one user could replay another user's response.</li>
+      <li>Not comparing the request body, so a reused key silently returns the response of a different order.</li>
+      <li>Keeping the key reserved after a failed request, which blocks the client from ever retrying.</li>
+      <li>Calling non-idempotent things "idempotent": a PUT that also increments a counter or sends an email every time.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A client sends <code>POST /payments</code> with <code>Idempotency-Key: abc</code>. Walk through what happens, and which status each request gets, in this sequence: (1) first request, takes 3 seconds; (2) a retry with the same key and body arrives after 1 second; (3) a retry after 5 seconds; (4) a request with key <code>abc</code> but a different amount.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>(1)</strong> The key is new: the insert succeeds, the payment runs, and the response is stored with <code>completedAt</code>. Status <strong>201</strong>.</li>
+        <li><strong>(2)</strong> The insert fails with P2002. The row exists, the hash matches, but <code>completedAt</code> is null, so: <strong>409</strong> "still being processed". No second charge.</li>
+        <li><strong>(3)</strong> The row exists, the hash matches, and it's completed: the stored body is returned with <code>Idempotent-Replayed: true</code>, status <strong>201</strong>. The handler doesn't run.</li>
+        <li><strong>(4)</strong> The row exists, but the hash differs: <strong>422</strong>. The client has a bug (it reused a key for a different payment).</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does idempotent mean, and which HTTP methods are idempotent?</summary>
+      <p>An operation is idempotent if performing it several times has the same effect on server state as performing it once. GET, HEAD, OPTIONS, PUT and DELETE are defined as idempotent. POST is not, and PATCH isn't guaranteed to be.</p></details>
+    <details><summary>How would you make <code>POST /payments</code> safe to retry?</summary>
+      <p>Require an <code>Idempotency-Key</code> header generated by the client per action. Store it with a unique constraint (scoped per user) and a hash of the request. The first request runs and saves its response; retries get the saved response; concurrent duplicates get 409; a reused key with a different body gets 422. Expire keys after a while.</p></details>
+    <details><summary>Why isn't "check if the key exists, then insert" enough?</summary>
+      <p>It's a race condition. Two concurrent requests can both see "not found" and both proceed. A database unique constraint (or primary key) makes the reservation atomic, so exactly one insert succeeds and the other gets a unique violation.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Networks fail and clients retry, so design operations as "set to" where possible, protect important POSTs with an <code>Idempotency-Key</code> backed by a unique constraint, and let the database decide who wins.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Architecture.html">← Prev: 5. Architecture</a>
+  <a href="Authentication-and-Authorization.html">Next: 7. Authentication &amp; Authorization →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Authentication &amp; Authorization</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 7 of 12</span>
+  </nav>
+  <h1>7. Authentication &amp; Authorization</h1>
+  <p class="goal"><strong>Goal:</strong> Protect resources and know exactly who is doing what.</p>
+  <p class="howto">How to use this page: the eight points build <strong>one</strong> auth system for a shop API, step by step: register → login → JWT access + refresh tokens → guards → roles → rotation, then compare sessions and OAuth. Read the points in order, type the code into a NestJS + Prisma project, do each exercise <em>before</em> opening the answer, then answer the interview questions out loud.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#password-hashing">Password hashing</a></li>
+      <li><a href="#jwt">JWT</a></li>
+      <li><a href="#passport-strategies">Passport strategies</a></li>
+      <li><a href="#guards">Guards</a></li>
+      <li><a href="#rbac">RBAC</a></li>
+      <li><a href="#refresh-token-rotation">Refresh token rotation</a></li>
+      <li><a href="#session-vs-token">Session vs token auth</a></li>
+      <li><a href="#oauth-basics">OAuth basics</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="password-hashing">
+  <div class="topic-head"><span class="num">1</span><h2>Password hashing</h2></div>
+  <p class="tagline">bcrypt or argon2</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>You must never keep a user's real password. Think of a meat grinder: you can turn a steak into minced meat, but you can never turn the minced meat back into the steak. A <em>hash function</em> is that grinder for passwords. When the user registers, you store only the "minced" version. When they log in, you grind the password they typed and check whether it gives the same result. If a hacker steals your database, they get only minced meat, and a <em>slow</em> grinder like bcrypt or argon2 makes guessing the original passwords very expensive.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Hashing is not encryption.</strong> Encryption is two-way: with the key you can decrypt. Hashing is one-way: there is no key and no "un-hash". That is exactly what we want for passwords. The server never needs to know the password again. It only needs to <em>check</em> it.</p>
+
+  <table>
+    <tr><th>Technique</th><th>Reversible?</th><th>Good for passwords?</th></tr>
+    <tr><td>Plain text</td><td>Not needed, it's readable</td><td>❌ Never</td></tr>
+    <tr><td>Encryption (AES)</td><td>Yes, with the key</td><td>❌ If the key leaks, all passwords leak</td></tr>
+    <tr><td>Fast hash (MD5, SHA-256)</td><td>No</td><td>❌ A GPU can try billions of guesses per second</td></tr>
+    <tr><td>Slow password hash (bcrypt, argon2id)</td><td>No</td><td>✅ Designed to be slow and salted</td></tr>
+  </table>
+
+  <p><strong>Why "slow" matters.</strong> Attackers who steal a database do not reverse hashes. They <em>guess</em>: hash "123456", compare, hash "password", compare, and so on, using huge lists of leaked passwords. SHA-256 is designed to be fast, so a single graphics card can test billions of guesses per second. bcrypt and argon2 are designed to be slow on purpose (about 50–250 ms per hash), and argon2 also needs a lot of memory, which GPUs are bad at. For your login endpoint, 100 ms is nothing. For an attacker who wants to try a billion guesses, it is years of work.</p>
+
+  <p><strong>Why "salted" matters.</strong> A <em>salt</em> is a random value mixed into each password before hashing. Two users with the password <code>Summer2024!</code> get completely different hashes. This kills "rainbow tables" (pre-computed hash lists) and stops an attacker from cracking everybody who shares the same password at once. bcrypt and argon2 generate the salt for you and store it <em>inside</em> the hash string, so you need only one column.</p>
+
+  <script type="text/x-code" data-lang="plaintext">
+    argon2id hash (one string, everything included):
+    $argon2id$v=19$m=65536,t=3,p=4$Zm9vYmFyc2FsdA$3q2+7wZ...
+      │         │    │                │              └── the hash itself
+      │         │    │                └── the random salt
+      │         │    └── cost: memory (64 MB), iterations (3), parallelism (4)
+      │         └── version
+      └── algorithm
+
+    bcrypt hash:
+    $2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW
+      │  │  └── 22 chars of salt + 31 chars of hash
+      │  └── cost factor 12 (2^12 rounds)
+      └── algorithm version
+  </script>
+
+  <p><strong>Using argon2 in Node.</strong> Install the <code>argon2</code> package (it ships its own types). Its defaults are argon2id with sensible costs, so the simplest call is already a good one:</p>
+  <script type="text/x-code" data-lang="bash">
+    npm install argon2
+    # or, if you choose bcrypt instead:
+    npm install bcrypt && npm install -D @types/bcrypt
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    import * as argon2 from 'argon2';
+
+    // At registration
+    const hash = await argon2.hash('Summer2024!');          // argon2id by default
+    // '$argon2id$v=19$m=65536,t=3,p=4$...'
+
+    // At login — NOTE the order: (hash, plainPassword)
+    const ok = await argon2.verify(hash, 'Summer2024!');    // true
+    const bad = await argon2.verify(hash, 'summer2024!');   // false
+
+    // ❌ Never compare by hashing again and using ===
+    // (await argon2.hash('Summer2024!')) === hash  → always false, the salt is different each time!
+  </script>
+
+  <p><strong>The same with bcrypt.</strong> bcrypt is older (1999) but still safe and very common. The number you pass is the <em>cost factor</em>: each +1 doubles the time. 10–12 is typical today.</p>
+  <script type="text/x-code" data-lang="typescript">
+    import * as bcrypt from 'bcrypt';
+
+    const hash = await bcrypt.hash('Summer2024!', 12);       // salt generated automatically
+    const ok = await bcrypt.compare('Summer2024!', hash);    // NOTE the order: (plain, hash)
+
+    // ⚠️ bcrypt only uses the first 72 BYTES of the input.
+    // 'a'.repeat(72) + 'X' and 'a'.repeat(72) + 'Y' produce the SAME result.
+    // → limit password length in your DTO (e.g. @MaxLength(72)) or prefer argon2.
+  </script>
+
+  <table>
+    <tr><th></th><th>bcrypt</th><th>argon2id</th></tr>
+    <tr><td>Age / status</td><td>1999, battle-tested</td><td>Won the 2015 Password Hashing Competition; OWASP's first choice</td></tr>
+    <tr><td>Resists GPU attacks</td><td>Medium (CPU-hard only)</td><td>Strong (memory-hard)</td></tr>
+    <tr><td>Input limit</td><td>72 bytes</td><td>No practical limit</td></tr>
+    <tr><td>Node package</td><td><code>bcrypt</code> (native) or <code>bcryptjs</code> (pure JS, slower)</td><td><code>argon2</code> (native)</td></tr>
+  </table>
+
+  <p><strong>Upgrading old hashes.</strong> Costs should go up as hardware gets faster. Because the parameters are stored inside the hash, you can check at login whether a hash is "old" and re-hash it with the new settings, since that is the one moment you have the plain password:</p>
+  <script type="text/x-code" data-lang="typescript">
+    if (await argon2.verify(user.passwordHash, password)) {
+      if (argon2.needsRehash(user.passwordHash, { memoryCost: 2 ** 16, timeCost: 3 })) {
+        const newHash = await argon2.hash(password, { memoryCost: 2 ** 16, timeCost: 3 });
+        await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
+      }
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>This is the first step of our auth flow: the <code>User</code> model and the <strong>register</strong> endpoint. The column is called <code>passwordHash</code>, not <code>password</code>, so nobody ever thinks it contains a real password. It is nullable because users who sign in with Google (point 8) have no password.</p>
+    <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+      enum Role {
+        USER
+        ADMIN
+      }
+
+      model User {
+        id           Int      @id @default(autoincrement())
+        email        String   @unique
+        name         String?
+        passwordHash String?  // null for OAuth-only users
+        role         Role     @default(USER)
+        createdAt    DateTime @default(now())
+        updatedAt    DateTime @updatedAt
+
+        refreshTokens RefreshToken[]  // added in point 6
+        accounts      Account[]       // added in point 8
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/dto/register.dto.ts">
+      import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+      export class RegisterDto {
+        @IsEmail()
+        email!: string;
+
+        @IsString()
+        @MinLength(8)
+        @MaxLength(72)        // safe for bcrypt too; stops 1 MB "passwords" being hashed
+        password!: string;
+
+        @IsOptional()
+        @IsString()
+        name?: string;
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts">
+      import { ConflictException, Injectable } from '@nestjs/common';
+      import { Prisma } from '@prisma/client';
+      import * as argon2 from 'argon2';
+      import { PrismaService } from '../prisma/prisma.service';
+      import { RegisterDto } from './dto/register.dto';
+
+      @Injectable()
+      export class AuthService {
+        constructor(private readonly prisma: PrismaService) {}
+
+        async register(dto: RegisterDto) {
+          const passwordHash = await argon2.hash(dto.password);
+          try {
+            return await this.prisma.user.create({
+              data: { email: dto.email.toLowerCase(), name: dto.name, passwordHash },
+              select: { id: true, email: true, name: true, role: true }, // ✅ never return the hash
+            });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+              throw new ConflictException('Email already registered');
+            }
+            throw e;
+          }
+        }
+      }
+    </script>
+    <p>Note the <code>select</code>: the response must never contain <code>passwordHash</code>, not even a hashed value.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using MD5, SHA-1 or SHA-256 for passwords "because it's a hash". They are far too fast. Use argon2id or bcrypt.</li>
+      <li>Swapping the argument order: it's <code>argon2.verify(hash, plain)</code> but <code>bcrypt.compare(plain, hash)</code>. The wrong order simply returns <code>false</code>, which looks like "wrong password".</li>
+      <li>Returning the user object straight from Prisma, so <code>passwordHash</code> ends up in the JSON response. Use <code>select</code> or a response DTO.</li>
+      <li>Logging the request body of <code>/auth/register</code> or <code>/auth/login</code>, so plain passwords end up in your log files.</li>
+      <li>Using the synchronous APIs (<code>bcrypt.hashSync</code>). They block the event loop for 100+ ms, so every other request waits.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>PasswordService</code> with two methods: <code>hash(plain)</code> and <code>verify(hash, plain)</code>. Use argon2 inside it. Why is wrapping the library in your own service useful?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="auth/password.service.ts">
+        import { Injectable } from '@nestjs/common';
+        import * as argon2 from 'argon2';
+
+        @Injectable()
+        export class PasswordService {
+          hash(plain: string): Promise<string> {
+            return argon2.hash(plain, { type: argon2.argon2id });
+          }
+
+          async verify(hash: string, plain: string): Promise<boolean> {
+            try {
+              return await argon2.verify(hash, plain);
+            } catch {
+              return false; // malformed hash in the DB → treat as "wrong password"
+            }
+          }
+        }
+      </script>
+      <p>Why: (1) the rest of the app doesn't depend on argon2, so you can switch to bcrypt in one file; (2) in tests you can replace <code>PasswordService</code> with a fast fake instead of running a slow real hash; (3) the "argument order" trap exists in one place only.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Why not just encrypt passwords with AES?</summary>
+      <p>Encryption is reversible. Whoever gets the key (a leaked <code>.env</code>, a malicious insider) can decrypt every password. Hashing is one-way, so even the server can't recover the password. The server only needs to verify it.</p></details>
+    <details><summary>What is a salt, and where is it stored?</summary>
+      <p>A random value added to each password before hashing, so identical passwords produce different hashes and pre-computed tables are useless. bcrypt and argon2 store the salt inside the hash string, so no separate column is needed. The salt is not secret.</p></details>
+    <details><summary>Why is a slow hash function good here, when we usually want fast code?</summary>
+      <p>The legitimate server hashes once per login, so 100 ms is fine. An attacker must hash billions of guesses, so every millisecond is multiplied by billions. Memory-hard algorithms like argon2id also make GPU and ASIC attacks much more expensive.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Store only an argon2id (or bcrypt) hash, verify with the library's own <code>verify</code>/<code>compare</code>, and never let the hash leave the server.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="jwt">
+  <div class="topic-head"><span class="num">2</span><h2>JWT</h2></div>
+  <p class="tagline">access tokens and refresh tokens</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A JWT is like a festival wristband. At the entrance (login) you show your ID once, and you get a wristband printed with "Name: An, VIP: yes, valid until 18:00", plus a tamper-proof seal. After that, every stand just looks at the wristband. It doesn't call the entrance to ask who you are. The seal proves the festival printed it, and nobody can change "VIP: no" to "VIP: yes" without breaking the seal. An <em>access token</em> is a wristband that expires quickly (minutes). A <em>refresh token</em> is a voucher, kept safely in your pocket, that you can trade at the entrance for a new wristband.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Structure.</strong> A JWT (JSON Web Token) is three Base64URL strings joined by dots: <code>header.payload.signature</code>.</p>
+  <script type="text/x-code" data-lang="plaintext">
+    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQyLCJlbWFpbCI6ImFuQHNob3AuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3MjgxMjAwMDAsImV4cCI6MTcyODEyMDkwMH0.Q1x8...
+
+    header   → {"alg":"HS256","typ":"JWT"}
+    payload  → {"sub":42,"email":"an@shop.com","role":"USER","iat":1728120000,"exp":1728120900}
+    signature→ HMAC-SHA256(header + "." + payload, SECRET)
+  </script>
+  <p>The important lesson: <strong>the payload is only encoded, not encrypted</strong>. Anyone can paste a token into jwt.io and read it. The signature does not hide the data. It only proves that the data was created by someone who knows the secret and hasn't been changed since. So never put secrets (passwords, card numbers, internal notes) in a JWT.</p>
+
+  <p><strong>Standard claims.</strong> "Claims" are the fields in the payload. Some have reserved names:</p>
+  <table>
+    <tr><th>Claim</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>sub</code></td><td>Subject: who the token is about (the user id)</td><td><code>42</code></td></tr>
+    <tr><td><code>iat</code></td><td>Issued at (Unix seconds)</td><td><code>1728120000</code></td></tr>
+    <tr><td><code>exp</code></td><td>Expires at. Verification fails after it</td><td><code>1728120900</code> (+15 min)</td></tr>
+    <tr><td><code>jti</code></td><td>JWT ID: a unique id for this token</td><td><code>"9b1d…"</code></td></tr>
+    <tr><td><code>iss</code> / <code>aud</code></td><td>Issuer / audience: who made it, who it is for</td><td><code>"shop-api"</code></td></tr>
+  </table>
+
+  <p><strong>Signing and verifying with <code>@nestjs/jwt</code>.</strong> <code>JwtService</code> wraps the <code>jsonwebtoken</code> library. <code>signAsync</code> creates a token; <code>verifyAsync</code> checks the signature <em>and</em> the expiry, and throws if either is wrong.</p>
+  <script type="text/x-code" data-lang="typescript">
+    const token = await this.jwt.signAsync(
+      { sub: 42, email: 'an@shop.com', role: 'USER' },
+      { secret: 'access-secret', expiresIn: '15m' },
+    );
+
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub: number; role: string }>(token, {
+        secret: 'access-secret',
+      });
+      payload.sub; // 42
+    } catch (e) {
+      // TokenExpiredError, JsonWebTokenError ('invalid signature'), ...
+    }
+
+    // ❌ decode() does NOT check the signature — never use it to trust a token
+    const unsafe = this.jwt.decode(token);
+  </script>
+
+  <p><strong>Why two tokens?</strong> A JWT is <em>stateless</em>: the server checks it with maths only, no database lookup. That is fast and scales well, but it has a big downside: <strong>you can't easily cancel a JWT</strong> before it expires. If a token valid for 30 days is stolen, the thief has 30 days. The solution is to split the job in two:</p>
+  <table>
+    <tr><th></th><th>Access token</th><th>Refresh token</th></tr>
+    <tr><td>Purpose</td><td>Sent with every API request</td><td>Used only to get a new access token</td></tr>
+    <tr><td>Lifetime</td><td>Short: 5–15 minutes</td><td>Long: 7–30 days</td></tr>
+    <tr><td>Checked how</td><td>Signature only (stateless, fast)</td><td>Signature <strong>and</strong> database record (can be revoked)</td></tr>
+    <tr><td>Where the client keeps it</td><td>Memory (JS variable)</td><td>httpOnly cookie, sent only to <code>/auth/refresh</code></td></tr>
+    <tr><td>Secret</td><td><code>JWT_ACCESS_SECRET</code></td><td><code>JWT_REFRESH_SECRET</code> (different!)</td></tr>
+  </table>
+  <p>So a stolen access token works for at most 15 minutes, and a stolen refresh token can be revoked in the database. You get the speed of stateless tokens for 99% of requests and control over the long-lived part.</p>
+
+  <script type="text/x-code" data-lang="http">
+    POST /auth/login            { email, password }
+    ← 200 { accessToken }       + Set-Cookie: refresh_token=...; HttpOnly; Secure; Path=/auth
+
+    GET /orders                 Authorization: Bearer <accessToken>
+    ← 200 [...]
+
+    ... 15 minutes later ...
+    GET /orders                 Authorization: Bearer <expired accessToken>
+    ← 401
+
+    POST /auth/refresh          Cookie: refresh_token=...
+    ← 200 { accessToken: <new> } + Set-Cookie: refresh_token=<new>   (rotation, see point 6)
+  </script>
+
+  <p><strong>Algorithms.</strong> <code>HS256</code> uses one shared secret to sign and verify: simple, fine when only your API verifies tokens. <code>RS256</code>/<code>ES256</code> sign with a private key and verify with a public key: useful when other services must verify tokens but must <em>not</em> be able to create them. For a single NestJS API, HS256 with a long random secret (at least 32 bytes) is fine.</p>
+  <script type="text/x-code" data-lang="bash">
+    # generate strong secrets for .env
+    node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 2 of our flow: configure <code>JwtModule</code> and add a <code>login</code> method that returns a token pair. Lifetimes are written as literal constants. This also keeps TypeScript happy, because newer <code>jsonwebtoken</code> types accept only strings like <code>'15m'</code> or a number of seconds, not any <code>string</code>.</p>
+    <script type="text/x-code" data-lang="ini" data-title=".env">
+      JWT_ACCESS_SECRET=change-me-48-random-bytes
+      JWT_REFRESH_SECRET=change-me-another-48-random-bytes
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.constants.ts">
+      export const ACCESS_TOKEN_TTL = '15m';
+      export const REFRESH_TOKEN_TTL = '7d';
+      export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // for DB expiry + cookie maxAge
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/types/jwt-payload.type.ts">
+      import { Role } from '@prisma/client';
+
+      export type JwtPayload = {
+        sub: number;     // user id
+        email: string;
+        role: Role;
+      };
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.module.ts">
+      import { Module } from '@nestjs/common';
+      import { ConfigService } from '@nestjs/config';
+      import { JwtModule } from '@nestjs/jwt';
+      import { PassportModule } from '@nestjs/passport';
+      import { ACCESS_TOKEN_TTL } from './auth.constants';
+      import { AuthController } from './auth.controller';
+      import { AuthService } from './auth.service';
+
+      @Module({
+        imports: [
+          PassportModule,
+          JwtModule.registerAsync({
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+              secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'), // default = access secret
+              signOptions: { expiresIn: ACCESS_TOKEN_TTL },
+            }),
+          }),
+        ],
+        controllers: [AuthController],
+        providers: [AuthService], // strategies are added in point 3
+      })
+      export class AuthModule {}
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts (token part)">
+      import { randomUUID } from 'node:crypto';
+
+      // inside AuthService — constructor now also gets JwtService and ConfigService
+      async issueTokens(user: { id: number; email: string; role: Role }) {
+        const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+
+        const accessToken = await this.jwt.signAsync(payload); // uses module defaults (15m)
+
+        const refreshToken = await this.jwt.signAsync(
+          { sub: user.id, jti: randomUUID() },                 // minimal payload
+          {
+            secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+            expiresIn: REFRESH_TOKEN_TTL,
+          },
+        );
+        // point 6 stores a hash of refreshToken in the database
+        return { accessToken, refreshToken };
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Putting sensitive data in the payload, believing it's encrypted. It's only Base64. Anybody can read it.</li>
+      <li>Long-lived access tokens (7 days, "never expires"), so a stolen token can't be stopped. Keep access tokens short and use refresh tokens.</li>
+      <li>Using the same secret for access and refresh tokens, so a refresh token is accepted as an access token. Use different secrets (or check a <code>typ</code> claim).</li>
+      <li>Using <code>jwt.decode()</code> to read a token you then trust. Only <code>verify</code> checks the signature.</li>
+      <li>Weak or committed secrets (<code>"secret"</code>, <code>"jwt123"</code>). Generate long random secrets and keep them out of git.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A colleague suggests: "Let's put <code>isPaidCustomer</code> and the user's address in the access token, so we don't hit the database." Which of these is OK, which isn't, and why? Also: what happens if an admin changes a user's role from <code>ADMIN</code> to <code>USER</code>?</p>
+    <details>
+      <summary>Show answer</summary>
+      <p><strong>Address: no.</strong> It is personal data, and the payload is readable by anyone who sees the token (browser extensions, logs, proxies).</p>
+      <p><strong><code>isPaidCustomer</code>: technically possible, but risky.</strong> It is not secret, but it can become <em>stale</em>. If the subscription ends, the token still says <code>true</code> until it expires.</p>
+      <p><strong>Role change:</strong> the old access token still says <code>ADMIN</code> until it expires (max 15 minutes). This is the accepted trade-off of short-lived access tokens. If you need instant effect, revoke the user's refresh tokens and, for very sensitive actions, re-check the role in the database.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Is a JWT encrypted?</summary>
+      <p>A normal JWT (JWS) is <em>signed</em>, not encrypted. The header and payload are Base64URL-encoded and readable by anyone. The signature guarantees integrity and authenticity, not confidentiality. Encrypted tokens (JWE) exist, but they are rarely needed.</p></details>
+    <details><summary>Why use both access and refresh tokens instead of one long-lived token?</summary>
+      <p>Access tokens are verified without a database lookup, so they can't be revoked. Keeping them short limits the damage of theft. The long-lived refresh token is checked against the database on every use, so it can be revoked (logout, password change, theft detection).</p></details>
+    <details><summary>HS256 vs RS256?</summary>
+      <p>HS256 is symmetric: the same secret signs and verifies, so every verifier could also forge tokens. RS256 is asymmetric: a private key signs, and the public key only verifies. Use RS256 when several services or third parties verify your tokens.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A JWT is a signed, readable claim. Keep access tokens short and stateless, and keep refresh tokens long-lived, stored in the database and revocable.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="passport-strategies">
+  <div class="topic-head"><span class="num">3</span><h2>Passport strategies</h2></div>
+  <p class="tagline">local strategy and jwt strategy</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Passport is a security desk with interchangeable "checkers". Each checker (a <em>strategy</em>) knows how to check one kind of proof. The <strong>local</strong> checker looks at an email and a password. The <strong>jwt</strong> checker looks at the wristband (token) in the <code>Authorization</code> header. Whichever checker you choose, the result is the same: if the proof is good, the person's details are pinned to the request as <code>req.user</code>. If not, the request is turned away with 401.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The three pieces.</strong> In NestJS, Passport has three parts that are easy to mix up:</p>
+  <table>
+    <tr><th>Piece</th><th>What it is</th><th>Example</th></tr>
+    <tr><td>Strategy</td><td>A provider class that knows <em>how</em> to check a credential. It has a <code>validate()</code> method</td><td><code>LocalStrategy</code>, <code>JwtStrategy</code></td></tr>
+    <tr><td>Strategy name</td><td>A string that links a guard to a strategy</td><td><code>'local'</code>, <code>'jwt'</code></td></tr>
+    <tr><td>Guard</td><td><code>AuthGuard('name')</code>: runs the strategy for a route</td><td><code>@UseGuards(AuthGuard('local'))</code></td></tr>
+  </table>
+  <p>The flow for every request: the guard calls Passport → Passport extracts the credential (body fields, header…) → it calls <em>your</em> <code>validate()</code> → whatever <code>validate()</code> returns becomes <code>req.user</code>. If <code>validate()</code> throws, or returns <code>null</code>/<code>false</code>, the request fails with 401.</p>
+
+  <script type="text/x-code" data-lang="bash">
+    npm install @nestjs/passport passport passport-local passport-jwt
+    npm install -D @types/passport-local @types/passport-jwt
+  </script>
+
+  <p><strong>Step 1: <code>validateUser</code> in the service.</strong> The strategy should stay thin. The real logic (find the user, compare the hash) lives in <code>AuthService</code>, where it is easy to test.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/types/auth-user.type.ts">
+    import { Role } from '@prisma/client';
+
+    // what we put on req.user after a successful login — never includes passwordHash
+    export type AuthUser = { id: number; email: string; name: string | null; role: Role };
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts (validateUser)">
+    // a real argon2 hash, computed once at startup, used to keep timing equal (see below)
+    private readonly dummyHash = argon2.hash('not-a-real-password');
+
+    async validateUser(email: string, password: string): Promise<AuthUser | null> {
+      const user = await this.prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+
+      if (!user || !user.passwordHash) {
+        await argon2.verify(await this.dummyHash, password); // same slow work → same timing
+        return null;
+      }
+
+      const ok = await argon2.verify(user.passwordHash, password);
+      if (!ok) return null;
+
+      return { id: user.id, email: user.email, name: user.name, role: user.role }; // ✅ no hash
+    }
+  </script>
+  <p>Why the dummy hash? If unknown emails return in 2 ms but known emails take 100 ms (because of argon2), an attacker can measure the response time and find out which emails are registered. Doing the same slow work in both cases removes that signal. For the same reason, the error message is always "Invalid email or password", never "email not found".</p>
+
+  <p><strong>Step 2: the local strategy.</strong> <code>passport-local</code> reads <code>username</code> and <code>password</code> from the body by default. We use <code>email</code>, so we tell it with <code>usernameField</code>.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/strategies/local.strategy.ts">
+    import { Injectable, UnauthorizedException } from '@nestjs/common';
+    import { PassportStrategy } from '@nestjs/passport';
+    import { Strategy } from 'passport-local';
+    import { AuthService } from '../auth.service';
+    import { AuthUser } from '../types/auth-user.type';
+
+    @Injectable()
+    export class LocalStrategy extends PassportStrategy(Strategy) { // default name: 'local'
+      constructor(private readonly authService: AuthService) {
+        super({ usernameField: 'email' });
+      }
+
+      // Passport calls this with the two body fields
+      async validate(email: string, password: string): Promise<AuthUser> {
+        const user = await this.authService.validateUser(email, password);
+        if (!user) throw new UnauthorizedException('Invalid email or password');
+        return user; // → req.user
+      }
+    }
+  </script>
+
+  <p><strong>Step 3: the JWT strategy.</strong> <code>passport-jwt</code> does the heavy work: it extracts the token, verifies the signature and checks <code>exp</code>. Your <code>validate()</code> is called only for a <em>valid</em> token, with the decoded payload.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/strategies/jwt.strategy.ts">
+    import { Injectable } from '@nestjs/common';
+    import { ConfigService } from '@nestjs/config';
+    import { PassportStrategy } from '@nestjs/passport';
+    import { ExtractJwt, Strategy } from 'passport-jwt';
+    import { JwtPayload } from '../types/jwt-payload.type';
+
+    @Injectable()
+    export class JwtStrategy extends PassportStrategy(Strategy) { // default name: 'jwt'
+      constructor(config: ConfigService) {
+        super({
+          jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // "Authorization: Bearer <token>"
+          ignoreExpiration: false,                                   // ✅ expired → 401
+          secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        });
+      }
+
+      // payload is already verified here
+      validate(payload: JwtPayload): JwtPayload {
+        return { sub: payload.sub, email: payload.email, role: payload.role }; // → req.user
+      }
+    }
+  </script>
+  <p>Notice there is <strong>no database call</strong> in <code>JwtStrategy.validate()</code>. That's the stateless benefit of JWTs. You <em>can</em> load the user there (for example, to reject banned users immediately), but then every request costs one query. It is a conscious trade-off, not a rule.</p>
+
+  <p><strong>Step 4: register everything.</strong> Strategies are providers. If you forget to list them, you get the error <em>"Unknown authentication strategy 'jwt'"</em>.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/auth.module.ts">
+    @Module({
+      imports: [PassportModule, JwtModule.registerAsync({ /* as in point 2 */ })],
+      controllers: [AuthController],
+      providers: [AuthService, LocalStrategy, JwtStrategy], // ✅ strategies registered
+    })
+    export class AuthModule {}
+  </script>
+
+  <p><strong>Step 5: a <code>@CurrentUser()</code> decorator.</strong> Instead of <code>@Req() req</code> everywhere, read <code>req.user</code> with a small parameter decorator:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/decorators/current-user.decorator.ts">
+    import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+    export const CurrentUser = createParamDecorator(
+      (_data: unknown, ctx: ExecutionContext) => ctx.switchToHttp().getRequest().user,
+    );
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 3 of our flow: <code>/auth/login</code> uses the local strategy, and <code>/auth/me</code> uses the JWT strategy. Small named guard classes read better than string names scattered across controllers.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/guards/local-auth.guard.ts">
+      import { Injectable } from '@nestjs/common';
+      import { AuthGuard } from '@nestjs/passport';
+
+      @Injectable()
+      export class LocalAuthGuard extends AuthGuard('local') {}
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
+      import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+      import { AuthGuard } from '@nestjs/passport';
+      import { AuthService } from './auth.service';
+      import { CurrentUser } from './decorators/current-user.decorator';
+      import { LoginDto } from './dto/login.dto'; // { @IsEmail() email; @IsString() password }
+      import { RegisterDto } from './dto/register.dto';
+      import { LocalAuthGuard } from './guards/local-auth.guard';
+      import { AuthUser } from './types/auth-user.type';
+      import { JwtPayload } from './types/jwt-payload.type';
+
+      @Controller('auth')
+      export class AuthController {
+        constructor(private readonly authService: AuthService) {}
+
+        @Post('register')
+        register(@Body() dto: RegisterDto) {
+          return this.authService.register(dto);
+        }
+
+        @Post('login')
+        @HttpCode(200)                 // login creates nothing, so 200 instead of the POST default 201
+        @UseGuards(LocalAuthGuard)     // validates email + password BEFORE this method runs
+        login(@CurrentUser() user: AuthUser, @Body() _dto: LoginDto) {
+          return this.authService.issueTokens(user); // { accessToken, refreshToken }
+        }
+
+        @Get('me')
+        @UseGuards(AuthGuard('jwt'))   // point 4 makes this global
+        me(@CurrentUser() user: JwtPayload) {
+          return user;
+        }
+      }
+    </script>
+    <p>The <code>@Body() _dto: LoginDto</code> parameter isn't used in the method, but it lets <code>ValidationPipe</code> and Swagger see the expected body shape. One caveat: guards run <em>before</em> pipes, so the local strategy reads the raw body before validation runs.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Forgetting to add the strategy to <code>providers</code>, which leads to <em>"Unknown authentication strategy"</em> at runtime.</li>
+      <li>Forgetting <code>usernameField: 'email'</code>, so <code>passport-local</code> looks for <code>username</code>, finds nothing and returns 401 for every login.</li>
+      <li>Putting hashing and database logic directly inside <code>validate()</code>. Keep strategies thin and the logic in a testable service.</li>
+      <li>Different error messages for "unknown email" and "wrong password". That lets attackers discover which emails are registered.</li>
+      <li>Returning the full Prisma user (with <code>passwordHash</code>) from <code>validate()</code>, where it may end up in responses or logs.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Some mobile clients send the access token in a custom header <code>x-access-token</code> instead of <code>Authorization: Bearer</code>. Change <code>JwtStrategy</code> so it accepts <em>either</em>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        super({
+          jwtFromRequest: ExtractJwt.fromExtractors([
+            ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ExtractJwt.fromHeader('x-access-token'), // header names are lower-case in Node
+          ]),
+          ignoreExpiration: false,
+          secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        });
+      </script>
+      <p><code>fromExtractors</code> tries each extractor in order and uses the first one that returns a token.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does a Passport strategy's <code>validate()</code> return, and where does it go?</summary>
+      <p>It returns the authenticated "user" object, and Passport attaches it to <code>req.user</code>. Throwing (for example <code>UnauthorizedException</code>) or returning a falsy value makes the guard reject the request with 401.</p></details>
+    <details><summary>Does <code>JwtStrategy.validate()</code> run for an expired token?</summary>
+      <p>No. <code>passport-jwt</code> verifies the signature and expiry first. <code>validate()</code> is only called with the payload of a valid token, unless you set <code>ignoreExpiration: true</code>, which you should not do for access tokens.</p></details>
+    <details><summary>Why is the login route protected by a guard instead of checking the password in the controller?</summary>
+      <p>It keeps the controller simple and reuses the Passport pipeline: the guard runs the local strategy, rejects bad credentials with 401 before the handler runs, and gives the handler a ready <code>req.user</code>. Checking in the controller also works. Passport is a convention, not a requirement.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> A strategy checks one kind of credential and returns <code>req.user</code>. <code>local</code> checks email + password once, and <code>jwt</code> checks the bearer token on every request.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="guards">
+  <div class="topic-head"><span class="num">4</span><h2>Guards</h2></div>
+  <p class="tagline">AuthGuard and custom guards</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A guard is the bouncer at the door of a route. Before the controller method runs, the bouncer looks at the request and answers one question: <em>"Can this request come in? Yes or no."</em> If yes, the request continues. If no, it is stopped right there and the controller code never runs. <code>AuthGuard('jwt')</code> is a ready-made bouncer that checks tokens, and you can write your own bouncers for any other rule.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>A guard is a class with <code>canActivate()</code>.</strong> It receives an <code>ExecutionContext</code> (a wrapper around the current request) and returns <code>true</code> (allow) or <code>false</code> (deny). It can be sync or async. Returning <code>false</code> makes Nest throw a <code>ForbiddenException</code> (403). If you want another status, throw the exception yourself, for example <code>UnauthorizedException</code> (401).</p>
+
+  <p><strong>Where guards run.</strong> Guards run after middleware and <em>before</em> interceptors, pipes and your handler:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Request → Middleware → Guards → Interceptors (before) → Pipes → Controller method
+                              │
+                              └─ false / exception → response sent, nothing below runs
+  </script>
+  <p>That's why guards are the right place for "is this allowed at all?" decisions. They have access to the request <em>and</em> to metadata (via <code>Reflector</code>), which middleware doesn't have.</p>
+
+  <p><strong>A custom guard from scratch.</strong> Example: an internal endpoint used by a cron service, protected with a static API key in the <code>x-api-key</code> header.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="common/guards/api-key.guard.ts">
+    import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+    import { ConfigService } from '@nestjs/config';
+    import { timingSafeEqual } from 'node:crypto';
+    import { Request } from 'express';
+
+    @Injectable()
+    export class ApiKeyGuard implements CanActivate {
+      constructor(private readonly config: ConfigService) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<Request>();
+        const given = req.header('x-api-key') ?? '';
+        const expected = this.config.getOrThrow<string>('INTERNAL_API_KEY');
+
+        const a = Buffer.from(given);
+        const b = Buffer.from(expected);
+        // ✅ constant-time compare: no timing leak about how many characters matched
+        if (a.length !== b.length || !timingSafeEqual(a, b)) {
+          throw new UnauthorizedException('Invalid API key');
+        }
+        return true;
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    @Controller('internal')
+    @UseGuards(ApiKeyGuard)                  // all routes in this controller
+    export class InternalController {
+      @Post('orders/expire-unpaid')
+      expireUnpaid() { /* ... */ }
+    }
+  </script>
+
+  <p><strong>Three scopes.</strong></p>
+  <table>
+    <tr><th>Scope</th><th>How</th><th>When to use</th></tr>
+    <tr><td>Method</td><td><code>@UseGuards(X)</code> on a handler</td><td>One special route</td></tr>
+    <tr><td>Controller</td><td><code>@UseGuards(X)</code> on the class</td><td>All routes of one resource</td></tr>
+    <tr><td>Global</td><td><code>{ provide: APP_GUARD, useClass: X }</code> in a module</td><td>Rules that apply everywhere, like "must be logged in"</td></tr>
+  </table>
+  <p>Order: global guards run first, then controller guards, then method guards. All of them must say yes.</p>
+
+  <p><strong>Secure by default: a global JWT guard plus <code>@Public()</code>.</strong> If you add <code>@UseGuards(JwtAuthGuard)</code> to each controller, one day someone forgets it, and an endpoint is open to the world. It's safer to protect <em>everything</em> globally and explicitly mark the few public routes. We extend <code>AuthGuard('jwt')</code> and use <code>Reflector</code> to read a <code>@Public()</code> flag:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/decorators/public.decorator.ts">
+    import { SetMetadata } from '@nestjs/common';
+
+    export const IS_PUBLIC_KEY = 'isPublic';
+    export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/guards/jwt-auth.guard.ts">
+    import { ExecutionContext, Injectable } from '@nestjs/common';
+    import { Reflector } from '@nestjs/core';
+    import { AuthGuard } from '@nestjs/passport';
+    import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+    @Injectable()
+    export class JwtAuthGuard extends AuthGuard('jwt') {
+      constructor(private readonly reflector: Reflector) {
+        super();
+      }
+
+      canActivate(context: ExecutionContext) {
+        // look on the method first, then on the controller class
+        const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+        if (isPublic) return true;           // skip token check
+        return super.canActivate(context);   // run the 'jwt' Passport strategy
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    import { Module } from '@nestjs/common';
+    import { APP_GUARD } from '@nestjs/core';
+    import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+
+    @Module({
+      imports: [/* ConfigModule, PrismaModule, AuthModule, UsersModule, ... */],
+      providers: [
+        { provide: APP_GUARD, useClass: JwtAuthGuard }, // ✅ every route needs a valid token…
+      ],
+    })
+    export class AppModule {}
+  </script>
+  <p>Using <code>APP_GUARD</code> (instead of <code>app.useGlobalGuards(new JwtAuthGuard(...))</code> in <code>main.ts</code>) means the guard is created by Nest's DI container, so it can inject <code>Reflector</code> and other providers.</p>
+
+  <p><strong>Customising the error.</strong> <code>AuthGuard</code> has a <code>handleRequest(err, user, info)</code> hook. <code>info</code> tells you <em>why</em> Passport failed, which is useful for a clearer message:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { TokenExpiredError } from 'jsonwebtoken';
+
+    handleRequest<TUser = unknown>(err: unknown, user: TUser, info: unknown): TUser {
+      if (info instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Access token expired'); // client knows: call /auth/refresh
+      }
+      if (err || !user) throw err instanceof Error ? err : new UnauthorizedException();
+      return user;
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 4 of our flow: with the global <code>JwtAuthGuard</code>, the auth controller marks only its open routes. Everything else in the app (orders, products, users) is protected automatically.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
+      @Controller('auth')
+      export class AuthController {
+        constructor(private readonly authService: AuthService) {}
+
+        @Public()
+        @Post('register')
+        register(@Body() dto: RegisterDto) { return this.authService.register(dto); }
+
+        @Public()                      // skip the global JWT guard…
+        @UseGuards(LocalAuthGuard)     // …but still check email + password
+        @Post('login')
+        @HttpCode(200)
+        login(@CurrentUser() user: AuthUser) { return this.authService.issueTokens(user); }
+
+        @Get('me')                     // no decorator needed: protected by default
+        me(@CurrentUser() user: JwtPayload) { return user; }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="products/products.controller.ts">
+      @Controller('products')
+      export class ProductsController {
+        @Public()
+        @Get()                          // anyone can browse the catalogue
+        findAll() { /* ... */ }
+
+        @Post()                         // must be logged in (point 5 will add "admin only")
+        create(@Body() dto: CreateProductDto) { /* ... */ }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Registering a global guard with <code>app.useGlobalGuards(new JwtAuthGuard())</code>, so <code>Reflector</code> is not injected. Use <code>APP_GUARD</code>.</li>
+      <li>Using <code>reflector.get(KEY, context.getHandler())</code> only, so <code>@Public()</code> on a whole controller is ignored. Use <code>getAllAndOverride</code> with handler and class.</li>
+      <li>Doing authentication in middleware. Middleware doesn't know which handler will run, so it can't read decorators like <code>@Public()</code> or <code>@Roles()</code>.</li>
+      <li>Returning <code>false</code> when you mean "not logged in". That gives 403. Throw <code>UnauthorizedException</code> for 401.</li>
+      <li>Comparing secrets with <code>===</code> in an API-key guard. Prefer <code>timingSafeEqual</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>MaintenanceGuard</code> that blocks every request with <code>503 Service Unavailable</code> when the env variable <code>MAINTENANCE_MODE=true</code>, except for <code>GET /health</code>. Register it globally.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException } from '@nestjs/common';
+        import { ConfigService } from '@nestjs/config';
+        import { Request } from 'express';
+
+        @Injectable()
+        export class MaintenanceGuard implements CanActivate {
+          constructor(private readonly config: ConfigService) {}
+
+          canActivate(context: ExecutionContext): boolean {
+            if (this.config.get('MAINTENANCE_MODE') !== 'true') return true;
+            const req = context.switchToHttp().getRequest<Request>();
+            if (req.method === 'GET' && req.path === '/health') return true;
+            throw new ServiceUnavailableException('We are upgrading. Back soon!');
+          }
+        }
+
+        // app.module.ts — list it BEFORE JwtAuthGuard so it runs first
+        providers: [
+          { provide: APP_GUARD, useClass: MaintenanceGuard },
+          { provide: APP_GUARD, useClass: JwtAuthGuard },
+        ],
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>Guard vs middleware vs interceptor: which one for authorization?</summary>
+      <p>A guard. It runs before the handler and has access to the <code>ExecutionContext</code>, so it knows which handler and class will run and can read their metadata (<code>@Public()</code>, <code>@Roles()</code>). Middleware doesn't know the handler. Interceptors run after guards and are meant for transforming requests and responses.</p></details>
+    <details><summary>What happens when <code>canActivate</code> returns <code>false</code>?</summary>
+      <p>Nest throws a <code>ForbiddenException</code>, so the client gets 403 and the handler never runs. To return another status (for example 401), throw that exception yourself.</p></details>
+    <details><summary>How do you make all routes protected by default but allow a few public ones?</summary>
+      <p>Register a JWT guard globally with <code>APP_GUARD</code>, create a <code>@Public()</code> decorator with <code>SetMetadata</code>, and in the guard check that metadata with <code>Reflector.getAllAndOverride</code>. If it is set, return <code>true</code> without checking the token.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Guards decide "may this request reach the handler?". Protect everything globally with <code>APP_GUARD</code>, and opt out explicitly with <code>@Public()</code>.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="rbac">
+  <div class="topic-head"><span class="num">5</span><h2>RBAC</h2></div>
+  <p class="tagline">role-based and permission-based access control</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p><strong>Authentication</strong> answers "<em>who are you?</em>" (your ID card). <strong>Authorization</strong> answers "<em>what are you allowed to do?</em>" (which doors your key card opens). In a hotel, guests' cards open their own room, cleaners' cards open every room on their floor, and the manager's card opens everything. That's role-based access control (RBAC): you give people <em>roles</em>, and each role comes with a set of rights. Permission-based control is the finer version: instead of asking "is this a manager?", the door asks "does this card have the <em>open-storage-room</em> permission?".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>401 vs 403.</strong> These two status codes match the two questions:</p>
+  <table>
+    <tr><th>Status</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>401 Unauthorized</code></td><td>"I don't know who you are." Missing, invalid or expired token</td><td>No <code>Authorization</code> header</td></tr>
+    <tr><td><code>403 Forbidden</code></td><td>"I know who you are, but you may not do this"</td><td>A <code>USER</code> calls <code>DELETE /products/5</code></td></tr>
+  </table>
+
+  <p><strong>Step 1: a <code>@Roles()</code> decorator.</strong> It stores the allowed roles as metadata on the route. We reuse the <code>Role</code> enum generated by Prisma, so roles in code and in the database can never drift apart.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/decorators/roles.decorator.ts">
+    import { SetMetadata } from '@nestjs/common';
+    import { Role } from '@prisma/client';
+
+    export const ROLES_KEY = 'roles';
+    export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+
+    // Nest 10.2+ alternative, fully typed:
+    // export const Roles = Reflector.createDecorator<Role[]>();
+  </script>
+
+  <p><strong>Step 2: a <code>RolesGuard</code>.</strong> It runs <em>after</em> the JWT guard, so <code>req.user</code> is already set. If a route has no <code>@Roles()</code>, any logged-in user may call it.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/guards/roles.guard.ts">
+    import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+    import { Reflector } from '@nestjs/core';
+    import { Role } from '@prisma/client';
+    import { ROLES_KEY } from '../decorators/roles.decorator';
+    import { JwtPayload } from '../types/jwt-payload.type';
+
+    @Injectable()
+    export class RolesGuard implements CanActivate {
+      constructor(private readonly reflector: Reflector) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        const required = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES_KEY, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+        if (!required || required.length === 0) return true;      // no role restriction
+
+        const user = context.switchToHttp().getRequest().user as JwtPayload | undefined;
+        return !!user && required.includes(user.role);              // false → 403
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    providers: [
+      { provide: APP_GUARD, useClass: JwtAuthGuard }, // 1st: who are you?  (401)
+      { provide: APP_GUARD, useClass: RolesGuard },   // 2nd: may you?      (403)
+    ],
+  </script>
+  <p>The order of <code>APP_GUARD</code> providers is the order the guards run in. If <code>RolesGuard</code> ran first, <code>req.user</code> would still be empty.</p>
+
+  <p><strong>Step 3: permission-based access.</strong> Roles become clumsy as an app grows. You start writing <code>@Roles('ADMIN', 'MANAGER', 'SUPPORT')</code> everywhere, and adding a new role means editing dozens of controllers. The fix: routes ask for a <em>permission</em> (an action), and one central map says which role has which permissions.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/permissions.ts">
+    import { Role } from '@prisma/client';
+
+    export type Permission =
+      | 'product:create' | 'product:update' | 'product:delete'
+      | 'order:read:any' | 'order:refund'
+      | 'user:manage';
+
+    // ✅ the ONLY place that knows which role can do what
+    export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
+      USER:  [],
+      ADMIN: ['product:create', 'product:update', 'product:delete',
+              'order:read:any', 'order:refund', 'user:manage'],
+    };
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/guards/permissions.guard.ts">
+    export const PERMISSIONS_KEY = 'permissions';
+    export const RequirePermissions = (...p: Permission[]) => SetMetadata(PERMISSIONS_KEY, p);
+
+    @Injectable()
+    export class PermissionsGuard implements CanActivate {
+      constructor(private readonly reflector: Reflector) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        const required = this.reflector.getAllAndOverride<Permission[] | undefined>(PERMISSIONS_KEY, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+        if (!required?.length) return true;
+
+        const user = context.switchToHttp().getRequest().user as JwtPayload;
+        const granted = ROLE_PERMISSIONS[user.role];
+        return required.every((p) => granted.includes(p)); // must have ALL required permissions
+      }
+    }
+  </script>
+  <p>Register it as a third global guard, after <code>JwtAuthGuard</code>: <code>{ provide: APP_GUARD, useClass: PermissionsGuard }</code>. Now adding a <code>SUPPORT</code> role (can read all orders and refund, nothing else) means changing the enum and one line in the map. No controller changes at all.</p>
+
+  <p><strong>Step 4: ownership, the rule guards can't handle alone.</strong> "A user may see <em>their own</em> orders" depends on the <em>data</em>, not only on the role. The guard doesn't know who owns order 17 without loading it. The cleanest place is the service query itself: add the owner to the <code>where</code> clause.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="orders/orders.service.ts">
+    async findOne(id: number, user: JwtPayload) {
+      const canReadAny = ROLE_PERMISSIONS[user.role].includes('order:read:any');
+
+      const order = await this.prisma.order.findFirst({
+        where: canReadAny ? { id } : { id, userId: user.sub }, // ✅ owner filter in the query
+        include: { items: true },
+      });
+
+      // Same 404 whether it doesn't exist or belongs to someone else:
+      // don't reveal that order 17 exists.
+      if (!order) throw new NotFoundException(`Order ${id} not found`);
+      return order;
+    }
+
+    // ❌ The classic bug (IDOR — Insecure Direct Object Reference):
+    // return this.prisma.order.findUnique({ where: { id } });   // any user can read any order!
+  </script>
+  <table>
+    <tr><th>Approach</th><th>Question it answers</th><th>Where to check</th></tr>
+    <tr><td>Role-based</td><td>"Is the user an ADMIN?"</td><td>Guard + <code>@Roles()</code></td></tr>
+    <tr><td>Permission-based</td><td>"Can this user <code>product:delete</code>?"</td><td>Guard + <code>@RequirePermissions()</code></td></tr>
+    <tr><td>Ownership / attribute-based</td><td>"Is this <em>their</em> order?"</td><td>Service / query (or a library like CASL)</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 5 of our flow: the products and orders controllers combine everything. The global guards handle authentication and permissions; the service handles ownership.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="products/products.controller.ts">
+      @Controller('products')
+      export class ProductsController {
+        constructor(private readonly products: ProductsService) {}
+
+        @Public()
+        @Get()
+        findAll() { return this.products.findAll(); }
+
+        @RequirePermissions('product:create')
+        @Post()
+        create(@Body() dto: CreateProductDto) { return this.products.create(dto); }
+
+        @RequirePermissions('product:delete')
+        @Delete(':id')
+        @HttpCode(204)
+        remove(@Param('id', ParseIntPipe) id: number) { return this.products.remove(id); }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="orders/orders.controller.ts">
+      @Controller('orders')
+      export class OrdersController {
+        constructor(private readonly orders: OrdersService) {}
+
+        @Get(':id')                                   // any logged-in user…
+        findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtPayload) {
+          return this.orders.findOne(id, user);       // …but only their own order (unless admin)
+        }
+
+        @Roles(Role.ADMIN)                            // simple role check also works
+        @Post(':id/refund')
+        refund(@Param('id', ParseIntPipe) id: number) { return this.orders.refund(id); }
+      }
+    </script>
+    <p>For complex rules ("editors can update articles in their own team that are not yet published") look at <a href="https://casl.js.org" target="_blank" rel="noopener">CASL</a>, which the NestJS docs recommend for attribute-based access control.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Checking only the role and forgetting ownership. Every logged-in user can then read <code>/orders/1</code>, <code>/orders/2</code>… (IDOR, a top OWASP risk).</li>
+      <li>Registering <code>RolesGuard</code> before the JWT guard, so <code>req.user</code> is <code>undefined</code> and every protected call fails.</li>
+      <li>Hiding admin buttons in the frontend and calling that "security". The API must enforce every rule itself.</li>
+      <li>Hard-coding role strings like <code>'admin'</code> in many places. Use the Prisma <code>Role</code> enum or a central permission map.</li>
+      <li>Returning 403 for someone else's resource, which confirms that it exists. 404 is often the better answer.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add a <code>SUPPORT</code> role that can read any order and issue refunds, but cannot manage products or users. What exactly must change?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+        enum Role {
+          USER
+          SUPPORT
+          ADMIN
+        }
+      </script>
+      <script type="text/x-code" data-lang="typescript" data-title="auth/permissions.ts">
+        export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
+          USER:    [],
+          SUPPORT: ['order:read:any', 'order:refund'],
+          ADMIN:   [/* everything, as before */],
+        };
+      </script>
+      <p>Then run <code>npx prisma migrate dev --name add-support-role</code>. Because <code>ROLE_PERMISSIONS</code> is a <code>Record&lt;Role, …&gt;</code>, TypeScript reports an error until you add the <code>SUPPORT</code> key, so you can't forget it. The <code>refund</code> route should use <code>@RequirePermissions('order:refund')</code> instead of <code>@Roles(Role.ADMIN)</code>. Controllers using permissions need no change.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between authentication and authorization?</summary>
+      <p>Authentication proves identity ("who are you?"), for example with a password or a token. Failing it gives 401. Authorization decides what that identity may do ("are you allowed?"), for example with roles, permissions or ownership. Failing it gives 403 (or 404 to hide the resource).</p></details>
+    <details><summary>Why move from roles to permissions?</summary>
+      <p>Routes that check roles must list every role that may access them, so adding or changing a role means editing many routes. With permissions, routes declare the action they need, and one map links roles to permissions. Changes happen in one place, and the code says what it means.</p></details>
+    <details><summary>What is IDOR and how do you prevent it in a NestJS + Prisma app?</summary>
+      <p>Insecure Direct Object Reference: a user changes an id in the URL and gets someone else's data, because the server checks only "logged in", not "owner". Prevent it by scoping queries to the current user (<code>where: { id, userId: user.sub }</code>), unless the user has an explicit "read any" permission.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Guards check roles and permissions, and queries check ownership. Keep the role-to-permission map in one place, and remember that 401 means "who are you?" while 403 means "not allowed".</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="refresh-token-rotation">
+  <div class="topic-head"><span class="num">6</span><h2>Refresh token rotation</h2></div>
+  <p class="tagline">handling expiry securely</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine a voucher that can be exchanged for a new festival wristband. With <strong>rotation</strong>, every time you use the voucher, the desk tears it up and gives you a <em>new</em> voucher along with the new wristband. Each voucher works exactly once. Now suppose a thief copied your voucher. Either they use it first, and your copy no longer works, or you use it first, and theirs no longer works. Either way, the moment someone shows an <em>already-used</em> voucher, the desk knows something is wrong and cancels the whole chain of vouchers, so everyone has to log in again.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The problem.</strong> Access tokens expire after 15 minutes. Users shouldn't have to type their password every 15 minutes, so the client silently calls <code>POST /auth/refresh</code> with the refresh token. But a refresh token lives for days, so it's a valuable target. Rotation plus reuse detection limits the damage if one is stolen.</p>
+
+  <script type="text/x-code" data-lang="plaintext">
+    login            → RT1 issued (family F)
+    refresh with RT1 → RT1 marked used,  RT2 issued (family F)
+    refresh with RT2 → RT2 marked used,  RT3 issued (family F)
+
+    🚨 attacker replays stolen RT2
+                     → RT2 is already used → REUSE DETECTED
+                     → revoke every token in family F (RT3 too) → 401
+                     → the real user must log in again; the attacker is locked out
+  </script>
+
+  <p><strong>Step 1: store refresh tokens in the database.</strong> Each refresh token gets a row. The <code>id</code> is the token's <code>jti</code>. The <code>familyId</code> links all tokens that come from one login. We store only a <em>hash</em> of the token, so a database leak doesn't hand out working tokens.</p>
+  <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+    model RefreshToken {
+      id         String    @id               // = the JWT's jti
+      userId     Int
+      user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+      familyId   String                      // one family per login session
+      tokenHash  String                      // sha256 of the token
+      expiresAt  DateTime
+      revokedAt  DateTime?                   // set when used (rotated) or revoked
+      replacedBy String?                     // jti of the token that replaced this one
+      createdAt  DateTime  @default(now())
+
+      @@index([userId])
+      @@index([familyId])
+    }
+  </script>
+  <p><strong>Why SHA-256 here and not argon2?</strong> Passwords are short and guessable, so they need a slow hash. A refresh token is a long random value that can't be guessed, so a fast hash is enough. Also, bcrypt only uses the first 72 bytes, and the first 72 bytes of most JWTs (the header) are identical, so bcrypt would treat different tokens as equal.</p>
+
+  <p><strong>Step 2: issue a token and save its row.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts (issueTokens)">
+    import { createHash, randomUUID } from 'node:crypto';
+
+    const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+    async issueTokens(user: { id: number; email: string; role: Role }, familyId = randomUUID()) {
+      const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+      const accessToken = await this.jwt.signAsync(payload);
+
+      const jti = randomUUID();
+      const refreshToken = await this.jwt.signAsync(
+        { sub: user.id, jti, fam: familyId },
+        { secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'), expiresIn: REFRESH_TOKEN_TTL },
+      );
+
+      await this.prisma.refreshToken.create({
+        data: {
+          id: jti,
+          userId: user.id,
+          familyId,
+          tokenHash: sha256(refreshToken),
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        },
+      });
+
+      return { accessToken, refreshToken, jti };
+    }
+  </script>
+
+  <p><strong>Step 3: the refresh logic.</strong> Read it slowly. Each check has a reason.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts (refresh)">
+    type RefreshPayload = { sub: number; jti: string; fam: string };
+
+    async refresh(refreshToken: string | undefined) {
+      if (!refreshToken) throw new UnauthorizedException('Missing refresh token');
+
+      // 1. Signature + expiry (stateless check)
+      let payload: RefreshPayload;
+      try {
+        payload = await this.jwt.verifyAsync<RefreshPayload>(refreshToken, {
+          secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        });
+      } catch {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // 2. Must exist in the DB and match the stored hash
+      const stored = await this.prisma.refreshToken.findUnique({ where: { id: payload.jti } });
+      if (!stored || stored.tokenHash !== sha256(refreshToken)) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // 3. REUSE DETECTION: an already-used token is being replayed
+      if (stored.revokedAt) {
+        await this.revokeFamily(stored.familyId);
+        throw new UnauthorizedException('Refresh token reuse detected');
+      }
+
+      // 4. Atomically mark it used. Two parallel requests can't both succeed:
+      //    only one updateMany will match "revokedAt: null".
+      const { count } = await this.prisma.refreshToken.updateMany({
+        where: { id: stored.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      if (count === 0) {
+        await this.revokeFamily(stored.familyId);
+        throw new UnauthorizedException('Refresh token reuse detected');
+      }
+
+      // 5. Load the user fresh, so role changes and deleted accounts take effect now
+      const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
+      if (!user) throw new UnauthorizedException();
+
+      // 6. Issue a new pair in the SAME family and link old → new
+      const tokens = await this.issueTokens(user, stored.familyId);
+      await this.prisma.refreshToken.update({
+        where: { id: stored.id },
+        data: { replacedBy: tokens.jti },
+      });
+      return tokens;
+    }
+
+    private revokeFamily(familyId: string) {
+      return this.prisma.refreshToken.updateMany({
+        where: { familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+
+    async logout(refreshToken: string | undefined) {
+      if (!refreshToken) return;
+      const payload = this.jwt.decode<RefreshPayload | null>(refreshToken); // ok here: we only revoke
+      if (payload?.fam) await this.revokeFamily(payload.fam);
+    }
+
+    // on password change / "log out everywhere"
+    revokeAllForUser(userId: number) {
+      return this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+  </script>
+
+  <p><strong>Where should the client keep the refresh token?</strong></p>
+  <table>
+    <tr><th>Storage</th><th>Readable by JS (XSS risk)</th><th>Sent automatically (CSRF risk)</th><th>Verdict</th></tr>
+    <tr><td><code>localStorage</code></td><td>Yes ❌</td><td>No</td><td>Any XSS steals it</td></tr>
+    <tr><td>httpOnly, Secure, SameSite=Strict cookie, <code>Path=/auth</code></td><td>No ✅</td><td>Only to <code>/auth/*</code>, same site</td><td>✅ Recommended for browsers</td></tr>
+    <tr><td>Secure storage (Keychain / Keystore)</td><td>n/a</td><td>No</td><td>✅ For mobile apps</td></tr>
+  </table>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 6 of our flow: the controller sends the refresh token as an httpOnly cookie and returns only the access token in the JSON body. Install <code>cookie-parser</code> and enable it in <code>main.ts</code>.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+      // npm i cookie-parser && npm i -D @types/cookie-parser
+      import cookieParser from 'cookie-parser'; // needs "esModuleInterop" (default in Nest 11 projects);
+                                                // older projects: import * as cookieParser from 'cookie-parser';
+      // ...
+      app.use(cookieParser());
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
+      import { CookieOptions, Request, Response } from 'express';
+
+      const REFRESH_COOKIE = 'refresh_token';
+      const cookieOptions: CookieOptions = {
+        httpOnly: true,                                  // JS can't read it
+        secure: process.env.NODE_ENV === 'production',   // HTTPS only in prod
+        sameSite: 'strict',
+        path: '/auth',                                   // only sent to /auth/*
+        maxAge: REFRESH_TOKEN_TTL_MS,
+      };
+
+      @Controller('auth')
+      export class AuthController {
+        constructor(private readonly authService: AuthService) {}
+
+        @Public()
+        @UseGuards(LocalAuthGuard)
+        @Post('login')
+        @HttpCode(200)
+        async login(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) res: Response) {
+          const { accessToken, refreshToken } = await this.authService.issueTokens(user);
+          res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+          return { accessToken };
+        }
+
+        @Public()                                  // the access token may already be expired!
+        @Post('refresh')
+        @HttpCode(200)
+        async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+          const { accessToken, refreshToken } = await this.authService.refresh(req.cookies?.[REFRESH_COOKIE]);
+          res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+          return { accessToken };
+        }
+
+        @Public()
+        @Post('logout')
+        @HttpCode(204)
+        async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+          await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
+          res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+        }
+      }
+    </script>
+    <p><code>passthrough: true</code> lets you set cookies on the response while Nest still sends your returned object as JSON. Old rows pile up, so add a nightly job (for example with <code>@nestjs/schedule</code>) that runs <code>deleteMany({ where: { expiresAt: { lt: new Date() } } })</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Protecting <code>/auth/refresh</code> with the access-token guard. The access token is usually expired when the client calls it, so mark the route <code>@Public()</code>.</li>
+      <li>Not rotating (reusing the same refresh token for 30 days), so a stolen token works silently until it expires.</li>
+      <li>Storing refresh tokens in plain text in the database. Store a hash.</li>
+      <li>Check-then-update without atomicity: two parallel refreshes both pass the "not revoked" check. Use <code>updateMany</code> with <code>revokedAt: null</code> and check <code>count</code>.</li>
+      <li>Forgetting to revoke refresh tokens when the password changes, so an attacker with an old session stays logged in.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A user opens your shop in two browser tabs. Both tabs notice the expired access token and call <code>/auth/refresh</code> at the same moment with the same cookie. With the code above, what happens? Suggest one way to make it friendlier.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>One request wins the atomic <code>updateMany</code>. The other gets <code>count === 0</code>, is treated as reuse, and the whole family is revoked, so the user is logged out. That's safe but annoying.</p>
+      <p>Fixes: (1) on the <strong>client</strong>, share a single in-flight refresh promise between tabs (for example with a lock or <code>BroadcastChannel</code>) so only one request is sent; (2) on the <strong>server</strong>, add a short grace period: if the token was rotated less than ~10 seconds ago, don't revoke the family, just return 401 (or the already-issued successor) without treating it as theft.</p>
+      <script type="text/x-code" data-lang="typescript">
+        const GRACE_MS = 10_000;
+        if (stored.revokedAt) {
+          const recentlyRotated = stored.replacedBy && Date.now() - stored.revokedAt.getTime() < GRACE_MS;
+          if (!recentlyRotated) await this.revokeFamily(stored.familyId);
+          throw new UnauthorizedException('Refresh token already used');
+        }
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is refresh token rotation and why does it help?</summary>
+      <p>Every refresh issues a new refresh token and invalidates the old one, so each token is single-use. A stolen token either stops working when the real user refreshes, or, if the attacker uses it first, the real user's next refresh shows reuse. Either way, theft is detected and the session family can be revoked.</p></details>
+    <details><summary>How do you log a user out when using JWTs?</summary>
+      <p>Revoke the refresh token(s) in the database and clear the cookie. The current access token stays valid until it expires (a few minutes). That's acceptable because it is short. If you need instant logout, keep a small denylist of access-token <code>jti</code>s (for example in Redis) until their <code>exp</code>.</p></details>
+    <details><summary>Where should a browser app store the refresh token?</summary>
+      <p>In an <code>httpOnly</code>, <code>Secure</code>, <code>SameSite=Strict</code> cookie scoped to the auth path. JavaScript can't read it, so XSS can't steal it, and SameSite plus the narrow path limit CSRF. The short-lived access token can stay in memory.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Refresh tokens are single-use: store a hash, rotate on every refresh, revoke the whole family on reuse, and keep them in an httpOnly cookie.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="session-vs-token">
+  <div class="topic-head"><span class="num">7</span><h2>Session vs token auth</h2></div>
+  <p class="tagline">know the trade-offs</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>There are two ways to remember a logged-in guest. <strong>Session</strong>: like a coat check. You get a small numbered ticket (a session id in a cookie), and the <em>server</em> keeps the real information on its shelf (memory or Redis). The ticket means nothing on its own; the server always looks it up. <strong>Token</strong>: like the festival wristband. All the information is printed on the wristband itself, so the server doesn't need a shelf, but it also can't easily take the wristband back. Neither is "better". They make different trade-offs.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Session-based auth, step by step.</strong></p>
+  <script type="text/x-code" data-lang="plaintext">
+    POST /auth/login {email, password}
+      server: check password → create session in Redis:
+              "sess:Xy7..." → { userId: 42, role: "USER" }   (TTL 7 days)
+      ← Set-Cookie: sid=Xy7...; HttpOnly; Secure; SameSite=Lax
+
+    GET /orders   Cookie: sid=Xy7...     (the browser sends it automatically)
+      server: look up "sess:Xy7..." in Redis → userId 42 → continue
+
+    POST /auth/logout
+      server: delete "sess:Xy7..." → the cookie is now worthless immediately
+  </script>
+
+  <p><strong>Token-based auth</strong> (what we built in points 2–6): the server signs a token with the user data inside. On each request it verifies the signature and needs no lookup.</p>
+
+  <p><strong>Sessions in NestJS.</strong> Nest uses the Express <code>express-session</code> middleware. In production, store sessions in Redis. The default in-memory store leaks memory and loses all sessions on restart, and with two app instances, users get logged out randomly.</p>
+  <script type="text/x-code" data-lang="bash">
+    npm install express-session connect-redis redis
+    npm install -D @types/express-session
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts (session version)">
+    import { NestFactory } from '@nestjs/core';
+    import session from 'express-session';    // default imports need "esModuleInterop" (on in Nest 11)
+    import { RedisStore } from 'connect-redis';   // connect-redis v8 (v7: import RedisStore from 'connect-redis')
+    import { createClient } from 'redis';
+    import { AppModule } from './app.module';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+
+      const redisClient = createClient({ url: process.env.REDIS_URL });
+      await redisClient.connect();
+
+      app.use(
+        session({
+          store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
+          secret: process.env.SESSION_SECRET!,      // signs the cookie value
+          resave: false,                            // don't re-save unchanged sessions
+          saveUninitialized: false,                 // ✅ no session for anonymous visitors
+          cookie: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+          },
+        }),
+      );
+      await app.listen(3000);
+    }
+    bootstrap();
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="types/session.d.ts">
+    import { Role } from '@prisma/client';
+    import 'express-session';
+
+    declare module 'express-session' {
+      interface SessionData {        // declaration merging (Lesson 1) types req.session
+        userId: number;
+        role: Role;
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/session-auth.controller.ts">
+    @Public()
+    @UseGuards(LocalAuthGuard)
+    @Post('login')
+    @HttpCode(200)
+    async login(@CurrentUser() user: AuthUser, @Req() req: Request) {
+      // ✅ new session id after login, to prevent "session fixation"
+      await new Promise<void>((resolve, reject) =>
+        req.session.regenerate((err) => (err ? reject(err) : resolve())),
+      );
+      req.session.userId = user.id;
+      req.session.role = user.role;
+      return { id: user.id, email: user.email };
+    }
+
+    @Post('logout')
+    @HttpCode(204)
+    logout(@Req() req: Request) {
+      return new Promise<void>((resolve) => req.session.destroy(() => resolve())); // instant logout
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth/guards/session-auth.guard.ts">
+    @Injectable()
+    export class SessionAuthGuard implements CanActivate {
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<Request>();
+        if (!req.session.userId) throw new UnauthorizedException();
+        return true;
+      }
+    }
+  </script>
+
+  <p><strong>The trade-offs.</strong></p>
+  <table>
+    <tr><th>Concern</th><th>Server sessions</th><th>Stateless JWT</th></tr>
+    <tr><td>Logout / revoke</td><td>✅ Instant: delete the session</td><td>❌ Valid until <code>exp</code> (needs short TTL or a denylist)</td></tr>
+    <tr><td>Per-request cost</td><td>One Redis lookup (~1 ms)</td><td>✅ Only CPU to verify the signature</td></tr>
+    <tr><td>Infrastructure</td><td>Needs a shared store (Redis) for multiple instances</td><td>✅ Nothing shared except the secret</td></tr>
+    <tr><td>Data freshness</td><td>✅ Role changes apply on the next request</td><td>Stale until the token is refreshed</td></tr>
+    <tr><td>Clients</td><td>Great for browsers on the same site</td><td>✅ Easy for mobile apps, CLIs, other services</td></tr>
+    <tr><td>Cross-domain APIs</td><td>Cookies + CORS + SameSite are tricky</td><td>✅ <code>Authorization</code> header works anywhere</td></tr>
+    <tr><td>Main attack to defend</td><td>CSRF (cookie sent automatically): use SameSite + CSRF tokens</td><td>XSS (if stored in JS-readable storage)</td></tr>
+    <tr><td>Size per request</td><td>✅ Tiny cookie (~40 bytes)</td><td>Larger header (300–1000 bytes)</td></tr>
+  </table>
+
+  <p><strong>The honest conclusion.</strong> For a classic web app where the browser and API live on the same site, sessions are simple and very secure. For an API used by mobile apps, SPAs on other domains, or other services, tokens are more convenient. Many real systems end up with a <em>hybrid</em>, like the one we built: a short-lived stateless access token for speed, and a stateful, revocable refresh token in an httpOnly cookie for control.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Our shop API serves a React SPA <em>and</em> a mobile app, so we chose the hybrid token design. The decision is easy to see in code:</p>
+    <script type="text/x-code" data-lang="typescript">
+      // Stateless part — no DB, runs on every request (JwtStrategy.validate)
+      validate(payload: JwtPayload) { return payload; }
+
+      // Stateful part — DB lookup, runs every ~15 min (AuthService.refresh)
+      const stored = await this.prisma.refreshToken.findUnique({ where: { id: payload.jti } });
+      if (!stored || stored.revokedAt) throw new UnauthorizedException();
+    </script>
+    <p>An internal admin dashboard served from the same domain could just as well use <code>express-session</code> with Redis plus <code>SessionAuthGuard</code>, and get instant logout for free. Pick per client, not per fashion.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using the default in-memory session store in production: memory leaks, sessions lost on restart, and broken logins behind a load balancer.</li>
+      <li>Not regenerating the session id at login (session fixation).</li>
+      <li>Saying "JWTs are stateless, so we can't log users out". Short TTLs, refresh-token revocation and denylists solve it.</li>
+      <li>Putting a long-lived JWT in <code>localStorage</code> "because sessions are old-fashioned". You traded CSRF risk for XSS risk and lost revocation.</li>
+      <li>Using cookie-based sessions without SameSite or CSRF protection on state-changing routes.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>For each case, choose sessions, stateless JWT or hybrid, and give one reason: (a) a server-rendered admin panel on <code>admin.shop.com</code>; (b) a public API used by partner companies' servers; (c) your React SPA plus iOS app.</p>
+    <details>
+      <summary>Show answer</summary>
+      <ul>
+        <li><strong>(a) Sessions</strong>: same site, browser only, instant logout and fresh roles matter for admins.</li>
+        <li><strong>(b) Tokens</strong> (or API keys / OAuth client credentials): server-to-server, no browser, no cookies; verification must be cheap.</li>
+        <li><strong>(c) Hybrid</strong>: short access JWT in memory or the app's secure storage, plus a rotating refresh token (httpOnly cookie on web, Keychain on iOS).</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the main advantage of server-side sessions over JWTs?</summary>
+      <p>Control. The server owns the state, so logout, banning a user or changing a role takes effect on the very next request. With JWTs, the token stays valid until it expires unless you add extra machinery.</p></details>
+    <details><summary>Why are cookie-based sessions exposed to CSRF, and how do you defend against it?</summary>
+      <p>Browsers attach cookies automatically, even when another site triggers the request. Defences: <code>SameSite=Lax</code> or <code>Strict</code> cookies, CSRF tokens on state-changing requests, and checking the <code>Origin</code> header. Bearer tokens in headers aren't sent automatically, so they don't have this issue.</p></details>
+    <details><summary>How do sessions work when you run 3 instances of the API?</summary>
+      <p>All instances must share the session store, usually Redis. Otherwise a user who logs in on instance A appears logged out on B. The alternative, "sticky sessions" at the load balancer, is fragile.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Sessions give control, and tokens give portability and statelessness. A short access token plus a revocable refresh token gives you most of both.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="oauth-basics">
+  <div class="topic-head"><span class="num">8</span><h2>OAuth basics</h2></div>
+  <p class="tagline">third-party login flows</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>"Sign in with Google" works like a hotel valet key. You don't give the valet your house keys (your Google password). Instead, Google, which you already trust, gives our shop a limited, temporary pass that says "this person is an@gmail.com, and you may read their name and email, nothing else". Our app never sees the Google password. <strong>OAuth 2.0</strong> is the standard for handing out these limited passes, and <strong>OpenID Connect (OIDC)</strong> is a small layer on top that adds "and here's who the person is".</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The actors.</strong></p>
+  <table>
+    <tr><th>Role</th><th>In our example</th></tr>
+    <tr><td>Resource owner</td><td>The user, An</td></tr>
+    <tr><td>Client</td><td>Our NestJS shop API (registered in Google Cloud Console, with a client id and client secret)</td></tr>
+    <tr><td>Authorization server</td><td>Google's login and consent pages (<code>accounts.google.com</code>)</td></tr>
+    <tr><td>Resource server</td><td>Google APIs that return the profile</td></tr>
+  </table>
+
+  <p><strong>The Authorization Code flow</strong>, the one you should use for logins:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    1. Browser → GET  https://api.shop.com/auth/google
+    2. API     → 302  https://accounts.google.com/o/oauth2/v2/auth
+                        ?client_id=...&redirect_uri=https://api.shop.com/auth/google/callback
+                        &response_type=code&scope=openid%20email%20profile&state=RANDOM
+    3. User logs in at GOOGLE and clicks "Allow"         (our app never sees the password)
+    4. Google  → 302  https://api.shop.com/auth/google/callback?code=ONE_TIME_CODE&state=RANDOM
+    5. API checks state, then server-to-server:
+               POST https://oauth2.googleapis.com/token  { code, client_id, client_secret, redirect_uri }
+               ← { access_token, id_token, ... }
+    6. API reads the profile (sub, email, name), finds or creates the User
+    7. API issues OUR OWN tokens (point 2) and redirects to the frontend
+  </script>
+  <p>Key ideas:</p>
+  <ul>
+    <li><strong>The code is not the token.</strong> The browser only ever sees a short-lived, one-time <code>code</code>. Swapping it for tokens needs the <code>client_secret</code>, which lives only on the server.</li>
+    <li><strong><code>state</code></strong> is a random value the server generates and checks on return. It stops attackers from forcing their own login code into your callback (login CSRF).</li>
+    <li><strong>PKCE</strong> ("pixy") adds a one-time secret pair (<code>code_verifier</code> / <code>code_challenge</code>), so a stolen code is useless. It is required for mobile apps and SPAs that can't keep a client secret, and recommended for everyone.</li>
+    <li><strong>Scopes</strong> limit what you ask for. For login, <code>openid email profile</code> is enough. Don't ask for Drive access to log someone in.</li>
+    <li><strong>Google's access token is for Google's APIs</strong>, not yours. After the callback, your API issues its own JWTs, so the rest of the app (guards, roles) works unchanged.</li>
+  </ul>
+
+  <p><strong>Other OAuth flows</strong>, so you recognise the names:</p>
+  <table>
+    <tr><th>Flow</th><th>Use</th></tr>
+    <tr><td>Authorization Code (+ PKCE)</td><td>✅ User logins: web, SPA, mobile</td></tr>
+    <tr><td>Client Credentials</td><td>✅ Machine-to-machine (a cron service calling your API), no user involved</td></tr>
+    <tr><td>Implicit</td><td>❌ Deprecated: tokens in the URL</td></tr>
+    <tr><td>Password (ROPC)</td><td>❌ Deprecated: the app collects the third-party password, which defeats the purpose</td></tr>
+  </table>
+
+  <p><strong>Linking accounts in the database.</strong> One user may log in with a password <em>and</em> with Google. Store external identities in a separate table, keyed by provider and the provider's stable user id (<code>sub</code>), not by email, because email addresses can change.</p>
+  <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
+    model Account {
+      id                Int      @id @default(autoincrement())
+      userId            Int
+      user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+      provider          String   // 'google', 'github', ...
+      providerAccountId String   // Google's "sub" — stable, never changes
+      createdAt         DateTime @default(now())
+
+      @@unique([provider, providerAccountId])
+      @@index([userId])
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Step 7 of our flow: a Google strategy with <code>passport-google-oauth20</code>. Passport handles steps 2–5 (redirect, code exchange, profile fetch). We handle step 6 (find or create the user) and step 7 (issue our tokens).</p>
+    <script type="text/x-code" data-lang="bash">
+      npm install passport-google-oauth20
+      npm install -D @types/passport-google-oauth20
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/strategies/google.strategy.ts">
+      import { Injectable } from '@nestjs/common';
+      import { ConfigService } from '@nestjs/config';
+      import { PassportStrategy } from '@nestjs/passport';
+      import { Profile, Strategy } from 'passport-google-oauth20';
+      import { AuthService } from '../auth.service';
+      import { AuthUser } from '../types/auth-user.type';
+
+      @Injectable()
+      export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+        constructor(config: ConfigService, private readonly authService: AuthService) {
+          super({
+            clientID: config.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+            clientSecret: config.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
+            callbackURL: config.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
+            scope: ['openid', 'email', 'profile'],
+          });
+        }
+
+        // called after Passport exchanged the code and fetched the profile
+        validate(_accessToken: string, _refreshToken: string, profile: Profile): Promise<AuthUser> {
+          return this.authService.findOrCreateOAuthUser({
+            provider: 'google',
+            providerAccountId: profile.id,                        // Google's stable "sub"
+            email: profile.emails?.[0]?.value,
+            emailVerified: String(profile._json.email_verified) === 'true', // boolean or string
+            name: profile.displayName,
+          });
+        }
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts (findOrCreateOAuthUser)">
+      async findOrCreateOAuthUser(input: {
+        provider: string; providerAccountId: string;
+        email?: string; emailVerified: boolean; name?: string;
+      }): Promise<AuthUser> {
+        const select = { id: true, email: true, name: true, role: true } as const;
+
+        // 1. Seen this Google account before? → that user
+        const account = await this.prisma.account.findUnique({
+          where: { provider_providerAccountId: {
+            provider: input.provider, providerAccountId: input.providerAccountId } },
+          include: { user: { select } },
+        });
+        if (account) return account.user;
+
+        if (!input.email || !input.emailVerified) {
+          throw new UnauthorizedException('A verified email is required');
+        }
+        const email = input.email.toLowerCase();
+
+        // 2. Existing password user with the same VERIFIED email → link, or 3. brand-new user
+        return this.prisma.user.upsert({
+          where: { email },
+          update: { accounts: { create: {
+            provider: input.provider, providerAccountId: input.providerAccountId } } },
+          create: {
+            email,
+            name: input.name,
+            accounts: { create: { provider: input.provider, providerAccountId: input.providerAccountId } },
+          },
+          select,
+        });
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts (Google routes)">
+      @Public()
+      @UseGuards(AuthGuard('google'))
+      @Get('google')
+      googleLogin() {
+        // never runs: the guard redirects to Google
+      }
+
+      @Public()
+      @UseGuards(AuthGuard('google'))      // exchanges ?code=... and runs GoogleStrategy.validate
+      @Get('google/callback')
+      async googleCallback(@CurrentUser() user: AuthUser, @Res() res: Response) {
+        const { refreshToken } = await this.authService.issueTokens(user);
+        res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+        // ✅ no token in the URL: the SPA calls POST /auth/refresh to get its access token
+        res.redirect(`${this.config.getOrThrow<string>('FRONTEND_URL')}/login/success`);
+      }
+    </script>
+    <p>Notice how the earlier design pays off: Google login ends in the <em>same</em> <code>issueTokens()</code>, so guards, roles and rotation work exactly as they do for password users. Remember to add <code>GoogleStrategy</code> to the <code>AuthModule</code> providers and to inject <code>ConfigService</code> into the controller.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Identifying users by the email from the provider instead of the provider's stable id (<code>sub</code>). Emails change and can be reused.</li>
+      <li>Auto-linking to an existing account by an <em>unverified</em> email. An attacker registers that email at some provider and takes over the account.</li>
+      <li>Putting your own JWT in the redirect URL (<code>?token=...</code>), where it lands in browser history, logs and Referer headers.</li>
+      <li>Skipping <code>state</code> (and PKCE), which opens the door to login CSRF and stolen authorization codes.</li>
+      <li>Using Google's access token as your API's auth token. Issue your own tokens after the callback.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A user registered with a password as <code>an@gmail.com</code>, then later clicks "Sign in with Google" using the same Gmail address. Trace what <code>findOrCreateOAuthUser</code> does, and what's in the database afterwards. What would change if Google said the email was <em>not</em> verified?</p>
+    <details>
+      <summary>Show answer</summary>
+      <ol>
+        <li>No <code>Account</code> row with <code>(google, &lt;sub&gt;)</code> exists → continue.</li>
+        <li>The email is verified → <code>upsert</code> finds the existing user by email and runs <code>update</code>, which creates an <code>Account</code> row linked to that user.</li>
+        <li>Result: one <code>User</code> (still with their <code>passwordHash</code>) and one <code>Account</code> (<code>google</code>). They can now log in either way. Next time, step 1 matches the account directly.</li>
+      </ol>
+      <p>If the email were <strong>not verified</strong>, the method throws <code>UnauthorizedException</code> before linking. Without that check, anyone who can create a provider account with an unverified <code>an@gmail.com</code> could take over An's shop account.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is the difference between OAuth 2.0 and OpenID Connect?</summary>
+      <p>OAuth 2.0 is about <em>authorization</em>: giving an app limited access to resources (an access token). OpenID Connect adds <em>authentication</em> on top: an <code>id_token</code> (a JWT) and a standard <code>userinfo</code> endpoint that say who the user is. "Sign in with Google" is OIDC.</p></details>
+    <details><summary>Why does the Authorization Code flow return a code instead of a token directly?</summary>
+      <p>The code passes through the browser, which is a less trusted channel. It is short-lived, single-use, and useless without the client secret (or PKCE verifier). The real tokens are fetched in a direct server-to-server call, so they never appear in the URL or browser history.</p></details>
+    <details><summary>What is the <code>state</code> parameter for?</summary>
+      <p>It's a random value tied to the user's browser and sent with the authorization request. The callback must return the same value. That proves the callback belongs to a login this browser started, which prevents CSRF and session-swapping attacks.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Use the Authorization Code flow (with state and PKCE), identify users by provider + <code>sub</code>, link only verified emails, and finish by issuing your own tokens.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="REST-API-Design.html">← Prev: 6. REST API Design</a>
+  <a href="Testing.html">Next: 8. Testing →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>

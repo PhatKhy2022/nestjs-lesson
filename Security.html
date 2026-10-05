@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Security</title>
+<link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e3e6ea;
+    --accent: #1a73e8;
+    --accent-soft: #e8f0fe;
+    --plain-bg: #e8f0fe;  --plain-border: #1a73e8;
+    --nest-bg: #fde8ef;   --nest-border: #e0234e;
+    --warn-bg: #fef7e0;   --warn-border: #f9ab00;
+    --try-bg: #e6f4ea;    --try-border: #1e8e3e;
+    --key-bg: #f3e8fd;    --key-border: #9334e6;
+    --code-bg: #f6f8fa;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --surface: #1b1e22;
+      --surface-2: #22262b;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --border: #30353b;
+      --accent: #8ab4f8;
+      --accent-soft: #1f2a3a;
+      --plain-bg: #1c2636;  --plain-border: #8ab4f8;
+      --nest-bg: #33202a;   --nest-border: #f2788f;
+      --warn-bg: #332b16;   --warn-border: #fdd663;
+      --try-bg: #1a2e22;    --try-border: #81c995;
+      --key-bg: #2a2036;    --key-border: #c58af9;
+      --code-bg: #0d1117;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 19px;
+  }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  p code, li code, td code, summary code, .tagline code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  .hero { max-width: 1320px; margin: 0 auto; padding: 24px 16px 8px; }
+  .crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
+  .crumbs a { text-decoration: none; font-weight: 600; }
+  .hero h1 { margin: 10px 0 4px; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; }
+  .hero .goal { margin: 0; color: var(--muted); }
+  .hero .howto { margin-top: 14px; font-size: 16px; color: var(--muted); }
+
+  .layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; font-size: 16px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover, .toc a.active { color: var(--accent); font-weight: 600; }
+
+  .topic {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    scroll-margin-top: 16px;
+  }
+  .topic-head { display: flex; align-items: center; gap: 12px; }
+  .num {
+    flex: none;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .topic h2 { margin: 0; font-size: 28px; line-height: 1.25; }
+  .tagline { color: var(--muted); margin: 6px 0 16px; }
+  .topic h3 { font-size: 21px; margin: 26px 0 8px; }
+
+  .box {
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .box > strong:first-child { display: block; margin-bottom: 4px; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .box ul { padding-left: 20px; margin: 6px 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-border); }
+  .nest  { background: var(--nest-bg);  border-color: var(--nest-border); }
+  .warn  { background: var(--warn-bg);  border-color: var(--warn-border); }
+  .try   { background: var(--try-bg);   border-color: var(--try-border); }
+  .key   { background: var(--key-bg);   border-color: var(--key-border); }
+
+  details { margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  .qa details {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  figure.code {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  figure.code figcaption {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  figure.code button {
+    font: inherit; font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  figure.code pre { margin: 0; overflow-x: auto; }
+  figure.code pre code { display: block; padding: 14px 16px; background: transparent !important; font-size: 16.5px; line-height: 1.6; }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 17.5px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+
+  .pager {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 40px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .pager a {
+    background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static; max-height: none; }
+    .topic { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="crumbs">
+    <a href="nestjs.html">← Back to roadmap</a>
+    <span>Lesson 10 of 12</span>
+  </nav>
+  <h1>10. Security</h1>
+  <p class="goal"><strong>Goal:</strong> Protect users and application data.</p>
+  <p class="howto">How to use this page: read each point top to bottom, type the examples into a local NestJS + Prisma + PostgreSQL project, do the exercise <em>before</em> opening the answer, then try to answer the interview questions out loud. Every point shows the <strong>vulnerable</strong> version first (❌) and then the <strong>fix</strong> (✅). Learn to recognise the ❌ shape in code reviews, because that is where most security bugs are caught.</p>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h2>In this lesson</h2>
+    <ol>
+      <li><a href="#input-validation">Input validation</a></li>
+      <li><a href="#sql-injection-prevention">SQL injection prevention</a></li>
+      <li><a href="#cors">CORS</a></li>
+      <li><a href="#helmet">Helmet</a></li>
+      <li><a href="#environment-secrets">Environment secrets</a></li>
+      <li><a href="#https">HTTPS</a></li>
+      <li><a href="#sensitive-logs">Sensitive logs</a></li>
+      <li><a href="#brute-force-protection">Brute force protection</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+<!-- ============================================================ 1 -->
+<section class="topic" id="input-validation">
+  <div class="topic-head"><span class="num">1</span><h2>Input validation</h2></div>
+  <p class="tagline">sanitize and validate all input</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Think of your API as a building with a security desk. Everything that comes in (body, query string, URL params, headers, uploaded files) is a stranger until it has been checked. <strong>Validation</strong> is the guard checking the visitor's badge: "is this the right kind of thing, the right size, in the allowed range?" If not, it's turned away at the door with a <code>400</code>. <strong>Sanitizing</strong> is cleaning what you let in: trimming spaces, normalizing an email to lowercase, removing dangerous HTML. Remember from Lesson 1: TypeScript types disappear at runtime, so <code>dto: CreateUserDto</code> alone checks <em>nothing</em> when a real request arrives.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The vulnerability: trusting the body.</strong> Here is a "update my profile" endpoint that passes the body straight to Prisma:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+    // ❌ Mass assignment: whatever the client sends is written to the database
+    @Patch('me')
+    updateMe(@CurrentUser() user: JwtUser, @Body() body: any) {
+      return this.prisma.user.update({ where: { id: user.id }, data: body });
+    }
+  </script>
+  <p>The frontend only sends <code>{ "name": "An" }</code>, but nothing stops a client from sending extra fields:</p>
+  <script type="text/x-code" data-lang="json">
+    { "name": "An", "role": "ADMIN", "emailVerified": true }
+  </script>
+  <p>Prisma happily writes them, and the user has made themselves an admin. This is called <strong>mass assignment</strong>, and it's one of the most common real-world API vulnerabilities.</p>
+
+  <p><strong>The fix, part 1: a DTO class with explicit rules.</strong> List exactly which fields are allowed, and the rules for each:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="update-profile.dto.ts">
+    import { Transform } from 'class-transformer';
+    import { IsOptional, IsString, IsUrl, Length, MaxLength } from 'class-validator';
+
+    export class UpdateProfileDto {
+      @IsOptional()
+      @IsString()
+      @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value)) // sanitize
+      @Length(1, 80)
+      name?: string;
+
+      @IsOptional()
+      @IsUrl({ protocols: ['https'], require_protocol: true })
+      @MaxLength(500)
+      avatarUrl?: string;
+
+      // no 'role', no 'emailVerified' → they are not allowed
+    }
+  </script>
+
+  <p><strong>The fix, part 2: a global <code>ValidationPipe</code> with the right options.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { ValidationPipe } from '@nestjs/common';
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,              // ✅ strip properties that have no decorator in the DTO
+        forbidNonWhitelisted: true,   // ✅ ...or better: reject the request with 400
+        transform: true,              // ✅ turn the plain object into a DTO instance (runs @Transform)
+      }),
+    );
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
+    // ✅ Only validated, known fields reach the service
+    @Patch('me')
+    updateMe(@CurrentUser() user: JwtUser, @Body() dto: UpdateProfileDto) {
+      return this.usersService.updateProfile(user.id, dto);
+    }
+  </script>
+  <p>Now the same malicious request gets:</p>
+  <script type="text/x-code" data-lang="http">
+    HTTP/1.1 400 Bad Request
+    Content-Type: application/json
+
+    {
+      "statusCode": 400,
+      "message": ["property role should not exist", "property emailVerified should not exist"],
+      "error": "Bad Request"
+    }
+  </script>
+
+  <p><strong>Validate every input source, not only the body.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // URL params: ❌ @Param('id') id: string  → "abc", "1 OR 1=1", "-5" all reach your code
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number) { /* ✅ 400 if not an integer */ }
+
+    @Get('by-uuid/:id')
+    findByUuid(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) { /* ✅ */ }
+
+    // Query strings: always bound limits, or one request can ask for 10 million rows
+    export class ListOrdersQuery {
+      @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+      page = 1;
+
+      @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)  // ✅ upper bound
+      limit = 20;
+
+      @IsOptional() @IsEnum(OrderStatus)
+      status?: OrderStatus;
+    }
+  </script>
+
+  <p><strong>Nested objects and arrays</strong> need <code>@ValidateNested</code> plus <code>@Type</code>, otherwise the inner objects are not checked at all:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="create-order.dto.ts">
+    class OrderItemDto {
+      @IsInt() @Min(1) productId: number;
+      @IsInt() @Min(1) @Max(50) quantity: number;
+      // ❌ never accept a price from the client; read it from the database
+    }
+
+    export class CreateOrderDto {
+      @IsArray()
+      @ArrayMinSize(1)
+      @ArrayMaxSize(100)                 // ✅ cap array size
+      @ValidateNested({ each: true })
+      @Type(() => OrderItemDto)          // ✅ without this, items are plain objects and skip validation
+      items: OrderItemDto[];
+    }
+  </script>
+
+  <p><strong>Limit size.</strong> Validation runs <em>after</em> the body is parsed, so also cap the body size, and validate uploads (size and type) before processing them:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // main.ts (NestExpressApplication)
+    app.useBodyParser('json', { limit: '100kb' });   // ✅ default is 100kb; don't raise it globally
+
+    // uploads
+    @Post('avatar')
+    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
+    upload(
+      @UploadedFile(
+        new ParseFilePipe({
+          validators: [
+            new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
+            new FileTypeValidator({ fileType: /^image\/(png|jpeg|webp)$/ }),
+          ],
+        }),
+      )
+      file: Express.Multer.File,
+    ) { /* ... */ }
+  </script>
+
+  <p><strong>Sanitizing HTML.</strong> If users can submit rich text (product reviews, comments) that is later shown in a browser, stored HTML could contain scripts (stored XSS). Prefer accepting plain text and letting the frontend escape it when rendering. If you must accept HTML, clean it with an allow-list library:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import sanitizeHtml from 'sanitize-html';
+
+    export class CreateReviewDto {
+      @IsString() @Length(1, 5000)
+      @Transform(({ value }) =>
+        sanitizeHtml(value, { allowedTags: ['b', 'i', 'em', 'strong', 'p', 'ul', 'li'], allowedAttributes: {} }),
+      )
+      body: string;  // ✅ script tags, onerror=..., javascript: links are removed
+    }
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Teams usually combine three layers: (1) a global <code>ValidationPipe</code> with <code>whitelist</code> + <code>forbidNonWhitelisted</code> + <code>transform</code>, (2) DTO classes that use <code>PickType</code>/<code>PartialType</code> so the "update" DTO can never accidentally include admin-only fields, and (3) services that map DTOs to Prisma explicitly instead of spreading them:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
+      updateProfile(userId: number, dto: UpdateProfileDto) {
+        return this.prisma.user.update({
+          where: { id: userId },
+          data: { name: dto.name, avatarUrl: dto.avatarUrl },   // ✅ explicit fields
+          select: { id: true, name: true, avatarUrl: true },    // ✅ explicit output
+        });
+      }
+    </script>
+    <p>Validation is a security boundary, so test it: e2e tests that send unknown fields, too-large values and wrong types and expect <code>400</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using an <code>interface</code> or <code>any</code> for <code>@Body()</code>. Nothing is validated at runtime.</li>
+      <li>Forgetting <code>whitelist: true</code>, which leaves the door open to mass assignment.</li>
+      <li>Forgetting <code>@Type(() =&gt; ItemDto)</code> on nested arrays, so inner objects silently skip validation.</li>
+      <li>Accepting security-relevant values from the client: prices, <code>userId</code> of the owner, roles. Take them from the database or from the authenticated user.</li>
+      <li>No upper bounds: unlimited <code>limit</code>, string length, array size or file size.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a <code>RegisterDto</code> for <code>POST /auth/register</code> with: <code>email</code> (valid email, trimmed and lowercased, max 254 chars), <code>password</code> (string, 12 to 128 characters), and an optional <code>displayName</code> (trimmed, 1 to 50 chars). A client must not be able to set <code>role</code>.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        import { Transform } from 'class-transformer';
+        import { IsEmail, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+
+        const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
+
+        export class RegisterDto {
+          @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+          @IsEmail()
+          @MaxLength(254)
+          email: string;
+
+          @IsString()
+          @Length(12, 128)   // max length matters too: hashing huge strings is a DoS vector
+          password: string;
+
+          @IsOptional()
+          @Transform(trim)
+          @IsString()
+          @Length(1, 50)
+          displayName?: string;
+        }
+        // 'role' is not declared, so with whitelist + forbidNonWhitelisted
+        // a request containing it is rejected with 400. The service sets role = USER itself.
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What do <code>whitelist</code> and <code>forbidNonWhitelisted</code> do in <code>ValidationPipe</code>?</summary>
+      <p><code>whitelist</code> removes any property that has no validation decorator in the DTO. <code>forbidNonWhitelisted</code> rejects the request with 400 instead of silently removing them. Together they prevent mass assignment (clients setting fields like <code>role</code>).</p></details>
+    <details><summary>What is the difference between validation and sanitization?</summary>
+      <p>Validation checks that input matches the rules and rejects it if not (type, format, length, range). Sanitization transforms accepted input into a safe or normalized form (trim, lowercase, strip disallowed HTML). You usually do both: normalize, then validate.</p></details>
+    <details><summary>Why isn't the TypeScript type of <code>@Body()</code> enough?</summary>
+      <p>Types are erased at compile time. At runtime the body is whatever JSON the client sent. Only runtime validation (class-validator via <code>ValidationPipe</code>) actually checks it.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> All input is untrusted until validated: use DTO classes, a global <code>ValidationPipe</code> with <code>whitelist</code> and <code>forbidNonWhitelisted</code>, upper bounds on everything, and never take prices, owners or roles from the client.</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="topic" id="sql-injection-prevention">
+  <div class="topic-head"><span class="num">2</span><h2>SQL injection prevention</h2></div>
+  <p class="tagline">parameterized queries via Prisma</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Imagine you dictate a letter to an assistant who types <em>exactly</em> what you say, including instructions. If a stranger's sentence is dropped into the middle of your dictation, the assistant can't tell your instructions from theirs. That is SQL injection: user text is glued into the SQL string, so the database treats part of the user's text as <em>commands</em>. <strong>Parameterized queries</strong> fix this by sending the SQL command and the values <em>separately</em>: the database always treats the values as data, never as code.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The good news: normal Prisma queries are safe.</strong> <code>findMany</code>, <code>create</code>, <code>update</code> and friends always send values as parameters (<code>$1</code>, <code>$2</code>…). You can see it in the query log from Lesson 9:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ✅ Safe: email is sent as a parameter, never mixed into the SQL text
+    await this.prisma.user.findUnique({ where: { email: dto.email } });
+    // SQL:    SELECT ... FROM "User" WHERE "User"."email" = $1 LIMIT $2
+    // params: ["an@shop.com", 1]
+  </script>
+  <p>The risk appears when you drop down to raw SQL (Lesson 4, "Raw queries") for reports, full-text search or performance.</p>
+
+  <p><strong>The vulnerability: building SQL with string concatenation.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ VULNERABLE: user input is concatenated into the SQL text
+    async search(term: string) {
+      return this.prisma.$queryRawUnsafe(
+        `SELECT id, name, price FROM "Product" WHERE name ILIKE '%${term}%'`,
+      );
+    }
+  </script>
+  <p>The value of <code>term</code> becomes part of the command. A single quote in the input closes the string early, and whatever follows is interpreted as SQL. That can let someone read other tables (users, password hashes), bypass filters, or modify data. Even an innocent input such as <code>O'Brien</code> breaks the query with a syntax error, which is often how this bug is first noticed.</p>
+
+  <p><strong>The fix: <code>$queryRaw</code> with a tagged template.</strong> Notice there are no parentheses: <code>$queryRaw`...`</code> is a <em>tagged template</em>. Prisma receives the SQL pieces and the <code>${}</code> values separately and turns each value into a parameter:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ✅ SAFE: ${term} becomes $1, sent separately from the SQL text
+    async search(term: string) {
+      const pattern = `%${term}%`;
+      return this.prisma.$queryRaw<{ id: number; name: string; price: string }[]>`
+        SELECT id, name, price::text FROM "Product" WHERE name ILIKE ${pattern} LIMIT 50
+      `;
+    }
+    // SQL:    SELECT id, name, price::text FROM "Product" WHERE name ILIKE $1 LIMIT 50
+    // params: ["%O'Brien%"]   ← the quote is just a character in the data now
+  </script>
+  <table>
+    <tr><th>Method</th><th>Safe?</th><th>Why</th></tr>
+    <tr><td><code>prisma.model.findMany(...)</code> etc.</td><td>✅</td><td>Always parameterized</td></tr>
+    <tr><td><code>$queryRaw`... ${value}`</code> / <code>$executeRaw`...`</code></td><td>✅</td><td>Tagged template, values become parameters</td></tr>
+    <tr><td><code>$queryRawUnsafe('... $1', value)</code></td><td>✅ if you only use <code>$1</code> placeholders</td><td>Values passed as separate arguments</td></tr>
+    <tr><td><code>$queryRawUnsafe(`... ${value}`)</code></td><td>❌</td><td>Value is part of the SQL text</td></tr>
+    <tr><td><code>$queryRaw(Prisma.raw(`... ${value}`))</code></td><td>❌</td><td><code>Prisma.raw</code> inserts text without escaping</td></tr>
+  </table>
+
+  <p><strong>Building dynamic queries safely.</strong> Use <code>Prisma.sql</code> to compose fragments, and <code>Prisma.join</code> for lists. Each piece stays parameterized:</p>
+  <script type="text/x-code" data-lang="typescript">
+    import { Prisma } from '@prisma/client';
+
+    async report(filters: { status?: string; categoryIds?: number[] }) {
+      const conditions: Prisma.Sql[] = [Prisma.sql`o."createdAt" >= now() - interval '30 days'`];
+      if (filters.status) conditions.push(Prisma.sql`o.status::text = ${filters.status}`);
+      if (filters.categoryIds?.length) {
+        conditions.push(Prisma.sql`p."categoryId" IN (${Prisma.join(filters.categoryIds)})`);
+      }
+
+      return this.prisma.$queryRaw`
+        SELECT p.id, p.name, SUM(oi.quantity)::int AS sold
+        FROM "OrderItem" oi
+        JOIN "Order" o ON o.id = oi."orderId"
+        JOIN "Product" p ON p.id = oi."productId"
+        WHERE ${Prisma.join(conditions, ' AND ')}
+        GROUP BY p.id, p.name
+        ORDER BY sold DESC
+        LIMIT 20
+      `;
+    }
+  </script>
+
+  <p><strong>Identifiers cannot be parameters.</strong> Parameters only work for <em>values</em>. Column names and sort directions (<code>ORDER BY ${column}</code>) cannot be parameters, so people are tempted to concatenate them. Use an allow-list instead:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ sortBy comes from the query string and is pasted into SQL
+    Prisma.raw(`ORDER BY "${query.sortBy}" ${query.dir}`);
+
+    // ✅ Map allowed values to fixed SQL fragments; anything else is impossible
+    const SORT_COLUMNS = {
+      price: Prisma.sql`p.price`,
+      newest: Prisma.sql`p."createdAt"`,
+      name: Prisma.sql`p.name`,
+    } as const;
+    type SortKey = keyof typeof SORT_COLUMNS;
+
+    const column = SORT_COLUMNS[query.sortBy as SortKey] ?? SORT_COLUMNS.newest;
+    const direction = query.dir === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    const orderBy = Prisma.sql`ORDER BY ${column} ${direction}`;
+    // (and validate sortBy with @IsIn(['price', 'newest', 'name']) in the DTO)
+  </script>
+
+  <p><strong>Prisma's own "operator injection".</strong> Even without raw SQL, passing unvalidated objects into <code>where</code> is dangerous. If the query string is parsed into nested objects, a client could send a filter object instead of a string:</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ query.email might be an object like { contains: '' } instead of a string,
+    //    turning "find by exact email" into "match any email"
+    this.prisma.user.findFirst({ where: { email: req.query.email as any } });
+
+    // ✅ The DTO guarantees a string; @IsEmail rejects objects with 400
+    this.prisma.user.findFirst({ where: { email: dto.email } });
+  </script>
+  <p>That's why input validation (point 1) and injection prevention work together.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Keep raw SQL inside repositories, review every <code>Unsafe</code> call in code review, and add an ESLint rule so it can't sneak in unnoticed:</p>
+    <script type="text/x-code" data-lang="javascript" data-title="eslint.config.mjs (excerpt)">
+      {
+        rules: {
+          'no-restricted-properties': ['error',
+            { property: '$queryRawUnsafe', message: 'Use $queryRaw`` (tagged template) instead.' },
+            { property: '$executeRawUnsafe', message: 'Use $executeRaw`` (tagged template) instead.' },
+          ],
+        },
+      }
+    </script>
+    <p>Defense in depth: the database user in <code>DATABASE_URL</code> for the app should have only the privileges it needs (read/write on the app's tables), not superuser. Then even a successful injection can't drop tables or read other databases. Migrations can run with a separate, more privileged user.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Using <code>$queryRawUnsafe</code> with template literals (<code>`... ${x}`</code>) because "it's the same syntax". It is not: the value becomes SQL text.</li>
+      <li>Calling <code>$queryRaw(...)</code> with parentheses around a pre-built string, which loses the parameterization.</li>
+      <li>Concatenating column names or sort directions from user input instead of using an allow-list.</li>
+      <li>"Escaping" quotes by hand with <code>replace(/'/g, "''")</code>. Escaping is easy to get wrong; parameters are always right.</li>
+      <li>Connecting with a superuser account, so any injection becomes a full database takeover.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Rewrite this vulnerable method safely. <code>minPrice</code> comes from a query string, and <code>tag</code> comes from the URL.</p>
+    <script type="text/x-code" data-lang="typescript">
+      // ❌
+      findByTag(tag: string, minPrice: string) {
+        return this.prisma.$queryRawUnsafe(
+          `SELECT id, name FROM "Product" WHERE '${tag}' = ANY(tags) AND price >= ${minPrice}`,
+        );
+      }
+    </script>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // ✅ Option 1: no raw SQL needed at all
+        findByTag(tag: string, minPrice: number) {
+          return this.prisma.product.findMany({
+            where: { tags: { has: tag }, price: { gte: minPrice } },
+            select: { id: true, name: true },
+          });
+        }
+
+        // ✅ Option 2: raw SQL, parameterized
+        findByTagRaw(tag: string, minPrice: number) {
+          return this.prisma.$queryRaw<{ id: number; name: string }[]>`
+            SELECT id, name FROM "Product" WHERE ${tag} = ANY(tags) AND price >= ${minPrice}
+          `;
+        }
+        // And validate input first: @IsString() @Length(1, 30) tag; @Type(() => Number) @IsNumber() @Min(0) minPrice
+      </script>
+      <p>The best fix is often to not use raw SQL. If the Prisma query API can express it, use it.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is SQL injection and how do parameterized queries prevent it?</summary>
+      <p>SQL injection happens when user input is concatenated into a SQL string, so part of the input is executed as SQL. Parameterized queries send the SQL text and the values separately; the database parses the command first and treats values purely as data, so they can never change the query's structure.</p></details>
+    <details><summary>Is Prisma immune to SQL injection?</summary>
+      <p>The query API (<code>findMany</code>, <code>create</code>…) and tagged-template <code>$queryRaw</code>/<code>$executeRaw</code> are parameterized and safe. <code>$queryRawUnsafe</code>/<code>$executeRawUnsafe</code> with concatenated strings, and <code>Prisma.raw</code> with user input, are vulnerable. Passing unvalidated objects into <code>where</code> can also change a query's meaning.</p></details>
+    <details><summary>How do you safely let users choose a sort column?</summary>
+      <p>Identifiers can't be parameters, so validate against an allow-list (e.g. <code>@IsIn([...])</code>) and map each allowed value to a fixed SQL fragment or a Prisma <code>orderBy</code> object. Never insert the raw string.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Never build SQL by concatenating input. Use the Prisma query API or tagged-template <code>$queryRaw</code>, use allow-lists for identifiers, and treat every <code>Unsafe</code> call as a red flag in review.</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="topic" id="cors">
+  <div class="topic-head"><span class="num">3</span><h2>CORS</h2></div>
+  <p class="tagline">configuring allowed origins</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Browsers follow a rule called the <strong>same-origin policy</strong>: JavaScript on <code>https://evil.example</code> is not allowed to read responses from <code>https://api.shop.com</code>. Otherwise any website you visit could quietly read your bank data using your logged-in cookies. <strong>CORS</strong> (Cross-Origin Resource Sharing) is how your API tells the browser "it's OK, I trust <em>these</em> specific websites to read my responses". It's a guest list that the browser enforces at the door. Two key facts: CORS is enforced <em>by browsers only</em> (curl, Postman and servers ignore it), and it is <em>not</em> authentication.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>What is an "origin"?</strong> The combination of scheme + host + port. All three must match to be "same origin":</p>
+  <table>
+    <tr><th>Page origin</th><th>API URL</th><th>Same origin?</th></tr>
+    <tr><td><code>https://shop.com</code></td><td><code>https://shop.com/api/orders</code></td><td>✅ Yes</td></tr>
+    <tr><td><code>https://shop.com</code></td><td><code>https://api.shop.com/orders</code></td><td>❌ No (different host)</td></tr>
+    <tr><td><code>http://localhost:5173</code></td><td><code>http://localhost:3000/orders</code></td><td>❌ No (different port)</td></tr>
+    <tr><td><code>http://shop.com</code></td><td><code>https://shop.com/orders</code></td><td>❌ No (different scheme)</td></tr>
+  </table>
+
+  <p><strong>The request flow.</strong> For "non-simple" requests (e.g. <code>PUT</code>/<code>DELETE</code>, JSON bodies, an <code>Authorization</code> header), the browser first sends a <strong>preflight</strong> <code>OPTIONS</code> request to ask permission:</p>
+  <script type="text/x-code" data-lang="http">
+    OPTIONS /orders HTTP/1.1
+    Origin: https://shop.com
+    Access-Control-Request-Method: POST
+    Access-Control-Request-Headers: authorization, content-type
+
+    HTTP/1.1 204 No Content
+    Access-Control-Allow-Origin: https://shop.com
+    Access-Control-Allow-Methods: GET,POST,PATCH,DELETE
+    Access-Control-Allow-Headers: authorization,content-type
+    Access-Control-Allow-Credentials: true
+    Access-Control-Max-Age: 600
+  </script>
+  <p>If the response doesn't allow the origin, the browser blocks the real request (or blocks JavaScript from reading its response) and shows the famous "blocked by CORS policy" error in the console.</p>
+
+  <p><strong>Vulnerable configurations.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    // ❌ 1. Reflect ANY origin and allow credentials:
+    //       every website can make logged-in requests and READ the responses
+    app.enableCors({ origin: true, credentials: true });
+
+    // ❌ 2. A regex that is too loose: also matches https://evil-shop.com and https://shop.com.evil.net
+    app.enableCors({ origin: /shop\.com/, credentials: true });
+
+    // ⚠️ 3. Allow everyone. Acceptable ONLY for a truly public, read-only API without cookies
+    app.enableCors(); // Access-Control-Allow-Origin: *
+  </script>
+  <p>Why is #1 so bad? If your API uses cookies for auth, a user who is logged in to your shop and visits a malicious site would let that site's JavaScript call <code>GET /me</code> with their cookie and read their personal data. (Browsers refuse <code>*</code> together with credentials for exactly this reason; reflecting the origin bypasses that safety rule.)</p>
+
+  <p><strong>The fix: an explicit allow-list from configuration.</strong></p>
+  <script type="text/x-code" data-lang="ini" data-title=".env.production">
+    CORS_ORIGINS=https://shop.com,https://admin.shop.com
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    const config = app.get(ConfigService);
+    const allowed = new Set(
+      config.getOrThrow<string>('CORS_ORIGINS').split(',').map((o) => o.trim()),
+    );
+
+    // ✅ Exact string matches only, no regex surprises
+    app.enableCors({
+      origin: (origin, callback) => {
+        // requests without an Origin header (server-to-server, curl, mobile apps) are not
+        // subject to CORS; allow them here and rely on authentication to protect the API
+        if (!origin || allowed.has(origin)) return callback(null, true);
+        return callback(null, false); // no CORS headers → browser blocks the read
+      },
+      credentials: true,                                    // only if you use cookies
+      methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+      exposedHeaders: ['X-Request-Id'],                     // headers the frontend may read
+      maxAge: 600,                                          // cache preflight for 10 minutes
+    });
+  </script>
+  <p>A simpler form works too: <code>origin: ['https://shop.com', 'https://admin.shop.com']</code>. The <code>cors</code> package compares strings exactly.</p>
+
+  <p><strong>What CORS does NOT do.</strong></p>
+  <ul>
+    <li>It doesn't stop anyone from calling your API directly with curl or a script. Only <strong>authentication and authorization</strong> do that.</li>
+    <li>It doesn't fully protect cookie-based APIs from CSRF (cross-site request forgery). Some "simple" requests (like a form POST) are still <em>sent</em> by the browser; CORS only blocks <em>reading</em> the response. Use <code>SameSite</code> cookies (point 6) and, for cookie sessions, CSRF tokens.</li>
+    <li>If your API uses <code>Authorization: Bearer</code> tokens stored by the frontend (not cookies), the browser doesn't attach credentials automatically, which reduces the CORS risk, but you should still allow-list origins.</li>
+  </ul>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Keep origins per environment in config (dev: <code>http://localhost:5173</code>; staging and production: their real domains) and validate them at boot together with other config. Write an e2e test so nobody "temporarily" switches to <code>origin: true</code>:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/cors.e2e-spec.ts">
+      it('allows the shop frontend', async () => {
+        const res = await request(app.getHttpServer())
+          .options('/orders')
+          .set('Origin', 'https://shop.com')
+          .set('Access-Control-Request-Method', 'POST');
+        expect(res.headers['access-control-allow-origin']).toBe('https://shop.com');
+      });
+
+      it('does not allow unknown origins', async () => {
+        const res = await request(app.getHttpServer())
+          .options('/orders')
+          .set('Origin', 'https://evil.example')
+          .set('Access-Control-Request-Method', 'POST');
+        expect(res.headers['access-control-allow-origin']).toBeUndefined();
+      });
+    </script>
+    <p>Note: in tests, call <code>app.enableCors(...)</code> the same way as in <code>main.ts</code> (move the setup into a shared <code>configureApp(app)</code> function), because <code>Test.createTestingModule</code> doesn't run <code>main.ts</code>.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li><code>origin: true</code> (reflect any origin) with <code>credentials: true</code>, usually added to "fix" a CORS error quickly.</li>
+      <li>Loose regexes such as <code>/shop\.com/</code> that match attacker-controlled domains.</li>
+      <li>Thinking CORS protects the API from non-browser clients. It doesn't. Authentication does.</li>
+      <li>Trailing slashes or wrong scheme in the allow-list (<code>https://shop.com/</code> never matches an <code>Origin</code> header, which has no path).</li>
+      <li>Allowing <code>null</code> as an origin. Sandboxed iframes and local files send <code>Origin: null</code>, and attackers can produce it too.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your frontend runs on <code>https://app.example.com</code> in production and <code>http://localhost:5173</code> in development. It uses an httpOnly cookie for the refresh token. Write the <code>enableCors</code> call using an env variable, and explain why <code>origin: '*'</code> would not work here anyway.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // .env.development: CORS_ORIGINS=http://localhost:5173
+        // .env.production:  CORS_ORIGINS=https://app.example.com
+        app.enableCors({
+          origin: config.getOrThrow<string>('CORS_ORIGINS').split(',').map((o) => o.trim()),
+          credentials: true,
+          methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+        });
+      </script>
+      <p>Browsers refuse to send or expose credentialed requests (cookies) when the server answers <code>Access-Control-Allow-Origin: *</code>. With credentials you must return the exact origin, which is why an explicit list is required.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What is CORS and who enforces it?</summary>
+      <p>A mechanism that lets a server tell browsers which other origins may read its responses, using <code>Access-Control-*</code> headers. It is enforced by the browser, so non-browser clients are not affected.</p></details>
+    <details><summary>Why is <code>origin: true</code> with <code>credentials: true</code> dangerous?</summary>
+      <p>It reflects whatever origin asks, so any website can make requests with the user's cookies and read the responses, which exposes the user's private data to every site they visit.</p></details>
+    <details><summary>What is a preflight request?</summary>
+      <p>An automatic <code>OPTIONS</code> request the browser sends before a non-simple cross-origin request (custom headers, JSON body, PUT/DELETE…) to check that the server allows that origin, method and headers. <code>Access-Control-Max-Age</code> lets the browser cache the answer.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Allow-list exact origins from config, enable credentials only if you use cookies, and remember CORS is a browser rule, not a substitute for authentication.</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="topic" id="helmet">
+  <div class="topic-head"><span class="num">4</span><h2>Helmet</h2></div>
+  <p class="tagline">secure HTTP headers</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>HTTP response headers are little instructions attached to every response that tell the browser how to behave: "only talk to me over HTTPS", "don't guess the file type", "don't show me inside someone else's frame". Browsers have many protections, but most are <em>off unless you ask for them</em>. <strong>Helmet</strong> is a middleware that adds a sensible set of these security headers in one line, like putting on a helmet before riding: it won't make you invincible, but it prevents a lot of common injuries.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Before Helmet.</strong> A fresh Nest app on Express sends very few headers, and one of them helps attackers:</p>
+  <script type="text/x-code" data-lang="bash">
+    curl -I http://localhost:3000/health
+  </script>
+  <script type="text/x-code" data-lang="http">
+    HTTP/1.1 200 OK
+    X-Powered-By: Express            ← ❌ advertises your framework (useful info for attackers)
+    Content-Type: application/json; charset=utf-8
+    Content-Length: 15
+  </script>
+
+  <p><strong>Add Helmet.</strong></p>
+  <script type="text/x-code" data-lang="bash">
+    npm i helmet
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import helmet from 'helmet';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      app.use(helmet());           // ✅ register early, before other middleware and routes
+      await app.listen(3000);
+    }
+  </script>
+  <p><strong>After Helmet:</strong></p>
+  <script type="text/x-code" data-lang="http">
+    HTTP/1.1 200 OK
+    Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+    Cross-Origin-Opener-Policy: same-origin
+    Cross-Origin-Resource-Policy: same-origin
+    Origin-Agent-Cluster: ?1
+    Referrer-Policy: no-referrer
+    Strict-Transport-Security: max-age=31536000; includeSubDomains
+    X-Content-Type-Options: nosniff
+    X-DNS-Prefetch-Control: off
+    X-Download-Options: noopen
+    X-Frame-Options: SAMEORIGIN
+    X-Permitted-Cross-Domain-Policies: none
+    X-XSS-Protection: 0
+    Content-Type: application/json; charset=utf-8
+  </script>
+
+  <p><strong>What the important ones do:</strong></p>
+  <table>
+    <tr><th>Header</th><th>Protects against</th></tr>
+    <tr><td><code>Strict-Transport-Security</code> (HSTS)</td><td>Downgrade to plain HTTP: the browser remembers to use HTTPS only (point 6)</td></tr>
+    <tr><td><code>Content-Security-Policy</code></td><td>XSS: limits where scripts, styles, images can load from. Most important for HTML pages</td></tr>
+    <tr><td><code>X-Content-Type-Options: nosniff</code></td><td>Browser "guessing" that an uploaded text file is a script and running it</td></tr>
+    <tr><td><code>X-Frame-Options</code> / <code>frame-ancestors</code></td><td>Clickjacking: your page loaded invisibly inside another site's frame</td></tr>
+    <tr><td><code>Referrer-Policy</code></td><td>Leaking full URLs (which may contain IDs or tokens) to other sites</td></tr>
+    <tr><td>removes <code>X-Powered-By</code></td><td>Giving away which framework and version you run</td></tr>
+  </table>
+  <p>For a pure JSON API, the browser doesn't render your responses as pages, so some headers matter less. They cost nothing, though, and they protect anything else the API serves: error pages, Swagger UI, file downloads, uploaded images.</p>
+
+  <p><strong>Configuring Helmet.</strong> Defaults are good; adjust only what you need, and keep the change as narrow as possible:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    // ❌ Turning protections off globally because one page broke
+    app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+
+    // ✅ Narrow changes
+    app.use(
+      helmet({
+        // product images are loaded by the shop frontend on another origin
+        crossOriginResourcePolicy: { policy: 'same-site' },
+        // API never needs to be framed
+        frameguard: { action: 'deny' },
+        hsts: { maxAge: 31_536_000, includeSubDomains: true },
+      }),
+    );
+  </script>
+
+  <p><strong>Swagger UI and CSP.</strong> Swagger UI uses inline scripts, which the default CSP blocks, so <code>/docs</code> may appear blank. The safest fix is to not expose Swagger in production at all. If you need it in staging, relax CSP only for that path:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { Request, Response, NextFunction } from 'express';
+
+    const strict = helmet();
+    const forDocs = helmet({
+      contentSecurityPolicy: {
+        directives: {
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+        },
+      },
+    });
+    app.use((req: Request, res: Response, next: NextFunction) =>
+      req.path.startsWith('/docs') ? forDocs(req, res, next) : strict(req, res, next),
+    );
+
+    if (config.get('NODE_ENV') !== 'production') {
+      SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+    }
+  </script>
+  <p>If you use the Fastify adapter instead of Express, use <code>@fastify/helmet</code> and register it with <code>await app.register(helmet)</code>.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Put security setup in one function used by both <code>main.ts</code> and e2e tests, and assert the headers in a test, so a refactor can't silently remove them:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="src/configure-app.ts">
+      export function configureApp(app: INestApplication, config: ConfigService) {
+        app.use(helmet());
+        app.enableCors({ origin: config.getOrThrow<string>('CORS_ORIGINS').split(','), credentials: true });
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+      }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="test/security-headers.e2e-spec.ts">
+      it('sends security headers', async () => {
+        const res = await request(app.getHttpServer()).get('/health').expect(200);
+        expect(res.headers['x-powered-by']).toBeUndefined();
+        expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['strict-transport-security']).toContain('max-age=');
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Registering Helmet <em>after</em> routes or other middleware that already sent the response, so its headers never get added.</li>
+      <li>Disabling CSP for the whole app to fix one page (often Swagger). Scope the change to that path.</li>
+      <li>Believing Helmet "secures the app". It only sets headers; it doesn't validate input, check auth or prevent injection.</li>
+      <li>Setting HSTS with a long <code>max-age</code> and <code>includeSubDomains</code> before every subdomain supports HTTPS. Browsers will refuse HTTP to those subdomains for the whole period.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Add Helmet to an existing app so that: the app can never be framed by any site, the referrer is sent only to the same origin, and everything else stays at Helmet's defaults. Then write the <code>curl</code> command you'd use to check the result.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        app.use(
+          helmet({
+            frameguard: { action: 'deny' },                 // X-Frame-Options: DENY
+            referrerPolicy: { policy: 'same-origin' },      // Referrer-Policy: same-origin
+          }),
+        );
+      </script>
+      <script type="text/x-code" data-lang="bash">
+        curl -sI http://localhost:3000/health | grep -iE 'x-frame-options|referrer-policy|x-powered-by'
+        # x-frame-options: DENY
+        # referrer-policy: same-origin
+        # (no x-powered-by line)
+      </script>
+      <p>For full protection against framing in modern browsers, CSP's <code>frame-ancestors 'none'</code> is the newer equivalent; Helmet's default CSP already sets <code>frame-ancestors 'self'</code>, which you could tighten too.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does Helmet do?</summary>
+      <p>It is middleware that sets a collection of security-related HTTP response headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and others) and removes <code>X-Powered-By</code>, turning on browser protections that are off by default.</p></details>
+    <details><summary>What is Content-Security-Policy for?</summary>
+      <p>It tells the browser which sources of scripts, styles, images, frames, etc. are allowed. Even if an attacker manages to inject HTML, scripts from non-allowed sources or inline scripts won't run, which greatly limits XSS damage.</p></details>
+    <details><summary>Does a JSON API need security headers?</summary>
+      <p>Yes, cheaply. <code>nosniff</code>, HSTS and framing protections still matter for error pages, docs, file downloads and any HTML the API returns, and removing <code>X-Powered-By</code> reduces fingerprinting. Defense in depth costs one line.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> <code>app.use(helmet())</code> early in <code>main.ts</code>, keep the defaults, loosen only narrowly (e.g. Swagger path), and test that the headers are present.</div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="topic" id="environment-secrets">
+  <div class="topic-head"><span class="num">5</span><h2>Environment secrets</h2></div>
+  <p class="tagline">.env management and secret storage</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Secrets are the keys to your house: the database password, the JWT signing key, the payment provider's API key. You wouldn't engrave your house key's shape on the front door, but putting a secret in your source code is exactly that: everyone who can see the code (teammates, contractors, a leaked laptop, a public GitHub repo by mistake) now has the key. Secrets belong <em>outside</em> the code, are given to the app when it starts, are different in every environment, and can be <strong>replaced</strong> (rotated) without changing code.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The vulnerable patterns.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ 1. Hard-coded secret: lives forever in git history
+    JwtModule.register({ secret: 'super-secret-key-123' });
+
+    // ❌ 2. "Convenient" fallback: if the env var is missing in production,
+    //       the app silently starts with a secret everyone can read on GitHub
+    const secret = process.env.JWT_SECRET || 'dev-secret';
+
+    // ❌ 3. Weak secret: short and guessable, so tokens could be forged offline
+    // JWT_SECRET=secret
+  </script>
+
+  <p><strong>Step 1: <code>.env</code> for local development only, never committed.</strong></p>
+  <script type="text/x-code" data-lang="plaintext" data-title=".gitignore">
+    .env
+    .env.*
+    !.env.example
+  </script>
+  <script type="text/x-code" data-lang="ini" data-title=".env.example (committed: names only, no real values)">
+    NODE_ENV=development
+    PORT=3000
+    DATABASE_URL=postgresql://app:app@localhost:5432/shop_dev
+    JWT_ACCESS_SECRET=change-me-generate-64-random-bytes
+    JWT_ACCESS_TTL=15m
+    STRIPE_SECRET_KEY=
+    CORS_ORIGINS=http://localhost:5173
+  </script>
+  <p>Generate strong random secrets instead of inventing them:</p>
+  <script type="text/x-code" data-lang="bash">
+    node -e "console.log(require('node:crypto').randomBytes(64).toString('base64url'))"
+  </script>
+
+  <p><strong>Step 2: validate configuration at startup (fail fast).</strong> If a secret is missing or obviously wrong, the app should refuse to start, not run with a default. <code>ConfigModule</code> accepts a <code>validate</code> function; here with class-validator, which you already use for DTOs:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="config/env.validation.ts">
+    import { plainToInstance } from 'class-transformer';
+    import { IsEnum, IsInt, IsString, IsUrl, MinLength, validateSync } from 'class-validator';
+
+    enum NodeEnv { Development = 'development', Test = 'test', Production = 'production' }
+
+    class EnvVars {
+      @IsEnum(NodeEnv) NODE_ENV: NodeEnv;
+      @IsInt() PORT: number;
+      @IsUrl({ protocols: ['postgresql', 'postgres'], require_tld: false }) DATABASE_URL: string;
+      @IsString() @MinLength(32) JWT_ACCESS_SECRET: string;   // ✅ rejects 'secret'
+      @IsString() CORS_ORIGINS: string;
+    }
+
+    export function validateEnv(raw: Record<string, unknown>) {
+      const env = plainToInstance(EnvVars, raw, { enableImplicitConversion: true });
+      const errors = validateSync(env, { skipMissingProperties: false });
+      if (errors.length) {
+        // ✅ report WHICH variable is wrong, but never print its value
+        throw new Error('Invalid environment: ' + errors.map((e) => e.property).join(', '));
+      }
+      return env;
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+      ignoreEnvFile: process.env.NODE_ENV === 'production', // ✅ prod gets real env vars, not a file
+    }),
+
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),   // ✅ no fallback
+        signOptions: { expiresIn: config.getOrThrow<string>('JWT_ACCESS_TTL') },
+      }),
+    }),
+  </script>
+
+  <p><strong>Step 3: where production secrets live.</strong> In production there is no <code>.env</code> file in the repository or the Docker image. The platform injects environment variables when the container starts, reading them from a secret store:</p>
+  <table>
+    <tr><th>Option</th><th>Good for</th></tr>
+    <tr><td>Platform env settings (Render, Railway, Fly.io, Heroku)</td><td>Small projects; encrypted at rest, edited in a dashboard</td></tr>
+    <tr><td>AWS Secrets Manager / SSM Parameter Store, GCP Secret Manager, Azure Key Vault</td><td>Cloud deployments; access controlled by IAM roles, audit logs, rotation</td></tr>
+    <tr><td>HashiCorp Vault, Doppler, Infisical</td><td>Multi-cloud or many services; central management</td></tr>
+    <tr><td>Kubernetes Secrets (ideally synced from one of the above)</td><td>K8s deployments; mounted as env vars or files</td></tr>
+    <tr><td>CI secrets (GitHub Actions secrets)</td><td>Values needed only during build/deploy pipelines</td></tr>
+  </table>
+  <script type="text/x-code" data-lang="dockerfile" data-title="Dockerfile">
+    # ❌ Secrets baked into the image: anyone who can pull the image can read them
+    # COPY .env .env
+    # ENV JWT_ACCESS_SECRET=abc123
+
+    # ✅ Image contains only code; secrets arrive at runtime
+    FROM node:22-alpine
+    WORKDIR /app
+    COPY dist ./dist
+    COPY node_modules ./node_modules
+    CMD ["node", "dist/main.js"]
+    # docker run -e DATABASE_URL=... -e JWT_ACCESS_SECRET=...  (or injected by the orchestrator)
+  </script>
+  <p>Also add a <code>.dockerignore</code> containing <code>.env*</code>, so a <code>COPY . .</code> never pulls local secrets into the image.</p>
+
+  <p><strong>Step 4: when a secret leaks, rotate it.</strong> If a secret was ever committed, pushed, pasted into a chat or printed in logs, consider it compromised. Deleting the commit is not enough (forks, clones, caches and CI logs keep copies). The response is:</p>
+  <ol>
+    <li><strong>Rotate</strong>: generate a new value, deploy it, revoke the old one at the provider.</li>
+    <li>Check for misuse in the provider's and your own logs.</li>
+    <li>Clean history if needed, and add prevention: secret scanning (GitHub secret scanning / push protection, or a pre-commit hook such as gitleaks).</li>
+  </ol>
+  <p>Design for rotation from the start: for example, accept JWTs signed with the current key <em>or</em> the previous key for a short overlap period, so rotating the signing key doesn't log everyone out.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Use a different secret per environment (dev, staging, production never share a JWT secret or a database password), give each service only the secrets it needs, and access configuration only through <code>ConfigService</code> (no scattered <code>process.env</code> reads). A typed wrapper keeps it tidy:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="config/app-config.service.ts">
+      @Injectable()
+      export class AppConfig {
+        constructor(private readonly config: ConfigService) {}
+
+        get jwtAccessSecret(): string { return this.config.getOrThrow('JWT_ACCESS_SECRET'); }
+        get stripeKey(): string { return this.config.getOrThrow('STRIPE_SECRET_KEY'); }
+        get isProduction(): boolean { return this.config.get('NODE_ENV') === 'production'; }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Committing <code>.env</code> "just once", or putting real values in <code>.env.example</code>.</li>
+      <li>Fallback defaults like <code>process.env.JWT_SECRET || 'secret'</code> that hide a missing secret in production.</li>
+      <li>Copying <code>.env</code> into Docker images, or printing <code>process.env</code> / the config object at startup "for debugging".</li>
+      <li>Sharing the same secrets across dev, staging and production, so a leak in dev compromises production.</li>
+      <li>Deleting a leaked secret from git instead of rotating it.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>A teammate's PR contains: <code>const stripe = new Stripe(process.env.STRIPE_KEY ?? 'sk_live_51H...', { apiVersion: '2024-06-20' })</code> inside a service. List everything wrong and write the fixed version.</p>
+    <details>
+      <summary>Show answer</summary>
+      <p>Problems: (1) a <strong>live</strong> secret key is now in git history, so it must be rotated at Stripe immediately, even if the PR is never merged; (2) the fallback hides a missing env var; (3) <code>process.env</code> is read directly instead of through validated config; (4) the client is created inside a service instead of as a provider, which makes it hard to mock in tests.</p>
+      <script type="text/x-code" data-lang="typescript" data-title="payments.module.ts">
+        export const STRIPE = Symbol('STRIPE');
+
+        @Module({
+          providers: [
+            {
+              provide: STRIPE,
+              inject: [ConfigService],
+              useFactory: (config: ConfigService) =>
+                new Stripe(config.getOrThrow<string>('STRIPE_SECRET_KEY')), // ✅ no fallback
+            },
+            PaymentsService,
+          ],
+          exports: [PaymentsService],
+        })
+        export class PaymentsModule {}
+        // + add STRIPE_SECRET_KEY to the env validation class and to .env.example (empty value)
+      </script>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How do you manage secrets in a NestJS application?</summary>
+      <p>Secrets come from environment variables, never from code. Locally a git-ignored <code>.env</code>; in production they are injected from a secret manager or the platform. <code>ConfigModule</code> validates them at startup (fail fast, no defaults), and the code reads them only through <code>ConfigService</code>. Use different secrets per environment and plan for rotation.</p></details>
+    <details><summary>A secret was committed to the repository. What do you do?</summary>
+      <p>Treat it as compromised: rotate it (create a new one, deploy it, revoke the old one), check logs for misuse, then clean the history if necessary and add secret scanning to prevent it happening again. Removing the commit alone is not enough.</p></details>
+    <details><summary>Why validate environment variables at startup?</summary>
+      <p>So a misconfigured deployment fails immediately and visibly, instead of starting with a missing or weak secret, or crashing later on the first request that needs the value.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Secrets never go in code, git or Docker images: inject them at runtime, validate them at boot without fallbacks, keep them different per environment, and rotate anything that leaks.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="topic" id="https">
+  <div class="topic-head"><span class="num">6</span><h2>HTTPS</h2></div>
+  <p class="tagline">understand secure API communication</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Plain HTTP is like sending a postcard: every post office, Wi-Fi router and network provider between the user and your server can read it, and even change it. HTTPS puts the postcard in a locked, tamper-proof envelope, and also checks the ID of the recipient. It gives three guarantees: <strong>confidentiality</strong> (nobody can read the password or token), <strong>integrity</strong> (nobody can change the response on the way) and <strong>authentication</strong> (the client is really talking to <code>api.shop.com</code>, proven by a certificate). For any API that handles logins or personal data, HTTPS is not optional.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>The basics of TLS</strong> (the "S" in HTTPS):</p>
+  <ol>
+    <li>The client connects and the server presents its <strong>certificate</strong>: "I am api.shop.com", signed by a certificate authority (CA) such as Let's Encrypt that the client already trusts.</li>
+    <li>The client checks the signature, the domain name and the expiry date. If anything is wrong, it refuses to continue.</li>
+    <li>Both sides agree on a fresh encryption key, and all further traffic, including headers like <code>Authorization</code> and cookies, is encrypted.</li>
+  </ol>
+
+  <p><strong>Where HTTPS ends in a typical deployment.</strong> Usually your NestJS app does <em>not</em> handle certificates itself. A load balancer or reverse proxy "terminates" TLS and forwards plain HTTP to the app over a private network:</p>
+  <script type="text/x-code" data-lang="plaintext">
+    Browser ──HTTPS──▶ Load balancer / reverse proxy ──HTTP (private network)──▶ NestJS :3000
+                       (AWS ALB, Nginx, Caddy, Cloudflare,
+                        Kubernetes ingress: holds the certificate,
+                        renews it automatically)
+  </script>
+  <p>This keeps certificate renewal out of your code. But it means the app sees an HTTP request, so it needs to know the original request was secure. The proxy sends <code>X-Forwarded-Proto: https</code>, and you tell Express to trust exactly your proxy (as in Lesson 9's rate limiting):</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    app.set('trust proxy', 1); // ✅ now req.secure, req.protocol and req.ip reflect the real client
+  </script>
+
+  <p><strong>Never accept credentials over plain HTTP.</strong> Redirecting HTTP to HTTPS is fine for websites, but for an API the first request has <em>already</em> sent the token in clear text before the redirect happens. Better: don't serve the API on port 80 at all (or answer with an error), and use HSTS so browsers never even try HTTP:</p>
+  <script type="text/x-code" data-lang="http">
+    Strict-Transport-Security: max-age=31536000; includeSubDomains
+  </script>
+  <p>Helmet sets this header by default (point 4). After the browser sees it once, it rewrites every <code>http://</code> request to that domain into <code>https://</code> locally for a year.</p>
+
+  <p><strong>Cookies must be secure too.</strong> If you store a refresh token in a cookie, these flags matter:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth.controller.ts">
+    // ❌ Readable by JavaScript (XSS can steal it), sent over HTTP, sent cross-site
+    res.cookie('refresh_token', token);
+
+    // ✅
+    res.cookie('refresh_token', token, {
+      httpOnly: true,              // JavaScript cannot read it
+      secure: true,                // only sent over HTTPS
+      sameSite: 'strict',          // not sent with requests from other sites (CSRF protection)
+      path: '/auth/refresh',       // only sent to the endpoint that needs it
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  </script>
+
+  <p><strong>HTTPS for outgoing connections too.</strong> The same rule applies when <em>your</em> app is the client: to the database, Redis, and third-party APIs.</p>
+  <script type="text/x-code" data-lang="ini" data-title=".env.production">
+    # ✅ Encrypt the connection to a managed PostgreSQL (RDS, Cloud SQL, Neon, Supabase...)
+    DATABASE_URL="postgresql://app:***@db.example.com:5432/shop?sslmode=require"
+    # ✅ rediss:// (two s) = Redis over TLS
+    REDIS_URL="rediss://default:***@cache.example.com:6380"
+  </script>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ "Fixing" a certificate error by turning verification off.
+    //    Traffic is still encrypted, but you no longer know WHO you're talking to,
+    //    so a machine in the middle can impersonate the server.
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    new https.Agent({ rejectUnauthorized: false });
+
+    // ✅ Fix the real problem: correct hostname, renew the certificate,
+    //    or provide the internal CA certificate explicitly
+    new https.Agent({ ca: fs.readFileSync('/etc/ssl/internal-ca.pem') });
+  </script>
+
+  <p><strong>HTTPS in local development</strong> is usually not needed (cookies with <code>secure: true</code> are allowed on <code>localhost</code> in modern browsers). When you do need it, for example to test something that requires a secure context, create a locally trusted certificate (e.g. with <code>mkcert</code>) and pass it to Nest:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="main.ts (local only)">
+    import { readFileSync } from 'node:fs';
+
+    const httpsOptions = process.env.LOCAL_HTTPS === 'true'
+      ? { key: readFileSync('./certs/localhost-key.pem'), cert: readFileSync('./certs/localhost.pem') }
+      : undefined;
+    const app = await NestFactory.create(AppModule, { httpsOptions });
+  </script>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Checklist for a production NestJS API: TLS terminated at the load balancer with automatically renewed certificates; only TLS 1.2+ enabled there; port 80 closed or rejecting API traffic; <code>trust proxy</code> set to the right number of hops; Helmet's HSTS on; cookies <code>httpOnly</code> + <code>secure</code> + <code>sameSite</code>; <code>sslmode=require</code> (or stricter, <code>verify-full</code> with the CA) for the database. Remember that the hop between the load balancer and the app is unencrypted, so keep it on a private network, or enable TLS there too if your security requirements demand end-to-end encryption.</p>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Disabling certificate verification (<code>NODE_TLS_REJECT_UNAUTHORIZED=0</code>, <code>rejectUnauthorized: false</code>) to make an error go away.</li>
+      <li>Relying on an HTTP→HTTPS redirect for API calls. The token has already travelled in clear text.</li>
+      <li>Forgetting <code>trust proxy</code>, so <code>req.secure</code> is false and secure cookies or redirects misbehave.</li>
+      <li>Connecting to a managed database or Redis over the public internet without TLS.</li>
+      <li>Putting tokens or secrets in URLs (<code>?token=...</code>). HTTPS encrypts them on the wire, but URLs end up in proxy logs, browser history and <code>Referer</code> headers.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your API is behind an AWS load balancer that terminates TLS. After deploying, the refresh-token cookie with <code>secure: true</code> works, but <code>req.protocol</code> logs <code>http</code> and the rate limiter counts every user under the same IP. What single line is missing, and why does it fix both problems?</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        app.set('trust proxy', 1);
+      </script>
+      <p>The app receives connections from the load balancer, so without trusting it Express uses the connection's own protocol (HTTP) and IP (the load balancer's). With <code>trust proxy</code> set to one hop, Express reads <code>X-Forwarded-Proto</code> and <code>X-Forwarded-For</code> as set by that load balancer, so <code>req.protocol</code> becomes <code>https</code> and <code>req.ip</code> is the real client. Trusting exactly one hop (not <code>true</code>) prevents clients from faking those headers.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What does HTTPS protect against?</summary>
+      <p>Eavesdropping (confidentiality), tampering with requests or responses in transit (integrity), and impersonation of the server (authentication via certificates). It does not protect against bugs in your application, such as injection or broken authorization.</p></details>
+    <details><summary>What is TLS termination and what must the app do about it?</summary>
+      <p>A load balancer or reverse proxy decrypts HTTPS and forwards plain HTTP to the app. The app must trust that proxy (<code>trust proxy</code>) to learn the original protocol and client IP from <code>X-Forwarded-*</code> headers, and the internal hop should stay on a private network.</p></details>
+    <details><summary>What is HSTS?</summary>
+      <p>The <code>Strict-Transport-Security</code> header tells browsers to use only HTTPS for the domain for a set period. It prevents downgrade attacks and accidental HTTP requests after the first visit.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> HTTPS everywhere, including to your database and Redis: terminate TLS at the proxy, trust exactly that proxy, enable HSTS, use secure cookies, and never disable certificate verification.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="topic" id="sensitive-logs">
+  <div class="topic-head"><span class="num">7</span><h2>Sensitive logs</h2></div>
+  <p class="tagline">never expose tokens, passwords or secrets</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>Logs are copied everywhere: to log servers, to monitoring tools, to backups, into support tickets and screenshots, and many more people can read them than can read your database. Writing a password or a token into a log is like writing your PIN on the back of a receipt and handing out copies. The rule is simple: logs should tell you <em>what happened</em> (who, which action, which record, the result), but never contain the <em>secret things</em> themselves. The same goes for error responses: the client should never see stack traces, SQL or internal details.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Where secrets leak into logs</strong> (each one is common in real projects):</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ 1. Logging a whole DTO or request body: includes the password
+    this.logger.log({ dto }, 'Login attempt');            // {"dto":{"email":"...","password":"hunter2..."}}
+
+    // ❌ 2. Logging all headers: includes Authorization and Cookie
+    this.logger.debug({ headers: req.headers }, 'Incoming request');
+
+    // ❌ 3. Logging a whole entity: includes passwordHash, resetToken, mfaSecret
+    this.logger.log({ user }, 'User updated');
+
+    // ❌ 4. Logging tokens "to debug auth"
+    this.logger.debug(`Issued refresh token ${refreshToken}`);
+
+    // ❌ 5. Logging full errors from HTTP clients: axios errors contain config.headers
+    //       (your API keys for the third-party service)
+    this.logger.error(err);
+
+    // ❌ 6. Secrets in URLs: /reset-password?token=abc... is written to access logs
+    //       by every proxy and load balancer on the way
+  </script>
+
+  <p><strong>Fix 1: log identifiers and outcomes, not payloads.</strong></p>
+  <script type="text/x-code" data-lang="typescript">
+    // ✅ Who, what, result: enough to investigate, nothing to steal
+    this.logger.log({ userId: user.id, event: 'login_success', method: 'password' }, 'Login');
+    this.logger.warn({ emailHash: sha256(dto.email), event: 'login_failed', reason: 'bad_password' }, 'Login');
+    this.logger.log({ userId: user.id, changed: Object.keys(dto) }, 'Profile updated'); // field NAMES only
+
+    // ✅ For third-party errors, pick safe fields explicitly
+    this.logger.error(
+      { provider: 'stripe', status: err.response?.status, code: err.response?.data?.error?.code },
+      'Payment provider error',
+    );
+  </script>
+
+  <p><strong>Fix 2: redact automatically, as a safety net.</strong> Developers will eventually log something they shouldn't. pino's <code>redact</code> option removes or masks known sensitive paths <em>before</em> the line is written:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
+    LoggerModule.forRoot({
+      pinoHttp: {
+        redact: {
+          paths: [
+            'req.headers.authorization',
+            'req.headers.cookie',
+            'res.headers["set-cookie"]',
+            '*.password',
+            '*.passwordHash',
+            '*.token',
+            '*.accessToken',
+            '*.refreshToken',
+            '*.apiKey',
+            '*.cardNumber',
+            '*.*.password',            // one level deeper, e.g. { dto: { password } }
+          ],
+          censor: '[REDACTED]',
+        },
+      },
+    }),
+  </script>
+  <script type="text/x-code" data-lang="plaintext">
+    ❌ before: {"msg":"request completed","req":{"headers":{"authorization":"Bearer eyJhbGciOi..."}}}
+    ✅ after:  {"msg":"request completed","req":{"headers":{"authorization":"[REDACTED]"}}}
+  </script>
+  <p>Redaction paths match exact structures, so they are a <em>safety net</em>, not a replacement for logging carefully. Test them (see the exercise).</p>
+
+  <p><strong>Fix 3: never return sensitive data in responses.</strong> Leaks also happen in the other direction: an API that returns the full user row sends <code>passwordHash</code> to the browser, where it can end up in browser logs, analytics or a screenshot.</p>
+  <script type="text/x-code" data-lang="typescript">
+    // ❌ Returns every column, including passwordHash and resetToken
+    return this.prisma.user.findUnique({ where: { id } });
+
+    // ✅ Option A: select only public fields
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, name: true, role: true, createdAt: true },
+    });
+
+    // ✅ Option B: a response class with @Exclude + ClassSerializerInterceptor
+    export class UserResponse {
+      id: number;
+      email: string;
+      @Exclude() passwordHash: string;
+      constructor(partial: Partial<UserResponse>) { Object.assign(this, partial); }
+    }
+    // app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+    // return new UserResponse(user);
+  </script>
+
+  <p><strong>Fix 4: safe error responses.</strong> Unhandled errors (for example a Prisma error) can contain SQL fragments, table names and values. Log them on the server, and send the client only a generic message and the request ID:</p>
+  <script type="text/x-code" data-lang="json">
+    // ❌ what a careless filter returns
+    { "statusCode": 500, "message": "Invalid `prisma.user.create()` invocation: Unique constraint failed on the fields: (`email`)", "stack": "Error: ...\n at UsersService.create (/app/dist/users/users.service.js:41:23)" }
+
+    // ✅ what the client should get
+    { "statusCode": 500, "message": "Internal server error", "requestId": "7f3c9a1e" }
+  </script>
+  <p>(Known cases, like the unique email conflict above, should be mapped to a proper <code>409 Conflict</code> with a friendly message instead.)</p>
+
+  <p><strong>Also watch the Prisma query log.</strong> In Lesson 9 you logged queries for debugging. Prisma's query event includes <code>params</code>, which contain user data such as emails and password hashes. Keep query logging (especially params) for development only.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Combine the layers: a team rule ("log IDs, not objects"), pino <code>redact</code> as a safety net, <code>select</code>/<code>@Exclude</code> for responses, a global exception filter that hides internals, and short log retention with restricted access. Personal data (emails, addresses, phone numbers) also deserves care because of privacy laws such as GDPR: prefer user IDs in logs. If a secret is ever found in logs, treat it like a leaked secret: rotate it (point 5), and purge the logs if possible.</p>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma-exception.filter.ts">
+      @Catch(Prisma.PrismaClientKnownRequestError)
+      export class PrismaExceptionFilter implements ExceptionFilter {
+        private readonly logger = new Logger(PrismaExceptionFilter.name);
+
+        catch(err: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+          const res = host.switchToHttp().getResponse<Response>();
+          if (err.code === 'P2002') {
+            return res.status(409).json({ statusCode: 409, message: 'Resource already exists' });
+          }
+          if (err.code === 'P2025') {
+            return res.status(404).json({ statusCode: 404, message: 'Resource not found' });
+          }
+          this.logger.error({ code: err.code, model: err.meta?.modelName }, 'Database error'); // no values
+          return res.status(500).json({ statusCode: 500, message: 'Internal server error' });
+        }
+      }
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Logging whole request bodies, DTOs, headers or entities "temporarily" and forgetting to remove it.</li>
+      <li>Logging raw errors from HTTP clients, which contain request headers with API keys.</li>
+      <li>Returning Prisma models directly, exposing <code>passwordHash</code> and internal tokens.</li>
+      <li>Sending stack traces, SQL or Prisma messages to clients in production.</li>
+      <li>Putting tokens in query strings, where every proxy's access log records them.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Write a unit test that proves your pino redaction config hides <code>password</code> inside a logged <code>dto</code> object and the <code>authorization</code> header. Hint: create a pino logger that writes to an in-memory stream.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript" data-title="redaction.spec.ts">
+        import pino from 'pino';
+        import { Writable } from 'node:stream';
+        import { REDACT_PATHS } from '../src/logging/redact-paths'; // the same array used in LoggerModule
+
+        it('redacts secrets', () => {
+          const lines: string[] = [];
+          const stream = new Writable({
+            write(chunk, _enc, cb) { lines.push(chunk.toString()); cb(); },
+          });
+          const logger = pino({ redact: { paths: REDACT_PATHS, censor: '[REDACTED]' } }, stream);
+
+          logger.info({ dto: { email: 'an@shop.com', password: 'S3cret-pass!' } }, 'login');
+          logger.info({ req: { headers: { authorization: 'Bearer abc.def.ghi' } } }, 'request');
+
+          const output = lines.join('');
+          expect(output).not.toContain('S3cret-pass!');
+          expect(output).not.toContain('abc.def.ghi');
+          expect(output).toContain('[REDACTED]');
+        });
+      </script>
+      <p>Keeping the paths in one exported constant means the test checks the <em>real</em> configuration, not a copy.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>What should and shouldn't go into application logs?</summary>
+      <p>Should: event names, IDs (user, order, request), outcomes, durations, error codes. Shouldn't: passwords, tokens, API keys, session cookies, card data, full request bodies, and (as far as possible) personal data such as emails and addresses.</p></details>
+    <details><summary>How do you prevent secrets from appearing in logs?</summary>
+      <p>Log selected fields instead of whole objects, configure automatic redaction (pino <code>redact</code>) for known sensitive paths, keep query parameter logging to development, avoid secrets in URLs, test the redaction, and review logging in code review.</p></details>
+    <details><summary>Why hide error details from API clients?</summary>
+      <p>Stack traces, SQL and ORM messages reveal internal structure (tables, file paths, library versions) and sometimes data, which helps attackers. Clients need a status code, a safe message and a request ID; the details belong in server logs.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Log IDs and outcomes, never secrets or whole objects; redact automatically as a safety net; and return only safe fields and generic error messages to clients.</div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="topic" id="brute-force-protection">
+  <div class="topic-head"><span class="num">8</span><h2>Brute force protection</h2></div>
+  <p class="tagline">rate limiting sensitive endpoints</p>
+
+  <div class="box plain">
+    <strong>In plain words</strong>
+    <p>A brute-force attack is someone trying every key on a giant key ring until one opens your door: thousands of password guesses against a login form, or every 6-digit code against a verification endpoint. Each attempt is cheap for the attacker. The defence is to make guessing <em>slow and expensive</em>: allow only a few attempts per minute, slow down further after failures, and notice when it happens. A phone that locks for 1 minute after 5 wrong PINs uses exactly this idea.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p><strong>Which endpoints are sensitive?</strong> Anything that checks a secret or creates something costly:</p>
+  <ul>
+    <li><code>POST /auth/login</code>: password guessing and "credential stuffing" (trying email/password pairs leaked from other sites).</li>
+    <li><code>POST /auth/verify-otp</code>, 2FA codes: a 6-digit code has only 1,000,000 possibilities.</li>
+    <li><code>POST /auth/forgot-password</code>, <code>/auth/register</code>: abuse sends floods of emails or checks which emails exist.</li>
+    <li><code>POST /auth/refresh</code>, coupon/gift-card redemption, anything with a guessable code.</li>
+  </ul>
+
+  <p><strong>The vulnerable version: unlimited attempts and revealing messages.</strong></p>
+  <script type="text/x-code" data-lang="typescript" data-title="auth.service.ts">
+    // ❌ No limit on attempts, and different messages reveal which emails are registered
+    async login(dto: LoginDto) {
+      const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      if (!user) throw new UnauthorizedException('No account with this email');   // ❌ enumeration
+      if (!(await bcrypt.compare(dto.password, user.passwordHash))) {
+        throw new UnauthorizedException('Wrong password');                         // ❌ confirms the email exists
+      }
+      return this.issueTokens(user);
+    }
+  </script>
+  <p>With no limit, an automated client can try thousands of passwords per minute. With different messages (and even different response <em>times</em>: the "no user" branch returns instantly because it skips bcrypt), it can first find out which emails have accounts.</p>
+
+  <p><strong>Layer 1: strict rate limit on the endpoint</strong> with <code>@nestjs/throttler</code> (Lesson 9, point 5), keyed by IP <em>and</em> by the targeted account:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="login-throttler.guard.ts">
+    import { Injectable } from '@nestjs/common';
+    import { ThrottlerGuard } from '@nestjs/throttler';
+
+    @Injectable()
+    export class LoginThrottlerGuard extends ThrottlerGuard {
+      protected async getTracker(req: Record<string, any>): Promise<string> {
+        const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+        return `login:${req.ip}:${email}`; // one IP hammering one account
+      }
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth.controller.ts">
+    @Controller('auth')
+    export class AuthController {
+      @Post('login')
+      @HttpCode(200)
+      @UseGuards(LoginThrottlerGuard)
+      @Throttle({ default: { limit: 5, ttl: 60_000 } })   // ✅ 5 attempts per minute per IP+email
+      login(@Body() dto: LoginDto) {
+        return this.authService.login(dto);
+      }
+
+      @Post('forgot-password')
+      @HttpCode(202)
+      @Throttle({ default: { limit: 3, ttl: 15 * 60_000 } }) // ✅ 3 per 15 minutes
+      forgot(@Body() dto: ForgotPasswordDto) {
+        return this.authService.sendResetEmail(dto.email); // always 202, whether or not the email exists
+      }
+    }
+  </script>
+  <p>Remember Lesson 9: use Redis storage for the throttler when you run several instances, and configure <code>trust proxy</code> correctly, or the limits are either useless or block everyone.</p>
+
+  <p><strong>Layer 2: per-account protection with progressive delays.</strong> IP limits alone are weak against distributed attacks (many IPs, one account). Track failures on the account itself and lock it <em>temporarily</em>, with the lock growing after repeated failures:</p>
+  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
+    model User {
+      id               Int       @id @default(autoincrement())
+      email            String    @unique
+      passwordHash     String
+      failedLoginCount Int       @default(0)
+      lockedUntil      DateTime?
+    }
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="auth.service.ts">
+    const MAX_FREE_ATTEMPTS = 5;
+    // A real bcrypt hash (same cost factor as user passwords), computed once at startup.
+    // Comparing against it makes "unknown email" take as long as "wrong password".
+    const DUMMY_HASH = bcrypt.hashSync(randomBytes(16).toString('hex'), 12);
+
+    async login(dto: LoginDto) {
+      const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+
+      // ✅ Same error for "locked", "no user" and "wrong password"
+      const fail = () => new UnauthorizedException('Invalid email or password');
+
+      if (user?.lockedUntil && user.lockedUntil > new Date()) {
+        throw fail();
+      }
+
+      // ✅ Always run bcrypt, so response time doesn't reveal whether the email exists
+      const passwordOk = await bcrypt.compare(dto.password, user?.passwordHash ?? DUMMY_HASH);
+
+      if (!user || !passwordOk) {
+        if (user) await this.recordFailure(user.id);
+        throw fail();
+      }
+
+      if (user.failedLoginCount > 0) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginCount: 0, lockedUntil: null },
+        });
+      }
+      return this.issueTokens(user);
+    }
+
+    private async recordFailure(userId: number) {
+      const { failedLoginCount } = await this.prisma.user.update({
+        where: { id: userId },
+        data: { failedLoginCount: { increment: 1 } },   // ✅ atomic, safe under concurrency
+        select: { failedLoginCount: true },
+      });
+      if (failedLoginCount >= MAX_FREE_ATTEMPTS) {
+        // 1, 2, 4, 8 ... minutes, capped at 60
+        const minutes = Math.min(2 ** (failedLoginCount - MAX_FREE_ATTEMPTS), 60);
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { lockedUntil: new Date(Date.now() + minutes * 60_000) },
+        });
+        this.logger.warn({ userId, failedLoginCount, lockMinutes: minutes }, 'Account temporarily locked');
+      }
+    }
+  </script>
+  <table>
+    <tr><th>Failed attempts in a row</th><th>Effect</th></tr>
+    <tr><td>1–4</td><td>Normal "Invalid email or password"</td></tr>
+    <tr><td>5</td><td>Locked 1 minute</td></tr>
+    <tr><td>6 / 7 / 8</td><td>Locked 2 / 4 / 8 minutes</td></tr>
+    <tr><td>11+</td><td>Locked 60 minutes (cap). Consider emailing the owner</td></tr>
+  </table>
+  <p>Why temporary and not permanent? A permanent lock lets anyone lock out any user just by typing wrong passwords for their email. That is a denial-of-service against your own customers. Progressive delays make guessing impractical (at most a few dozen guesses per day) while real users recover by themselves.</p>
+
+  <p><strong>Layer 3: make the secret itself strong.</strong> Rate limits work best together with: a minimum password length (point 1 used 12), blocking very common or breached passwords, short-lived one-time codes (OTP valid 5 minutes, invalidated after 5 wrong tries), and offering 2FA. A CAPTCHA after several failures from the same IP adds friction for bots without bothering normal users.</p>
+
+  <p><strong>Layer 4: detect and alert.</strong> The warning logs above feed dashboards and alerts: a spike in <code>login_failed</code> events across many accounts usually means a credential-stuffing attempt. Edge protection (WAF, bot management at the CDN) can then block it before it reaches the app.</p>
+
+  <div class="box nest">
+    <strong>In a real NestJS project</strong>
+    <p>Put it all in the auth module: <code>LoginThrottlerGuard</code> on login, OTP and reset endpoints; Redis-backed throttler storage; the lockout logic in <code>AuthService</code>; one generic error message; <code>forgot-password</code> always answering <code>202</code>. Then write e2e tests for the security behaviour, not only the happy path:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="test/auth-bruteforce.e2e-spec.ts">
+      it('blocks the 6th login attempt within a minute', async () => {
+        const server = app.getHttpServer();
+        for (let i = 0; i < 5; i++) {
+          await request(server).post('/auth/login')
+            .send({ email: 'an@shop.com', password: 'wrong-password-' + i })
+            .expect(401);
+        }
+        await request(server).post('/auth/login')
+          .send({ email: 'an@shop.com', password: 'wrong-password-x' })
+          .expect(429);
+      });
+
+      it('returns the same message for unknown email and wrong password', async () => {
+        const a = await request(app.getHttpServer()).post('/auth/login')
+          .send({ email: 'nobody@shop.com', password: 'whatever-123456' });
+        const b = await request(app.getHttpServer()).post('/auth/login')
+          .send({ email: 'an@shop.com', password: 'whatever-123456' });
+        expect(a.body.message).toBe(b.body.message);
+      });
+    </script>
+  </div>
+
+  <div class="box warn">
+    <strong>Common mistakes</strong>
+    <ul>
+      <li>Relying only on the global rate limit (e.g. 200/min), which still allows thousands of password guesses per hour.</li>
+      <li>Limiting only by IP. Distributed attacks use many IPs against one account; add per-account limits.</li>
+      <li>Permanent lockouts, which let anyone lock real users out of their accounts.</li>
+      <li>Different error messages or response times for "unknown email" and "wrong password" (user enumeration).</li>
+      <li>Forgetting the less obvious endpoints: OTP verification, password reset, refresh, coupon codes.</li>
+    </ul>
+  </div>
+
+  <div class="box try">
+    <strong>Practice exercise</strong>
+    <p>Your app sends a 6-digit email code for 2FA via <code>POST /auth/verify-otp</code>. Describe (and sketch in code) at least three protections so the code cannot be guessed.</p>
+    <details>
+      <summary>Show answer</summary>
+      <script type="text/x-code" data-lang="typescript">
+        // 1. Rate limit the endpoint per IP + user
+        @Post('verify-otp')
+        @UseGuards(LoginThrottlerGuard)
+        @Throttle({ default: { limit: 5, ttl: 60_000 } })
+        verifyOtp(@CurrentUser() pending: PendingMfaUser, @Body() dto: VerifyOtpDto) {
+          // userId comes from the short-lived "password OK, 2FA pending" token, never from the body
+          return this.authService.verifyOtp(pending.userId, dto.code);
+        }
+
+        // 2 + 3 + 4. Short expiry, max attempts per code, single use, stored hashed
+        async verifyOtp(userId: number, code: string) {
+          const otp = await this.prisma.otpCode.findFirst({
+            where: { userId, usedAt: null, expiresAt: { gt: new Date() } },
+            orderBy: { createdAt: 'desc' },
+          });
+          if (!otp || otp.attempts >= 5) throw new UnauthorizedException('Invalid or expired code');
+
+          const ok = await bcrypt.compare(code, otp.codeHash);
+          if (!ok) {
+            await this.prisma.otpCode.update({ where: { id: otp.id }, data: { attempts: { increment: 1 } } });
+            throw new UnauthorizedException('Invalid or expired code');
+          }
+          await this.prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
+          return this.issueTokens(userId);
+        }
+      </script>
+      <p>With 5 attempts per code and a 5-minute expiry, an attacker has a 5 in 1,000,000 chance per code, instead of being able to try all of them.</p>
+    </details>
+  </div>
+
+  <div class="qa">
+    <h3>Interview questions</h3>
+    <details><summary>How would you protect a login endpoint against brute force?</summary>
+      <p>A strict rate limit on the endpoint by IP and by account (shared storage like Redis), progressive temporary lockouts after repeated failures, identical error messages and similar timing for unknown users and wrong passwords, strong password rules and 2FA, CAPTCHA after several failures, and monitoring/alerts on failure spikes.</p></details>
+    <details><summary>What is credential stuffing and why is IP-based limiting not enough?</summary>
+      <p>Attackers try email/password pairs leaked from other sites, spread over many IP addresses and many accounts. Each IP stays under the limit, so you also need per-account limits, breached-password checks, 2FA and anomaly detection.</p></details>
+    <details><summary>Why not lock an account permanently after 5 failures?</summary>
+      <p>Because anyone who knows a user's email could lock them out on purpose (denial of service). Temporary, progressively longer locks stop guessing while letting legitimate users recover automatically.</p></details>
+  </div>
+
+  <div class="box key"><strong>Remember</strong> Make guessing slow and expensive: strict per-IP and per-account limits on every secret-checking endpoint, temporary progressive lockouts, one generic error message, and alerts when failures spike.</div>
+</section>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="Performance-and-Debugging.html">← Prev: 9. Performance &amp; Debugging</a>
+  <a href="Git-CICD-and-Production.html">Next: 11. Git, CI/CD &amp; Production →</a>
+</nav>
+
+<script>
+  // Turn <script type="text/x-code"> blocks into highlighted code figures.
+  // Code is kept in script tags so it never needs HTML escaping.
+  document.querySelectorAll('script[type="text/x-code"]').forEach((block) => {
+    const lines = block.textContent.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    const source = lines.map((l) => l.slice(indent)).join('\n');
+    const lang = block.dataset.lang || 'plaintext';
+
+    const figure = document.createElement('figure');
+    figure.className = 'code';
+    const caption = document.createElement('figcaption');
+    const label = document.createElement('span');
+    label.textContent = block.dataset.title || lang;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = source;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      copy.textContent = 'Copied!';
+      setTimeout(() => (copy.textContent = 'Copy'), 1500);
+    });
+    caption.append(label, copy);
+
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const hlLang = window.hljs && hljs.getLanguage(lang) ? lang : 'plaintext';
+    code.className = 'language-' + hlLang;
+    code.textContent = source;
+    pre.appendChild(code);
+    figure.append(caption, pre);
+    block.replaceWith(figure);
+    if (window.hljs) hljs.highlightElement(code);
+  });
+
+  // Highlight the current topic in the table of contents.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('.topic').forEach((s) => observer.observe(s));
+</script>
+</body>
+</html>
