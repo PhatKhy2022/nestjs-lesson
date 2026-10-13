@@ -567,7 +567,7 @@
 
   <p><strong>Building dynamic queries safely.</strong> Use <code>Prisma.sql</code> to compose fragments, and <code>Prisma.join</code> for lists. Each piece stays parameterized:</p>
   <script type="text/x-code" data-lang="typescript">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     async report(filters: { status?: string; categoryIds?: number[] }) {
       const conditions: Prisma.Sql[] = [Prisma.sql`o."createdAt" >= now() - interval '30 days'`];
@@ -588,6 +588,7 @@
       `;
     }
   </script>
+  <p>(With Prisma 7, <code>Prisma</code> comes from the generated client (<code>src/generated/prisma/client.js</code>), not from <code>@prisma/client</code>. The <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
 
   <p><strong>Identifiers cannot be parameters.</strong> Parameters only work for <em>values</em>. Column names and sort directions (<code>ORDER BY ${column}</code>) cannot be parameters, so people are tempted to concatenate them. Use an allow-list instead:</p>
   <script type="text/x-code" data-lang="typescript">
@@ -621,15 +622,15 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Keep raw SQL inside repositories, review every <code>Unsafe</code> call in code review, and add an ESLint rule so it can't sneak in unnoticed:</p>
-    <script type="text/x-code" data-lang="javascript" data-title="eslint.config.mjs (excerpt)">
+    <p>Keep raw SQL inside repositories, review every <code>Unsafe</code> call in code review, and add a lint rule so it can't sneak in unnoticed. NestJS 12 projects lint with oxlint, which supports ESLint's <code>no-restricted-properties</code> rule:</p>
+    <script type="text/x-code" data-lang="json" data-title=".oxlintrc.json (excerpt)">
       {
-        rules: {
-          'no-restricted-properties': ['error',
-            { property: '$queryRawUnsafe', message: 'Use $queryRaw`` (tagged template) instead.' },
-            { property: '$executeRawUnsafe', message: 'Use $executeRaw`` (tagged template) instead.' },
-          ],
-        },
+        "rules": {
+          "no-restricted-properties": ["error",
+            { "property": "$queryRawUnsafe", "message": "Use $queryRaw`` (tagged template) instead." },
+            { "property": "$executeRawUnsafe", "message": "Use $executeRaw`` (tagged template) instead." }
+          ]
+        }
       }
     </script>
     <p>Defense in depth: the database user in <code>DATABASE_URL</code> for the app should have only the privileges it needs (read/write on the app's tables), not superuser. Then even a successful injection can't drop tables or read other databases. Migrations can run with a separate, more privileged user.</p>
@@ -1113,7 +1114,7 @@
     # ENV JWT_ACCESS_SECRET=abc123
 
     # ✅ Image contains only code; secrets arrive at runtime
-    FROM node:22-alpine
+    FROM node:24-alpine
     WORKDIR /app
     COPY dist ./dist
     COPY node_modules ./node_modules
@@ -1470,7 +1471,7 @@
       <script type="text/x-code" data-lang="typescript" data-title="redaction.spec.ts">
         import pino from 'pino';
         import { Writable } from 'node:stream';
-        import { REDACT_PATHS } from '../src/logging/redact-paths'; // the same array used in LoggerModule
+        import { REDACT_PATHS } from '../src/logging/redact-paths.js'; // the same array used in LoggerModule
 
         it('redacts secrets', () => {
           const lines: string[] = [];
