@@ -1,0 +1,169 @@
+### Shop API: try every department.
+### Open in VS Code with the "REST Client" extension and click "Send Request" above each call,
+### top to bottom (later calls reuse tokens and ids from earlier ones).
+### Start the app first: npm run start:dev
+
+@base = http://localhost:3001/api
+
+### Health check (public)
+GET {{base}}/health
+
+### ─── Security desk (Auth) ─────────────────────────────────────────────
+
+### Register a new customer (public). Run once; a second time gives 409.
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{ "email": "binh@shop.dev", "password": "Password123!", "name": "Binh" }
+
+### Validation in action: bad email, short password, unknown field → 400
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{ "email": "not-an-email", "password": "short", "role": "ADMIN" }
+
+### Log in as a customer
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "email": "an@shop.dev", "password": "Password123!" }
+
+@token = {{login.response.body.data.accessToken}}
+
+### Log in as the admin
+# @name adminLogin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@shop.dev", "password": "Password123!" }
+
+@adminToken = {{adminLogin.response.body.data.accessToken}}
+
+### ─── HR (Users) ───────────────────────────────────────────────────────
+
+### Who am I?
+GET {{base}}/users/me
+Authorization: Bearer {{token}}
+
+### No token → 401
+GET {{base}}/users/me
+
+### Update my name
+PATCH {{base}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "An Nguyen" }
+
+### List users: customers get 403 …
+GET {{base}}/users
+Authorization: Bearer {{token}}
+
+### … admins get the list
+GET {{base}}/users?page=1
+Authorization: Bearer {{adminToken}}
+
+### ─── Warehouse (Products) ─────────────────────────────────────────────
+
+### Browse products (public)
+GET {{base}}/products
+
+### One product
+GET {{base}}/products/1
+
+### Add a product (admin only)
+POST {{base}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "sku": "HS-001", "name": "Headset", "price": 59.9, "stock": 25 }
+
+### Same sku again → 409 (PrismaExceptionFilter, error P2002)
+POST {{base}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "sku": "HS-001", "name": "Another headset", "price": 10 }
+
+### Change a price (admin only). Stock stays as it was.
+PATCH {{base}}/products/2
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "price": 17.5 }
+
+### ─── Sales (Orders) ───────────────────────────────────────────────────
+
+### Place an order: 2 keyboards + 1 mouse. Stock goes down, total is computed by the server.
+# @name createOrder
+POST {{base}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": [{ "productId": 1, "quantity": 2 }, { "productId": 2, "quantity": 1 }], "note": "Leave at the door" }
+
+@orderId = {{createOrder.response.body.data.id}}
+@trackingCode = {{createOrder.response.body.data.trackingCode}}
+
+### Out of stock (the USB-C cable has stock 0) → 409 INSUFFICIENT_STOCK, nothing is reserved
+POST {{base}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": [{ "productId": 1, "quantity": 1 }, { "productId": 4, "quantity": 1 }] }
+
+### My orders: filter, paginate and sort
+GET {{base}}/orders?status=PENDING&page=1&limit=10&sort=-total
+Authorization: Bearer {{token}}
+
+### Sorting by a field that isn't allowed → 400 (ParseSortPipe)
+GET {{base}}/orders?sort=email
+Authorization: Bearer {{token}}
+
+### One of my orders
+GET {{base}}/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### Someone else's order → 404 (the admin didn't place it)
+GET {{base}}/orders/{{orderId}}
+Authorization: Bearer {{adminToken}}
+
+### Track an order without logging in (public)
+GET {{base}}/orders/track/{{trackingCode}}
+
+### ─── Finance (Payments) ───────────────────────────────────────────────
+
+### Pay for the order → the order becomes PAID
+POST {{base}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "orderId": "{{orderId}}" }
+
+### Pay again → 409
+POST {{base}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "orderId": "{{orderId}}" }
+
+### ─── Admin: ship it ──────────────────────────────────────────────────
+
+### Customers can't change status → 403
+PATCH {{base}}/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "SHIPPED" }
+
+### Admin ships the paid order
+PATCH {{base}}/orders/{{orderId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "status": "SHIPPED" }
+
+### A product that is part of an order can't be deleted → 400 (PrismaExceptionFilter, error P2003)
+DELETE {{base}}/products/1
+Authorization: Bearer {{adminToken}}

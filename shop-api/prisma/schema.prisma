@@ -1,0 +1,103 @@
+// The shop's database: users, products, orders, order items and payments.
+// After changing this file run: npx prisma migrate dev --name <what-changed>
+
+generator client {
+  provider = "prisma-client"            // Prisma 7 generator (replaces "prisma-client-js")
+  output   = "../src/generated/prisma"  // import from 'src/generated/prisma/client.js'
+}
+
+datasource db {
+  provider = "postgresql"               // the URL lives in prisma.config.ts
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String?
+  passwordHash String    @map("password_hash")
+  role         Role      @default(USER)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3) // soft delete
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  sku       String   @unique @db.VarChar(32)
+  name      String   @db.VarChar(200)
+  price     Decimal  @db.Decimal(10, 2)
+  stock     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       Int         @map("user_id")
+  status       OrderStatus @default(PENDING)
+  total        Decimal     @db.Decimal(10, 2)
+  note         String?
+  trackingCode String      @unique @map("tracking_code")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user    User        @relation(fields: [userId], references: [id])
+  items   OrderItem[]
+  payment Payment?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  orderId   String  @map("order_id") @db.Uuid
+  productId Int     @map("product_id")
+  quantity  Int
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2) // price at the moment of ordering
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@id([orderId, productId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id               Int           @id @default(autoincrement())
+  orderId          String        @unique @map("order_id") @db.Uuid // one payment per order
+  amount           Decimal       @db.Decimal(10, 2)
+  status           PaymentStatus
+  providerChargeId String        @unique @map("provider_charge_id")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
