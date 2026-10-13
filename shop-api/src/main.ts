@@ -1,15 +1,25 @@
+import helmet from '@fastify/helmet';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import helmet from 'helmet';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
 
-// The front door of the company.
+// The front door of the company. The building is Fastify instead of Express:
+// Nest talks to the HTTP server through an adapter, so the departments don't notice.
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule); // reads AppModule and everything it imports
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule, // reads AppModule and everything it imports
+    new FastifyAdapter(),
+  );
   const config = app.get(ConfigService);
 
-  app.use(helmet()); // safer HTTP headers
+  // Safer HTTP headers. A Fastify plugin (not Express middleware), so it's registered,
+  // and before any route, so it applies to all of them.
+  await app.register(helmet);
   app.enableCors({
     origin: config.get<string>('CORS_ORIGIN')?.split(',') ?? false,
   });
@@ -27,7 +37,11 @@ async function bootstrap() {
   app.enableShutdownHooks(); // lets PrismaService disconnect cleanly on Ctrl+C
 
   const port = config.get<number>('PORT') ?? 3001;
-  await app.listen(port);
-  Logger.log(`Shop API running on http://localhost:${port}/api`, 'Bootstrap');
+  // Fastify listens only on localhost by default; '0.0.0.0' also accepts Docker/LAN traffic.
+  await app.listen(port, '0.0.0.0');
+  Logger.log(
+    `Shop API (Fastify) running on http://localhost:${port}/api`,
+    'Bootstrap',
+  );
 }
 await bootstrap();

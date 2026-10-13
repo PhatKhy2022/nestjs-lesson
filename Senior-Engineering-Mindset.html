@@ -1103,7 +1103,7 @@
   <h3>How it works</h3>
   <p><strong>Principles for clear explanations.</strong></p>
   <ul>
-    <li><strong>Start from what they know.</strong> Ask first: "Have you used Express before?" Then connect the new idea to it.</li>
+    <li><strong>Start from what they know.</strong> Ask first: "Have you used Express or Fastify before?" Then connect the new idea to it.</li>
     <li><strong>Why before how.</strong> Explain the problem a concept solves before its syntax.</li>
     <li><strong>One concept at a time</strong>, with a concrete example from <em>your</em> codebase.</li>
     <li><strong>Check understanding</strong> by asking them to explain it back or apply it, not by asking "is that clear?" (everyone says yes).</li>
@@ -1309,6 +1309,7 @@
     <p>You can't reason about a system you can't see. A small interceptor that logs duration per route is a cheap first step (later: OpenTelemetry tracing across services):</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/common/timing.interceptor.ts">
       import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+      import type { FastifyRequest } from 'fastify';
       import { Observable, tap } from 'rxjs';
 
       @Injectable()
@@ -1316,13 +1317,14 @@
         private readonly logger = new Logger('HTTP');
 
         intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
-          const req = ctx.switchToHttp().getRequest();
+          const req = ctx.switchToHttp().getRequest<FastifyRequest>();
           const start = performance.now();
           return next.handle().pipe(
             tap(() => {
               const ms = Math.round(performance.now() - start);
               if (ms > 500) {
-                this.logger.warn(`${req.method} ${req.route?.path ?? req.url} took ${ms} ms`);
+                // the route pattern (/orders/:id, with any global prefix), not each real URL
+                this.logger.warn(`${req.method} ${req.routeOptions.url ?? req.url} took ${ms} ms`);
               }
             }),
           );

@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -6,13 +10,15 @@ import { AppModule } from '../src/app.module.js';
 // An e2e test boots the whole company (every module, guard, filter…) against the real database.
 // Needs the database running: npm run db:up && npm run db:migrate && npm run db:seed
 describe('Shop API (e2e)', () => {
-  let app: INestApplication;
+  let app: NestFastifyApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
     // Repeat what main.ts sets up, so the test app behaves like the real one.
     app.setGlobalPrefix('api');
     app.useGlobalPipes(
@@ -23,6 +29,8 @@ describe('Shop API (e2e)', () => {
       }),
     );
     await app.init();
+    // Fastify loads its plugins asynchronously: wait until it's ready before sending requests.
+    await app.getHttpAdapter().getInstance().ready();
   });
 
   afterAll(async () => {

@@ -521,20 +521,20 @@
   <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
     import { ArgumentsHost, Catch, HttpStatus } from '@nestjs/common';
     import { BaseExceptionFilter } from '@nestjs/core';
-    import { Response } from 'express';
+    import type { FastifyReply } from 'fastify';
     import { Prisma } from '../../generated/prisma/client.js'; // the Prisma 7 generated client
 
     @Catch(Prisma.PrismaClientKnownRequestError)
     export class PrismaExceptionFilter extends BaseExceptionFilter {
       catch(e: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
-        const res = host.switchToHttp().getResponse<Response>();
+        const reply = host.switchToHttp().getResponse<FastifyReply>();
         switch (e.code) {
           case 'P2002':
-            return res.status(HttpStatus.CONFLICT).json({
+            return reply.status(HttpStatus.CONFLICT).send({
               statusCode: 409, error: 'Conflict', message: 'A record with this value already exists',
             });
           case 'P2025':
-            return res.status(HttpStatus.NOT_FOUND).json({
+            return reply.status(HttpStatus.NOT_FOUND).send({
               statusCode: 404, error: 'Not Found', message: 'Record not found',
             });
           default:
@@ -552,14 +552,16 @@
     <strong>In a real NestJS project</strong>
     <p>Set codes on the controller, throw exceptions from services, and return a <code>Location</code> header for created resources when clients need it:</p>
     <script type="text/x-code" data-lang="typescript" data-title="orders.controller.ts">
+      import type { FastifyReply } from 'fastify';
+
       @Post()
       async create(
         @CurrentUser() user: AuthUser,
         @Body() dto: CreateOrderDto,
-        @Res({ passthrough: true }) res: Response, // passthrough: Nest still sends the return value
+        @Res({ passthrough: true }) reply: FastifyReply, // passthrough: Nest still sends the return value
       ) {
         const order = await this.ordersService.placeOrder(user.id, dto);
-        res.location(`/orders/${order.id}`);
+        reply.header('Location', `/orders/${order.id}`);
         return order; // 201 Created
       }
 
@@ -577,7 +579,7 @@
       <li>Returning <code>200</code> with <code>{ "success": false }</code> for errors. Clients, monitoring and retries all rely on the status code.</li>
       <li>Using 401 when you mean 403, or the reverse.</li>
       <li>Letting a Prisma unique-constraint error bubble up as a 500. That's a client conflict (409), not a server bug.</li>
-      <li>Using <code>@Res()</code> without <code>passthrough: true</code>. Nest then stops handling the response for you, and interceptors and serialization are skipped.</li>
+      <li>Using <code>@Res()</code> without <code>passthrough: true</code>. Nest then stops handling the response for you (you must call <code>reply.send()</code> yourself), and interceptors and serialization are skipped.</li>
       <li>Returning 404 for an empty list. <code>GET /orders?status=PAID</code> with no matches is <code>200</code> with <code>[]</code>.</li>
     </ul>
   </div>
@@ -1117,7 +1119,7 @@
     # everything combined with pagination
     GET /orders?status=PAID&sort=-createdAt&page=2&limit=20
   </script>
-  <p>Rules of thumb: use <code>camelCase</code> names that match your JSON fields, use the same name for the same idea everywhere (<code>q</code> for search on every resource), and keep filters flat. Other styles exist (<code>?filter[status]=PAID</code>, <code>?sort_by=createdAt&amp;order=desc</code>). Any is fine if it's consistent across the whole API.</p>
+  <p>Rules of thumb: use <code>camelCase</code> names that match your JSON fields, use the same name for the same idea everywhere (<code>q</code> for search on every resource), and keep filters flat. Other styles exist (<code>?filter[status]=PAID</code>, <code>?sort_by=createdAt&amp;order=desc</code>). Any is fine if it's consistent across the whole API. (Fastify's default query parser doesn't turn brackets into nested objects: <code>?filter[status]=PAID</code> arrives as a flat key named <code>filter[status]</code>, which you'd have to parse yourself. Another reason to prefer flat names like <code>?status=PAID</code>.)</p>
 
   <p><strong>Step 1: a query DTO that validates every parameter.</strong> Notice <code>@IsIn</code> on the sort: clients can only sort by fields we allow.</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
@@ -1357,7 +1359,7 @@
   <p><strong>Step 2: one global filter that catches everything</strong> and produces that shape, whether the error is a Nest <code>HttpException</code>, a domain error from Lesson 5, a Prisma error, or an unexpected crash:</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/filters/all-exceptions.filter.ts">
     import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
-    import { Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
     import { Prisma } from '../../generated/prisma/client.js';
     import { DomainError } from '../../orders/domain/order.errors.js'; // from Lesson 5
     import { DOMAIN_STATUS } from './domain-status.js';               // e.g. { OUT_OF_STOCK: 409, ... }
@@ -1368,8 +1370,8 @@
 
       catch(exception: unknown, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
-        const req = ctx.getRequest<Request>();
-        const res = ctx.getResponse<Response>();
+        const req = ctx.getRequest<FastifyRequest>();
+        const reply = ctx.getResponse<FastifyReply>();
 
         const { statusCode, code, message, details } = this.normalize(exception);
 
@@ -1385,9 +1387,9 @@
           ...(details && { details }),
           path: req.url,
           timestamp: new Date().toISOString(),
-          requestId: req.header('x-request-id'),
+          requestId: req.headers['x-request-id'] as string | undefined, // header values may also be string[]
         };
-        res.status(statusCode).json(body);
+        reply.status(statusCode).send(body);
       }
 
       private normalize(e: unknown): Pick<ApiErrorBody, 'statusCode' | 'code' | 'message' | 'details'> {
@@ -1593,8 +1595,9 @@
   <p><strong>Enabling versioning in Nest.</strong> Nest supports all of these out of the box:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts — URI versioning">
     import { VersioningType } from '@nestjs/common';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
     app.setGlobalPrefix('api');
     app.enableVersioning({
       type: VersioningType.URI,   // → /api/v1/orders
@@ -1757,13 +1760,14 @@
   <h3>How it works</h3>
   <p><strong>Step 1: install and set up.</strong></p>
   <script type="text/x-code" data-lang="bash">
-    npm i @nestjs/swagger
+    npm i @nestjs/swagger @fastify/static   # on Fastify, Swagger UI needs @fastify/static (the app won't start without it)
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
     import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
       app.setGlobalPrefix('api');
       app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
@@ -1779,7 +1783,7 @@
       // UI:   http://localhost:3000/docs
       // JSON: http://localhost:3000/docs-json   (feed this to client generators)
 
-      await app.listen(3000);
+      await app.listen(3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
     }
     await bootstrap();
   </script>
@@ -2060,7 +2064,7 @@
       Injectable, NestInterceptor, UnprocessableEntityException,
     } from '@nestjs/common';
     import { createHash } from 'node:crypto';
-    import { Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
     import { Observable, catchError, concatMap, from, of, throwError } from 'rxjs';
     import { Prisma } from '../../generated/prisma/client.js';
 
@@ -2070,11 +2074,11 @@
 
       async intercept(ctx: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
         const http = ctx.switchToHttp();
-        const req = http.getRequest<Request & { user: AuthUser }>();
-        const res = http.getResponse<Response>();
+        const req = http.getRequest<FastifyRequest & { user: AuthUser }>();
+        const reply = http.getResponse<FastifyReply>();
 
-        const key = req.header('Idempotency-Key');
-        if (!key || key.length > 100) {
+        const key = req.headers['idempotency-key']; // header names arrive lower-cased
+        if (typeof key !== 'string' || !key || key.length > 100) {
           throw new BadRequestException('A valid Idempotency-Key header is required');
         }
         const userId = req.user.id;
@@ -2096,7 +2100,7 @@
           if (!existing.completedAt) {
             throw new ConflictException('A request with this Idempotency-Key is still being processed');
           }
-          res.setHeader('Idempotent-Replayed', 'true');
+          reply.header('Idempotent-Replayed', 'true');
           return of(existing.responseBody); // the handler does NOT run again
         }
 

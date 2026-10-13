@@ -597,7 +597,8 @@
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.constants.ts">
       export const ACCESS_TOKEN_TTL = '15m';
       export const REFRESH_TOKEN_TTL = '7d';
-      export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // for DB expiry + cookie maxAge
+      export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // for the DB expiry (Date maths uses ms)
+      export const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;   // for the cookie maxAge: @fastify/cookie uses SECONDS
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/types/jwt-payload.type.ts">
       import { Role } from '../../generated/prisma/client.js';
@@ -926,15 +927,16 @@
     import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
     import { ConfigService } from '@nestjs/config';
     import { timingSafeEqual } from 'node:crypto';
-    import { Request } from 'express';
+    import type { FastifyRequest } from 'fastify';
 
     @Injectable()
     export class ApiKeyGuard implements CanActivate {
       constructor(private readonly config: ConfigService) {}
 
       canActivate(context: ExecutionContext): boolean {
-        const req = context.switchToHttp().getRequest<Request>();
-        const given = req.header('x-api-key') ?? '';
+        const req = context.switchToHttp().getRequest<FastifyRequest>();
+        const header = req.headers['x-api-key'];                // string | string[] | undefined
+        const given = typeof header === 'string' ? header : ''; // missing or repeated → rejected below
         const expected = this.config.getOrThrow<string>('INTERNAL_API_KEY');
 
         const a = Buffer.from(given);
@@ -1077,7 +1079,7 @@
       <script type="text/x-code" data-lang="typescript">
         import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException } from '@nestjs/common';
         import { ConfigService } from '@nestjs/config';
-        import { Request } from 'express';
+        import type { FastifyRequest } from 'fastify';
 
         @Injectable()
         export class MaintenanceGuard implements CanActivate {
@@ -1085,8 +1087,9 @@
 
           canActivate(context: ExecutionContext): boolean {
             if (this.config.get('MAINTENANCE_MODE') !== 'true') return true;
-            const req = context.switchToHttp().getRequest<Request>();
-            if (req.method === 'GET' && req.path === '/health') return true;
+            const req = context.switchToHttp().getRequest<FastifyRequest>();
+            const path = req.url.split('?')[0];      // req.url includes the query string
+            if (req.method === 'GET' && path === '/health') return true;
             throw new ServiceUnavailableException('We are upgrading. Back soon!');
           }
         }
@@ -1485,24 +1488,33 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Step 6 of our flow: the controller sends the refresh token as an httpOnly cookie and returns only the access token in the JSON body. Install <code>cookie-parser</code> and enable it in <code>main.ts</code>.</p>
+    <p>Step 6 of our flow: the controller sends the refresh token as an httpOnly cookie and returns only the access token in the JSON body. Install the <code>@fastify/cookie</code> plugin and register it in <code>main.ts</code>.</p>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-      // npm i cookie-parser && npm i -D @types/cookie-parser
-      import cookieParser from 'cookie-parser'; // needs "esModuleInterop" (default in NestJS 12 projects);
-                                                // older CommonJS projects: import * as cookieParser from 'cookie-parser';
-      // ...
-      app.use(cookieParser());
+      // npm i @fastify/cookie
+      import fastifyCookie from '@fastify/cookie';
+      import { NestFactory } from '@nestjs/core';
+      import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+      import { AppModule } from './app.module.js';
+
+      async function bootstrap() {
+        const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+        await app.register(fastifyCookie); // fills req.cookies and adds reply.setCookie()
+        // ...
+        await app.listen(process.env.PORT ?? 3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
+      }
+      await bootstrap();
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
-      import type { CookieOptions, Request, Response } from 'express';
+      import type { CookieSerializeOptions } from '@fastify/cookie';
+      import type { FastifyReply, FastifyRequest } from 'fastify';
 
       const REFRESH_COOKIE = 'refresh_token';
-      const cookieOptions: CookieOptions = {
+      const cookieOptions: CookieSerializeOptions = {
         httpOnly: true,                                  // JS can't read it
         secure: process.env.NODE_ENV === 'production',   // HTTPS only in prod
         sameSite: 'strict',
         path: '/auth',                                   // only sent to /auth/*
-        maxAge: REFRESH_TOKEN_TTL_MS,
+        maxAge: REFRESH_TOKEN_TTL_SECONDS,               // ⚠️ SECONDS in @fastify/cookie (Express used milliseconds)
       };
 
       @Controller('auth')
@@ -1513,31 +1525,31 @@
         @UseGuards(LocalAuthGuard)
         @Post('login')
         @HttpCode(200)
-        async login(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) res: Response) {
+        async login(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) reply: FastifyReply) {
           const { accessToken, refreshToken } = await this.authService.issueTokens(user);
-          res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+          reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOptions);
           return { accessToken };
         }
 
         @Public()                                  // the access token may already be expired!
         @Post('refresh')
         @HttpCode(200)
-        async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+        async refresh(@Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
           const { accessToken, refreshToken } = await this.authService.refresh(req.cookies?.[REFRESH_COOKIE]);
-          res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+          reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOptions);
           return { accessToken };
         }
 
         @Public()
         @Post('logout')
         @HttpCode(204)
-        async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+        async logout(@Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
           await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
-          res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+          reply.clearCookie(REFRESH_COOKIE, { path: '/auth' });
         }
       }
     </script>
-    <p><code>passthrough: true</code> lets you set cookies on the response while Nest still sends your returned object as JSON. Old rows pile up, so add a nightly job (for example with <code>@nestjs/schedule</code>) that runs <code>deleteMany({ where: { expiresAt: { lt: new Date() } } })</code>.</p>
+    <p><code>passthrough: true</code> lets you set cookies on the Fastify reply while Nest still sends your returned object as JSON. The client calls <code>/auth/refresh</code> and <code>/auth/logout</code> with no body, so it should not send <code>Content-Type: application/json</code> there: Fastify answers an empty body with that header with 400 (<em>"Body cannot be empty when content-type is set to 'application/json'"</em>). Old rows pile up, so add a nightly job (for example with <code>@nestjs/schedule</code>) that runs <code>deleteMany({ where: { expiresAt: { lt: new Date() } } })</code>.</p>
   </div>
 
   <div class="box warn">
@@ -1609,63 +1621,63 @@
 
   <p><strong>Token-based auth</strong> (what we built in points 2–6): the server signs a token with the user data inside. On each request it verifies the signature and needs no lookup.</p>
 
-  <p><strong>Sessions in NestJS.</strong> Nest uses the Express <code>express-session</code> middleware. In production, store sessions in Redis. The default in-memory store leaks memory and loses all sessions on restart, and with two app instances, users get logged out randomly.</p>
+  <p><strong>Sessions in NestJS.</strong> On Fastify, sessions come from the <code>@fastify/session</code> plugin, which builds on <code>@fastify/cookie</code>. In production, store sessions in Redis. The default in-memory store leaks memory and loses all sessions on restart, and with two app instances, users get logged out randomly.</p>
   <script type="text/x-code" data-lang="bash">
-    npm install express-session connect-redis redis
-    npm install -D @types/express-session
+    npm install @fastify/session @fastify/cookie connect-redis redis
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts (session version)">
+    import fastifyCookie from '@fastify/cookie';
+    import fastifySession from '@fastify/session';
     import { NestFactory } from '@nestjs/core';
-    import session from 'express-session';    // default imports need "esModuleInterop" (on in NestJS 12)
-    import { RedisStore } from 'connect-redis';   // connect-redis v8 (v7: import RedisStore from 'connect-redis')
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+    import { RedisStore } from 'connect-redis';   // @fastify/session accepts express-session-compatible stores
     import { createClient } from 'redis';
     import { AppModule } from './app.module.js';
 
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
       const redisClient = createClient({ url: process.env.REDIS_URL });
       await redisClient.connect();
 
-      app.use(
-        session({
-          store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
-          secret: process.env.SESSION_SECRET!,      // signs the cookie value
-          resave: false,                            // don't re-save unchanged sessions
-          saveUninitialized: false,                 // ✅ no session for anonymous visitors
-          cookie: {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-          },
-        }),
-      );
-      await app.listen(3000);
+      await app.register(fastifyCookie);          // sessions need the cookie plugin first
+      await app.register(fastifySession, {
+        secret: process.env.SESSION_SECRET!,      // signs the cookie value; at least 32 characters (shorter is rejected)
+        cookieName: 'sid',                        // default is 'sessionId'
+        saveUninitialized: false,                 // ✅ no session for anonymous visitors
+        store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
+        cookie: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000,        // ⚠️ MILLISECONDS here (unlike reply.setCookie's seconds)
+        },
+      });
+      await app.listen(3000, '0.0.0.0');
     }
     await bootstrap();
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="types/session.d.ts">
     import { Role } from '../generated/prisma/client.js';
-    import 'express-session';
+    import '@fastify/session';
 
-    declare module 'express-session' {
-      interface SessionData {        // declaration merging (Lesson 1) types req.session
-        userId: number;
-        role: Role;
+    declare module 'fastify' {
+      interface Session {            // declaration merging (Lesson 1) types req.session
+        userId?: number;
+        role?: Role;
       }
     }
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="auth/session-auth.controller.ts">
+    import type { FastifyRequest } from 'fastify';
+
     @Public()
     @UseGuards(LocalAuthGuard)
     @Post('login')
     @HttpCode(200)
-    async login(@CurrentUser() user: AuthUser, @Req() req: Request) {
+    async login(@CurrentUser() user: AuthUser, @Req() req: FastifyRequest) {
       // ✅ new session id after login, to prevent "session fixation"
-      await new Promise<void>((resolve, reject) =>
-        req.session.regenerate((err) => (err ? reject(err) : resolve())),
-      );
+      await req.session.regenerate();
       req.session.userId = user.id;
       req.session.role = user.role;
       return { id: user.id, email: user.email };
@@ -1673,15 +1685,15 @@
 
     @Post('logout')
     @HttpCode(204)
-    logout(@Req() req: Request) {
-      return new Promise<void>((resolve) => req.session.destroy(() => resolve())); // instant logout
+    async logout(@Req() req: FastifyRequest) {
+      await req.session.destroy(); // instant logout: the Redis entry is gone
     }
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="auth/guards/session-auth.guard.ts">
     @Injectable()
     export class SessionAuthGuard implements CanActivate {
       canActivate(context: ExecutionContext): boolean {
-        const req = context.switchToHttp().getRequest<Request>();
+        const req = context.switchToHttp().getRequest<FastifyRequest>();
         if (!req.session.userId) throw new UnauthorizedException();
         return true;
       }
@@ -1714,7 +1726,7 @@
       const stored = await this.prisma.refreshToken.findUnique({ where: { id: payload.jti } });
       if (!stored || stored.revokedAt) throw new UnauthorizedException();
     </script>
-    <p>An internal admin dashboard served from the same domain could just as well use <code>express-session</code> with Redis plus <code>SessionAuthGuard</code>, and get instant logout for free. Pick per client, not per fashion.</p>
+    <p>An internal admin dashboard served from the same domain could just as well use <code>@fastify/session</code> with Redis plus <code>SessionAuthGuard</code>, and get instant logout for free. Pick per client, not per fashion.</p>
   </div>
 
   <div class="box warn">
@@ -1893,22 +1905,37 @@
         });
       }
     </script>
+    <p>On Fastify, the Google routes need one small guard. The local and JWT strategies only read the request, but this one <em>redirects</em> to Google with Node's <code>res.setHeader()</code>/<code>res.end()</code>, which the Fastify reply doesn't have. A plain <code>AuthGuard('google')</code> fails with <em>"res.setHeader is not a function"</em>, so we hand Passport the raw Node response:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="auth/guards/google-auth.guard.ts">
+      import { Injectable, type ExecutionContext } from '@nestjs/common';
+      import { AuthGuard } from '@nestjs/passport';
+      import type { FastifyReply } from 'fastify';
+
+      // Passport redirects to Google with Node's res.setHeader()/res.end().
+      // Fastify's reply doesn't have those, so give Passport the raw Node response.
+      @Injectable()
+      export class GoogleAuthGuard extends AuthGuard('google') {
+        getResponse(context: ExecutionContext) {
+          return context.switchToHttp().getResponse<FastifyReply>().raw;
+        }
+      }
+    </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts (Google routes)">
       @Public()
-      @UseGuards(AuthGuard('google'))
+      @UseGuards(GoogleAuthGuard)
       @Get('google')
       googleLogin() {
         // never runs: the guard redirects to Google
       }
 
       @Public()
-      @UseGuards(AuthGuard('google'))      // exchanges ?code=... and runs GoogleStrategy.validate
+      @UseGuards(GoogleAuthGuard)          // exchanges ?code=... and runs GoogleStrategy.validate
       @Get('google/callback')
-      async googleCallback(@CurrentUser() user: AuthUser, @Res() res: Response) {
+      async googleCallback(@CurrentUser() user: AuthUser, @Res() reply: FastifyReply) {
         const { refreshToken } = await this.authService.issueTokens(user);
-        res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+        reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOptions); // maxAge in seconds
         // ✅ no token in the URL: the SPA calls POST /auth/refresh to get its access token
-        res.redirect(`${this.config.getOrThrow<string>('FRONTEND_URL')}/login/success`);
+        return reply.redirect(`${this.config.getOrThrow<string>('FRONTEND_URL')}/login/success`); // 302 by default
       }
     </script>
     <p>Notice how the earlier design pays off: Google login ends in the <em>same</em> <code>issueTokens()</code>, so guards, roles and rotation work exactly as they do for password users. Remember to add <code>GoogleStrategy</code> to the <code>AuthModule</code> providers and to inject <code>ConfigService</code> into the controller.</p>

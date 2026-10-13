@@ -953,22 +953,22 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>The <code>AuthController</code> from Lesson 7 sets a cookie, which is a good example of controller logic worth unit-testing. Pass a fake <code>Response</code> object with only the method you need:</p>
+    <p>The <code>AuthController</code> from Lesson 7 sets a cookie, which is a good example of controller logic worth unit-testing. It calls <code>reply.setCookie()</code>, so pass a fake Fastify reply with only the method you need:</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.controller.spec.ts">
-      import { Response } from 'express';
+      import type { FastifyReply } from 'fastify';
 
       it('login returns only the access token and sets the refresh cookie', async () => {
         authServiceMock.issueTokens.mockResolvedValue({
           accessToken: 'acc', refreshToken: 'ref', jti: 'j1',
         });
-        const res = { cookie: vi.fn() } as unknown as Response;
+        const reply = { setCookie: vi.fn() } as unknown as FastifyReply;
 
         const body = await controller.login(
-          { id: 1, email: 'an@shop.com', name: 'An', role: 'USER' }, res,
+          { id: 1, email: 'an@shop.com', name: 'An', role: 'USER' }, reply,
         );
 
         expect(body).toEqual({ accessToken: 'acc' });              // ✅ no refresh token in JSON
-        expect(res.cookie).toHaveBeenCalledWith(
+        expect(reply.setCookie).toHaveBeenCalledWith(
           'refresh_token', 'ref', expect.objectContaining({ httpOnly: true, path: '/auth' }),
         );
       });
@@ -1076,15 +1076,37 @@
       });
     });
   </script>
-  <p><code>Test.createTestingModule({ imports: [AppModule] })</code> builds the real app. <code>createNestApplication()</code> + <code>init()</code> create the HTTP layer without opening a port. Supertest's <code>request(app.getHttpServer())</code> sends requests straight to that server object.</p>
+  <p><code>nest new</code> generates this Express version; our app runs on Fastify (<code>@nestjs/platform-fastify</code>), so the test app needs the same adapter:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="test/app.e2e-spec.ts (Fastify)">
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+    // (the INestApplication and App imports are no longer needed)
 
-  <p><strong>Trap #1: <code>main.ts</code> is not used.</strong> Everything you configure in <code>main.ts</code> (global <code>ValidationPipe</code>, <code>cookieParser</code>, global prefix, CORS) does <em>not</em> exist in the test app. Then validation tests pass in production but fail in tests, or the other way round. Fix: move that setup into one function and call it from both places.</p>
+    describe('AppController (e2e)', () => {
+      let app: NestFastifyApplication;
+
+      beforeEach(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+        await app.init();
+        await app.getHttpAdapter().getInstance().ready(); // Fastify loads plugins asynchronously: wait for it
+      });
+
+      // ... the test and afterEach stay the same
+    });
+  </script>
+  <p><code>Test.createTestingModule({ imports: [AppModule] })</code> builds the real app. <code>createNestApplication(new FastifyAdapter())</code> + <code>init()</code> create the HTTP layer without opening a port, and <code>ready()</code> waits until Fastify has loaded its plugins. Supertest's <code>request(app.getHttpServer())</code> sends requests straight to that server object. (Fastify also has its own optional alternative without Supertest: <code>await app.inject({ method: 'GET', url: '/' })</code> returns a response with <code>statusCode</code> and <code>json()</code>. This lesson sticks with Supertest.)</p>
+
+  <p><strong>Trap #1: <code>main.ts</code> is not used.</strong> Everything you configure in <code>main.ts</code> (global <code>ValidationPipe</code>, the <code>@fastify/cookie</code> plugin, global prefix, CORS) does <em>not</em> exist in the test app. Then validation tests pass in production but fail in tests, or the other way round. Fix: move that setup into one function and call it from both places. Registering a Fastify plugin is async, so the function is <code>async</code> too.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/app.setup.ts">
-    import { INestApplication, ValidationPipe } from '@nestjs/common';
-    import cookieParser from 'cookie-parser';
+    import fastifyCookie from '@fastify/cookie';
+    import { ValidationPipe } from '@nestjs/common';
+    import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 
-    export function configureApp(app: INestApplication) {
-      app.use(cookieParser());
+    export async function configureApp(app: NestFastifyApplication) {
+      await app.register(fastifyCookie);   // fills req.cookies, adds reply.setCookie()
       app.useGlobalPipes(
         new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
       );
@@ -1092,32 +1114,34 @@
     }
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
-    const app = await NestFactory.create(AppModule);
-    configureApp(app);                   // ✅ same setup in prod…
-    await app.listen(process.env.PORT ?? 3000);
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+    await configureApp(app);             // ✅ same setup in prod…
+    await app.listen(process.env.PORT ?? 3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
   </script>
 
   <p><strong>Trap #2: speed.</strong> Starting the app takes a second or two. The generated example uses <code>beforeEach</code>, which restarts the app before every test. For a suite of 30 tests, use <code>beforeAll</code> and close the app in <code>afterAll</code>. If you never close it, Prisma connections stay open and can keep the test run from exiting (<code>npx vitest run --reporter=hanging-process</code> shows what is still open).</p>
 
   <p><strong>A real e2e test: the full auth flow.</strong> <code>request.agent()</code> keeps cookies between requests, like a browser, which is perfect for our httpOnly refresh cookie.</p>
   <script type="text/x-code" data-lang="typescript" data-title="test/auth.e2e-spec.ts">
-    import { INestApplication } from '@nestjs/common';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
     import { Test } from '@nestjs/testing';
     import request from 'supertest';
-    import { App } from 'supertest/types.js';
     import { AppModule } from '../src/app.module.js';
     import { configureApp } from '../src/app.setup.js';
     import { PrismaService } from '../src/prisma/prisma.service.js';
     import { resetDatabase } from './utils/reset-database.js'; // point 5
 
     describe('Auth (e2e)', () => {
-      let app: INestApplication<App>;
+      let app: NestFastifyApplication;
       let prisma: PrismaService;
 
       beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-        app = configureApp(moduleRef.createNestApplication());   // ✅ … and in tests
+        app = await configureApp(
+          moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter()),
+        );                                                        // ✅ … and in tests
         await app.init();
+        await app.getHttpAdapter().getInstance().ready();         // Fastify loads plugins asynchronously
         prisma = app.get(PrismaService);
       });
 
@@ -1157,6 +1181,7 @@
       });
     });
   </script>
+  <p>The cookie flow needs no Fastify-specific code: <code>request.agent()</code> stores the <code>Set-Cookie</code> from <code>reply.setCookie()</code> and sends it back. Note that the refresh and logout calls have no <code>.send()</code>, so Supertest sends no <code>Content-Type</code>. Keep it that way: Fastify answers an empty body with <code>Content-Type: application/json</code> with <code>400</code>.</p>
 
   <p><strong>Replacing only external services.</strong> e2e tests should use your real code and a real database, but not real e-mails or payments. Override just those providers:</p>
   <script type="text/x-code" data-lang="typescript">
@@ -1195,11 +1220,10 @@
         orders.e2e-spec.ts
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="test/utils/auth.ts">
-      import { INestApplication } from '@nestjs/common';
+      import type { NestFastifyApplication } from '@nestjs/platform-fastify';
       import request from 'supertest';
-      import { App } from 'supertest/types.js';
 
-      export async function loginAs(app: INestApplication<App>, email: string, password = 'Summer2024!') {
+      export async function loginAs(app: NestFastifyApplication, email: string, password = 'Summer2024!') {
         const res = await request(app.getHttpServer())
           .post('/auth/login')
           .send({ email, password })
@@ -1261,9 +1285,9 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>What does <code>app.getHttpServer()</code> give Supertest, and why is no port needed?</summary>
-      <p>It returns the underlying Node HTTP server (Express by default). Supertest can send requests directly to a server object; if it isn't listening, Supertest binds it to a temporary port itself. So tests don't fight over port 3000.</p></details>
+      <p>It returns the underlying Node HTTP server, which Fastify created. Supertest can send requests directly to a server object; if it isn't listening, Supertest binds it to a temporary port itself. So tests don't fight over port 3000.</p></details>
     <details><summary>Why might validation work in production but not in your e2e tests?</summary>
-      <p>Global pipes, middleware and prefixes set in <code>main.ts</code> aren't applied to an app created by the testing module. Put that configuration in a shared function and call it in both places, or register pipes with <code>APP_PIPE</code> in a module.</p></details>
+      <p>Global pipes, Fastify plugins and prefixes set in <code>main.ts</code> aren't applied to an app created by the testing module. Put that configuration in a shared function and call it in both places, or register pipes with <code>APP_PIPE</code> in a module.</p></details>
     <details><summary>What should and shouldn't be mocked in e2e tests?</summary>
       <p>Keep everything you own real: controllers, services, guards, Prisma and a real test database. Mock only external systems you don't control or don't want to call: email, payment providers, SMS, third-party APIs.</p></details>
   </div>

@@ -1,9 +1,14 @@
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { NextFunction, Request, Response } from 'express';
 
 // Functional middleware: stamps every request with an id, like a reception desk ticket number.
 // Reuses the caller's X-Request-Id if they sent one, so logs can be followed across services.
-export function requestId(req: Request, res: Response, next: NextFunction) {
+// On Fastify, Nest middleware gets the raw Node.js request/response (not Fastify's wrappers).
+export function requestId(
+  req: FastifyRequest['raw'],
+  res: FastifyReply['raw'],
+  next: () => void,
+) {
   const id =
     (req.headers['x-request-id'] as string | undefined) ?? randomUUID();
   req.headers['x-request-id'] = id; // available to later layers (see AllExceptionsFilter)

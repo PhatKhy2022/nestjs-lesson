@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import type { Role } from '../generated/prisma/client.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 
@@ -35,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
 
     const req = context
       .switchToHttp()
-      .getRequest<Request & { user?: JwtPayload }>();
+      .getRequest<FastifyRequest & { user?: JwtPayload }>();
     const [type, token] = req.headers.authorization?.split(' ') ?? [];
     if (type !== 'Bearer' || !token) throw new UnauthorizedException();
 

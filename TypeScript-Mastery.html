@@ -496,20 +496,19 @@
     <tr><td>Shape of an object / class contract</td><td><code>interface</code> (or <code>type</code>, just be consistent)</td></tr>
     <tr><td>Union, tuple, primitive alias, function type</td><td><code>type</code> (only option)</td></tr>
     <tr><td>Mapped / computed types (<code>keyof</code>, <code>Partial</code>…)</td><td><code>type</code></td></tr>
-    <tr><td>Augmenting a library type (e.g. Express <code>Request</code>)</td><td><code>interface</code> (declaration merging)</td></tr>
+    <tr><td>Augmenting a library type (e.g. Fastify's <code>FastifyRequest</code>)</td><td><code>interface</code> (declaration merging)</td></tr>
   </table>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>A classic use of declaration merging is adding <code>user</code> to Express's <code>Request</code> after authentication:</p>
-    <script type="text/x-code" data-lang="typescript" data-title="types/express.d.ts">
-      import { JwtPayload } from '../auth/jwt-payload.type.js';
+    <p>A classic use of declaration merging is adding <code>user</code> to Fastify's <code>FastifyRequest</code> after authentication. Fastify's types live in the <code>'fastify'</code> module, so you reopen that module with <code>declare module 'fastify' { ... }</code> (this is called <em>module augmentation</em>) and your <code>FastifyRequest</code> interface merges with theirs:</p>
+    <script type="text/x-code" data-lang="typescript" data-title="types/fastify.d.ts">
+      import 'fastify'; // makes this file a module, so the block below augments 'fastify' instead of replacing it
+      import type { JwtPayload } from '../auth/jwt-payload.type.js';
 
-      declare global {
-        namespace Express {
-          interface Request {
-            user?: JwtPayload; // now req.user is typed everywhere
-          }
+      declare module 'fastify' {
+        interface FastifyRequest {
+          user?: JwtPayload; // now req.user is typed everywhere
         }
       }
     </script>
@@ -554,7 +553,7 @@
     <details><summary>When must you use <code>type</code> instead of <code>interface</code>?</summary>
       <p>For anything that isn't an object shape: unions (<code>'a' | 'b'</code>), tuples, primitive aliases, and mapped/conditional types.</p></details>
     <details><summary>What is declaration merging?</summary>
-      <p>When two <code>interface</code> declarations have the same name in the same scope, TypeScript combines their members into one interface. It's used to extend third-party types, such as adding <code>user</code> to Express's <code>Request</code>.</p></details>
+      <p>When two <code>interface</code> declarations have the same name in the same scope, TypeScript combines their members into one interface. It's used to extend third-party types, such as adding <code>user</code> to Fastify's <code>FastifyRequest</code> (via <code>declare module 'fastify'</code>).</p></details>
     <details><summary>Why are NestJS DTOs classes rather than interfaces?</summary>
       <p>Interfaces are erased at compile time. Classes remain as JavaScript constructors, so decorators (<code>@IsEmail()</code>, <code>@ApiProperty()</code>) can attach metadata that <code>ValidationPipe</code> and Swagger read at runtime.</p></details>
   </div>
@@ -2110,7 +2109,7 @@
   </script>
   <p>⚠️ <strong>Downside:</strong> barrels can create <em>circular imports</em> (A imports the barrel, the barrel imports B, B imports A). At runtime, one of them is <code>undefined</code>. In Nest, this shows up as the dreaded "Nest can't resolve dependencies… [?]" or "A circular dependency between modules" error. Use barrels for the public API of a folder, but import directly inside the same feature.</p>
 
-  <p><strong>Namespaces</strong> are an older TypeScript way of grouping code (<code>namespace Utils { ... }</code>), from before ES modules existed. In modern code, <strong>use modules instead</strong>. You'll still see namespaces in <code>.d.ts</code> files, like <code>declare global { namespace Express { ... } }</code>.</p>
+  <p><strong>Namespaces</strong> are an older TypeScript way of grouping code (<code>namespace Utils { ... }</code>), from before ES modules existed. In modern code, <strong>use modules instead</strong>. You'll still see namespaces in <code>.d.ts</code> files, like <code>declare global { namespace Express { ... } }</code> for extending Express's types. Fastify uses module augmentation instead: <code>declare module 'fastify' { ... }</code> (see point 2).</p>
 
   <p><strong>CommonJS vs ES modules:</strong> Node.js has two module systems. <code>require()</code>/<code>module.exports</code> is CommonJS, and <code>import</code>/<code>export</code> is ESM. You <em>write</em> <code>import</code>/<code>export</code> in TS, and the compiler converts it based on <code>"module"</code> in tsconfig. NestJS 12 projects created by <code>nest new</code> are <strong>ESM</strong> (<code>"type": "module"</code> in <code>package.json</code>, <code>"module": "nodenext"</code> in tsconfig), so the output keeps <code>import</code>/<code>export</code>. There is no <code>require()</code> in app code, and <code>__dirname</code> becomes <code>import.meta.dirname</code>.</p>
 
