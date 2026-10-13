@@ -304,18 +304,23 @@
   <p><strong>Step 1: make queries visible.</strong> You cannot fix what you cannot see. Turn on Prisma's query log in development so every SQL statement is printed with its duration:</p>
   <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
     import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-    import { Prisma, PrismaClient } from '@prisma/client';
+    import { PrismaPg } from '@prisma/adapter-pg';
+    import { Prisma, PrismaClient } from '../generated/prisma/client.js';
 
     @Injectable()
     export class PrismaService
-      extends PrismaClient<Prisma.PrismaClientOptions, 'query'>
+      // the type arguments tell TypeScript that 'query' events exist, so $on('query') type-checks
+      extends PrismaClient<Prisma.PrismaClientOptions & { log: Prisma.LogDefinition[] }, 'query'>
       implements OnModuleInit
     {
       private readonly logger = new Logger('SQL');
       public queryCount = 0; // handy for measuring in dev and tests
 
       constructor() {
-        super({ log: [{ emit: 'event', level: 'query' }] });
+        super({
+          adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+          log: [{ emit: 'event', level: 'query' }],
+        });
       }
 
       async onModuleInit() {
@@ -327,6 +332,7 @@
       }
     }
   </script>
+  <p>(Prisma 7 generates the client into <code>src/generated/prisma</code> and talks to PostgreSQL through the <code>pg</code> driver adapter. The <code>.js</code> in the import is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
 
   <p><strong>Step 2: recognise N+1.</strong> Here is a typical "list users with their orders" endpoint written the naive way. It looks innocent because the loop hides the queries:</p>
   <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
@@ -699,22 +705,31 @@
   </div>
 
   <h3>How it works</h3>
-  <p><strong>Prisma's default pool size.</strong> Prisma's query engine creates a pool when the client connects. Its default size is:</p>
+  <p><strong>Prisma's default pool size.</strong> Prisma 7 no longer has a Rust query engine with its own pool: it talks to PostgreSQL through the <code>pg</code> driver (<code>@prisma/adapter-pg</code>), and the pool belongs to <code>pg</code>. Its defaults are:</p>
   <script type="text/x-code" data-lang="plaintext">
-    connection_limit = (number of physical CPUs × 2) + 1
-    e.g. 2 CPUs → 5 connections,  4 CPUs → 9 connections
+    max                     = 10       connections per pool, whatever the number of CPUs
+    connectionTimeoutMillis = 0        wait for a free connection FOREVER
+    idleTimeoutMillis       = 10000    close a connection after 10 s unused
   </script>
-  <p>You configure it in the connection string, together with <code>pool_timeout</code> (how many seconds a query waits for a free connection, default 10):</p>
-  <script type="text/x-code" data-lang="ini" data-title=".env">
-    DATABASE_URL="postgresql://app:secret@db.internal:5432/shop?schema=public&connection_limit=10&pool_timeout=10"
+  <p>You configure it on the adapter, in code. Always set <code>connectionTimeoutMillis</code> (how long a query waits for a free connection), so a full pool fails fast instead of hanging:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts (constructor)">
+    super({
+      adapter: new PrismaPg({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,                          // pool size per PrismaClient
+        connectionTimeoutMillis: 5_000,   // give up after 5 s waiting for a connection
+        idleTimeoutMillis: 10_000,
+      }),
+    });
   </script>
+  <p>Older Prisma versions read <code>?connection_limit=10&amp;pool_timeout=10</code> from the connection string. The adapter ignores those URL parameters (with <code>connection_limit=1</code>, two queries still run in parallel), so move the numbers to <code>max</code> and <code>connectionTimeoutMillis</code> (milliseconds: <code>pool_timeout=10</code> becomes <code>10_000</code>).</p>
 
   <p><strong>The maths that matters.</strong> PostgreSQL has a hard limit, <code>max_connections</code> (default 100, and a few are reserved for superusers). Every <em>process</em> that runs a PrismaClient has its own pool. So the total is:</p>
   <script type="text/x-code" data-lang="plaintext">
-    total connections = instances × PrismaClient per instance × connection_limit
+    total connections = instances × PrismaClient per instance × max (pool size)
 
     ✅ 4 API pods × 1 client × 10 = 40   (fits in 100, leaves room for migrations, psql, workers)
-    ❌ 10 API pods × 1 client × 9  = 90   + 3 worker pods × 9 = 117  → "too many clients already"
+    ❌ 10 API pods × 1 client × 10 = 100  + 3 worker pods × 10 = 130  → "too many clients already"
   </script>
   <script type="text/x-code" data-lang="sql">
     -- See who is connected right now, and what they are doing
@@ -725,13 +740,11 @@
     GROUP BY 1, 2 ORDER BY 3 DESC;
   </script>
 
-  <p><strong>What pool exhaustion looks like.</strong> When every connection is busy for longer than <code>pool_timeout</code>, Prisma throws error <code>P2024</code>:</p>
+  <p><strong>What pool exhaustion looks like.</strong> When every connection stays busy for longer than <code>connectionTimeoutMillis</code>, the query fails with a plain <code>Error</code> from <code>pg</code>, not a <code>PrismaClientKnownRequestError</code> with a code (older Prisma versions reported this as <code>P2024</code>):</p>
   <script type="text/x-code" data-lang="plaintext">
-    PrismaClientKnownRequestError:
-    Timed out fetching a new connection from the connection pool.
-    (Current connection pool timeout: 10, connection limit: 5)
-    code: 'P2024'
+    Error: timeout exceeded when trying to connect
   </script>
+  <p>Without <code>connectionTimeoutMillis</code> there is no error at all: requests just wait in line, and the API looks "randomly slow".</p>
   <p>The fix is rarely "make the pool bigger". First find <em>why connections are held for so long</em>. The usual causes:</p>
   <script type="text/x-code" data-lang="typescript">
     // ❌ 1. Slow external call INSIDE an interactive transaction.
@@ -750,7 +763,7 @@
       data: { status: 'PAID', paymentId: charge.id },
     });
 
-    // ❌ 2. Unbounded parallelism: 5,000 queries fired at once on a pool of 5
+    // ❌ 2. Unbounded parallelism: 5,000 queries fired at once on a pool of 10
     await Promise.all(userIds.map((id) => this.prisma.user.update({ where: { id }, data: { flagged: true } })));
 
     // ✅ One set-based query instead
@@ -758,12 +771,14 @@
   </script>
   <p>Interactive transactions also have their own limits: <code>maxWait</code> (time to get a connection, default 2s) and <code>timeout</code> (max run time, default 5s). If you need to raise them, that is often a sign the transaction does too much.</p>
 
-  <p><strong>One PrismaClient per process.</strong> Each <code>new PrismaClient()</code> creates a <em>new pool</em>. Creating one per request or per service multiplies your connection count:</p>
+  <p><strong>One PrismaClient per process.</strong> Each <code>new PrismaClient()</code> (with its own adapter) creates a <em>new pool</em>. Creating one per request or per service multiplies your connection count:</p>
   <script type="text/x-code" data-lang="typescript">
-    // ❌ Each service gets its own pool → 5 services × 9 connections = 45 per pod
+    // ❌ Each service gets its own pool → 5 services × 10 connections = 50 per pod
     @Injectable()
     export class ProductsService {
-      private prisma = new PrismaClient();
+      private prisma = new PrismaClient({
+        adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+      });
     }
 
     // ✅ One PrismaService provider, shared through DI (a singleton by default)
@@ -773,21 +788,35 @@
     }
   </script>
 
-  <p><strong>External poolers (PgBouncer, RDS Proxy, Supabase/Neon poolers).</strong> When you have many app instances or serverless functions, put a pooler between the app and PostgreSQL. Hundreds of client connections share a few real database connections. In <em>transaction mode</em>, tell Prisma with <code>pgbouncer=true</code>, and give migrations a direct connection, because they need session features:</p>
-  <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
-    datasource db {
-      provider  = "postgresql"
-      url       = env("DATABASE_URL")   // through PgBouncer: ...:6432/shop?pgbouncer=true&connection_limit=5
-      directUrl = env("DIRECT_URL")     // straight to PostgreSQL: used by prisma migrate
-    }
+  <p><strong>External poolers (PgBouncer, RDS Proxy, Supabase/Neon poolers).</strong> When you have many app instances or serverless functions, put a pooler between the app and PostgreSQL. Hundreds of client connections share a few real database connections. The app goes through the pooler, but migrations need a direct connection, because they need session features. In Prisma 7 the two URLs live in two places: the app's adapter uses the pooled <code>DATABASE_URL</code>, and the Prisma CLI uses the URL in <code>prisma.config.ts</code> (<code>directUrl</code> in <code>schema.prisma</code> is gone). Prisma recommends <em>not</em> adding <code>pgbouncer=true</code> with PgBouncer 1.21.0+; only older PgBouncer versions in <em>transaction mode</em> still need <code>?pgbouncer=true</code> on the pooled URL.</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.config.ts">
+    import 'dotenv/config';
+    import { defineConfig } from 'prisma/config';
+
+    export default defineConfig({
+      schema: 'prisma/schema.prisma',
+      datasource: {
+        url: process.env.DIRECT_URL,   // straight to PostgreSQL: used by prisma migrate
+      },
+    });
+    // The app's PrismaPg adapter keeps DATABASE_URL, which points at PgBouncer (...:6432/shop)
   </script>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Configure the pool per environment and make it visible. A small health check that reports pool usage is very helpful during incidents. Prisma's <code>metrics</code> preview feature exposes pool counters; a simpler option is to watch <code>pg_stat_activity</code> and the P2024 error rate. Also close the pool cleanly on shutdown, so rolling deployments don't leave connections hanging:</p>
+    <p>Configure the pool per environment and make it visible. A small health check that reports pool usage is very helpful during incidents. Prisma 7 removed the <code>metrics</code> preview feature, so watch <code>pg_stat_activity</code> and the rate of <code>timeout exceeded when trying to connect</code> errors. Also close the pool cleanly on shutdown, so rolling deployments don't leave connections hanging:</p>
     <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
       @Injectable()
       export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+        constructor() {
+          super({
+            adapter: new PrismaPg({
+              connectionString: process.env.DATABASE_URL,
+              max: Number(process.env.DB_POOL_MAX ?? 10),   // set per environment
+              connectionTimeoutMillis: 5_000,               // fail fast instead of queuing forever
+            }),
+          });
+        }
         async onModuleInit() {
           await this.$connect();      // fail fast at boot if the DB is unreachable
         }
@@ -801,37 +830,37 @@
       app.enableShutdownHooks(); // makes onModuleDestroy run on SIGTERM/SIGINT
       await app.listen(3000);
     </script>
-    <p>Load test before you change the pool. Example with 4 CPUs (default limit 9) and an endpoint holding each connection ~40ms: about 9 / 0.04 = 225 requests per second before requests start queuing. If you need more, first make the query faster (an index often turns 40ms into 2ms, i.e. 20× the capacity), and only then raise the limit within PostgreSQL's budget.</p>
+    <p>Load test before you change the pool. Example with the default pool (<code>max</code> 10) and an endpoint holding each connection ~40ms: about 10 / 0.04 = 250 requests per second before requests start queuing. If you need more, first make the query faster (an index often turns 40ms into 2ms, i.e. 20× the capacity), and only then raise <code>max</code> within PostgreSQL's budget.</p>
   </div>
 
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
       <li>Calling <code>new PrismaClient()</code> in many places, or on every request. Use one shared <code>PrismaService</code>.</li>
-      <li>Raising <code>connection_limit</code> to 100 on every pod and hitting PostgreSQL's <code>max_connections</code>.</li>
+      <li>Raising <code>max</code> to 100 on every pod and hitting PostgreSQL's <code>max_connections</code>.</li>
       <li>Making HTTP calls, sending emails or waiting on queues inside <code>$transaction</code>.</li>
       <li>Using <code>Promise.all</code> over thousands of items, which floods the pool. Use set-based queries or process in chunks.</li>
-      <li>Using PgBouncer in transaction mode without <code>pgbouncer=true</code> and without a <code>directUrl</code> for migrations.</li>
+      <li>Pointing <code>prisma.config.ts</code> at the PgBouncer URL, so <code>prisma migrate</code> runs through the pooler. Give the CLI a direct <code>DIRECT_URL</code>; only the app's adapter uses the pooled URL.</li>
     </ul>
   </div>
 
   <div class="box try">
     <strong>Practice exercise</strong>
-    <p>Your API runs on 6 pods with 2 CPUs each. A nightly worker runs on 2 pods with 4 CPUs. PostgreSQL has <code>max_connections = 100</code>. (1) How many connections can the app open with Prisma's defaults? (2) Choose explicit <code>connection_limit</code> values that leave at least 20 connections free for admin tools and migrations.</p>
+    <p>Your API runs on 6 pods with 2 CPUs each. A nightly worker runs on 2 pods with 4 CPUs. PostgreSQL has <code>max_connections = 100</code>. (1) How many connections can the app open with the default pool settings? (2) Choose explicit <code>max</code> values that leave at least 20 connections free for admin tools and migrations.</p>
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="plaintext">
-        (1) Defaults:
-            API:    2 CPUs → 2×2+1 = 5  per pod × 6 pods = 30
-            Worker: 4 CPUs → 4×2+1 = 9  per pod × 2 pods = 18
-            Total = 48 → fits today, but autoscaling to 20 API pods → 100 + 18 = 118 ❌
+        (1) Defaults (pg: max = 10 per pool; the CPU count no longer matters):
+            API:    10 per pod × 6 pods = 60
+            Worker: 10 per pod × 2 pods = 20
+            Total = 80 → fits today (just), but autoscaling to 20 API pods → 200 + 20 = 220 ❌
 
         (2) Budget = 100 − 20 reserved = 80
-            API:    connection_limit=10 × 6 pods = 60   (max pods must be capped, or add PgBouncer)
-            Worker: connection_limit=10 × 2 pods = 20
-            Total = 80 ✅
+            API:    max: 10 × 6 pods = 60   (max pods must be capped, or add PgBouncer)
+            Worker: max: 10 × 2 pods = 20
+            Total = 80 ✅  (+ connectionTimeoutMillis, so a full pool fails fast)
       </script>
-      <p>The key insight: the limit is <em>per process</em>, so the autoscaler's max replica count must be part of the calculation. If you need many replicas, put PgBouncer in front.</p>
+      <p>The key insight: the limit is <em>per process</em>, so the autoscaler's max replica count must be part of the calculation. Writing <code>max</code> down explicitly, even when it equals the default, makes that budget visible in code review. If you need many replicas, put PgBouncer in front.</p>
     </details>
   </div>
 
@@ -839,8 +868,8 @@
     <h3>Interview questions</h3>
     <details><summary>What is a connection pool and why do we need one?</summary>
       <p>A set of database connections that are opened once and reused. Opening connections is slow (TCP, TLS, auth) and each one costs PostgreSQL memory and a process, so reusing a limited number keeps latency low and protects the database.</p></details>
-    <details><summary>What does Prisma error P2024 mean and how would you investigate it?</summary>
-      <p>A query waited longer than <code>pool_timeout</code> for a free connection. Check what holds connections: long or slow queries, transactions containing external calls, unbounded <code>Promise.all</code>, too many PrismaClient instances. Only after that, consider tuning <code>connection_limit</code> within the database's <code>max_connections</code> budget.</p></details>
+    <details><summary>What does the error <code>timeout exceeded when trying to connect</code> mean and how would you investigate it?</summary>
+      <p>A query waited longer than <code>connectionTimeoutMillis</code> for a free connection from the <code>pg</code> pool (older Prisma versions reported this as <code>P2024</code>). Check what holds connections: long or slow queries, transactions containing external calls, unbounded <code>Promise.all</code>, too many PrismaClient instances. Only after that, consider tuning <code>max</code> within the database's <code>max_connections</code> budget.</p></details>
     <details><summary>When would you add PgBouncer?</summary>
       <p>When many processes (lots of pods, serverless functions) need connections and their total pool sizes would exceed what PostgreSQL can handle. PgBouncer multiplexes many client connections over a few server connections.</p></details>
   </div>
@@ -1480,15 +1509,16 @@
         {
           "type": "node",
           "request": "launch",
-          "name": "Debug current Jest test",
-          "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-          "args": ["${relativeFile}", "--runInBand"],
+          "name": "Debug current Vitest test",
+          "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+          "args": ["run", "${relativeFile}", "--no-file-parallelism"],
+          "autoAttachChildProcesses": true,
           "console": "integratedTerminal"
         }
       ]
     }
   </script>
-  <p>Set a breakpoint on the <code>return</code> line, run the failing test with "Debug current Jest test", and inspect <code>total</code> in the Variables panel. You can also add a <em>conditional breakpoint</em> (right-click the line, e.g. <code>discount !== undefined</code>) or a <em>logpoint</em>, which prints a value without editing the code. If the hypothesis is wrong, you go back to step 2 with new information. That is normal, not failure.</p>
+  <p>Set a breakpoint on the <code>return</code> line, run the failing test with "Debug current Vitest test", and inspect <code>total</code> in the Variables panel. You can also add a <em>conditional breakpoint</em> (right-click the line, e.g. <code>discount !== undefined</code>) or a <em>logpoint</em>, which prints a value without editing the code. If the hypothesis is wrong, you go back to step 2 with new information. That is normal, not failure.</p>
 
   <p><strong>Step 4: Fix the root cause, not the symptom.</strong></p>
   <script type="text/x-code" data-lang="typescript">
@@ -1497,7 +1527,7 @@
 
     // ✅ Root cause: never do money maths with JS floats.
     //    Prisma returns Decimal columns as Prisma.Decimal (decimal.js), so stay in Decimal.
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     computeTotal(items: CartItem[], discount?: Discount): string {
       let total = new Prisma.Decimal(0);
@@ -1521,7 +1551,7 @@
     git bisect start
     git bisect bad                 # current commit has the bug
     git bisect good v1.4.0         # this release was fine
-    git bisect run npx jest pricing.service.spec.ts   # git tests each step automatically
+    git bisect run npx vitest run pricing.service.spec.ts   # git tests each step automatically
     # → "a1b2c3d is the first bad commit"
     git bisect reset
   </script>

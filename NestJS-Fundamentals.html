@@ -319,30 +319,31 @@
   <p><strong>Step 1: the smallest module.</strong> Every app has one root module, usually <code>AppModule</code>. <code>main.ts</code> gives it to <code>NestFactory</code>, which builds the whole app from it.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
     import { NestFactory } from '@nestjs/core';
-    import { AppModule } from './app.module';
+    import { AppModule } from './app.module.js';
 
     async function bootstrap() {
       const app = await NestFactory.create(AppModule); // reads AppModule and everything it imports
       await app.listen(process.env.PORT ?? 3000);
     }
-    bootstrap();
+    await bootstrap();
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
     import { Module } from '@nestjs/common';
-    import { UsersModule } from './users/users.module';
-    import { OrdersModule } from './orders/orders.module';
+    import { UsersModule } from './users/users.module.js';
+    import { OrdersModule } from './orders/orders.module.js';
 
     @Module({
       imports: [UsersModule, OrdersModule], // the root module just glues feature modules together
     })
     export class AppModule {}
   </script>
+  <p>A NestJS 12 project created by <code>nest new</code> is an ES module project, so relative imports end in <code>.js</code>. The <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.</p>
 
   <p><strong>Step 2: a feature module.</strong> Each business area gets its own folder and module. The CLI command <code>nest g resource users</code> creates the module, controller, service and DTOs for you.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/users/users.module.ts">
     import { Module } from '@nestjs/common';
-    import { UsersController } from './users.controller';
-    import { UsersService } from './users.service';
+    import { UsersController } from './users.controller.js';
+    import { UsersService } from './users.service.js';
 
     @Module({
       controllers: [UsersController],
@@ -355,9 +356,9 @@
   <p><strong>Step 3: using another module's provider.</strong> <code>OrdersService</code> needs to look up the user who places an order. Two things must be true: <code>UsersModule</code> exports <code>UsersService</code>, <em>and</em> <code>OrdersModule</code> imports <code>UsersModule</code>.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/orders/orders.module.ts">
     import { Module } from '@nestjs/common';
-    import { UsersModule } from '../users/users.module';
-    import { OrdersController } from './orders.controller';
-    import { OrdersService } from './orders.service';
+    import { UsersModule } from '../users/users.module.js';
+    import { OrdersController } from './orders.controller.js';
+    import { OrdersService } from './orders.service.js';
 
     @Module({
       imports: [UsersModule],          // ✅ import the MODULE
@@ -373,14 +374,14 @@
   <script type="text/x-code" data-lang="plaintext">
     Nest can't resolve dependencies of the OrdersService (?).
     Please make sure that the argument UsersService at index [0]
-    is available in the OrdersModule context.
+    is available in the OrdersModule module.
   </script>
-  <p>Read it literally: "inside the <code>OrdersModule</code> context, I cannot find <code>UsersService</code>". The fix is always one of: add it to <code>providers</code> (if it belongs here), or import the module that exports it.</p>
+  <p>Read it literally: "inside the <code>OrdersModule</code> module, I cannot find <code>UsersService</code>". The fix is always one of: add it to <code>providers</code> (if it belongs here), or import the module that exports it.</p>
 
   <p><strong>Step 5: global modules and re-exporting.</strong> Some providers are needed everywhere (database client, config, logger). Instead of importing their module in 20 places, you can mark it <code>@Global()</code>. A global module must still be imported once (usually in <code>AppModule</code>), and its exported providers then become available in every module.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/prisma/prisma.module.ts">
     import { Global, Module } from '@nestjs/common';
-    import { PrismaService } from './prisma.service';
+    import { PrismaService } from './prisma.service.js';
 
     @Global()                       // use sparingly: only for true infrastructure
     @Module({
@@ -521,9 +522,9 @@
   </table>
   <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
     import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
-    import { UsersService } from './users.service';
-    import { CreateUserDto } from './dto/create-user.dto';
-    import { UpdateUserDto } from './dto/update-user.dto';
+    import { UsersService } from './users.service.js';
+    import { CreateUserDto } from './dto/create-user.dto.js';
+    import { UpdateUserDto } from './dto/update-user.dto.js';
 
     @Controller('users')
     export class UsersController {
@@ -765,25 +766,32 @@
   <p><strong>Step 5: lifecycle hooks.</strong> Providers can react to the app starting or stopping by implementing interfaces such as <code>OnModuleInit</code> and <code>OnApplicationShutdown</code>. The classic example is connecting to the database:</p>
   <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts">
     import { Injectable, OnModuleInit } from '@nestjs/common';
-    import { PrismaClient } from '@prisma/client';
+    import { PrismaPg } from '@prisma/adapter-pg';
+    import { PrismaClient } from '../generated/prisma/client.js';
 
     @Injectable()
     export class PrismaService extends PrismaClient implements OnModuleInit {
+      constructor() {
+        // Prisma 7 talks to PostgreSQL through a driver adapter (the `pg` package)
+        super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+      }
+
       async onModuleInit() {
         await this.$connect();   // connect once when the module starts, fail fast if DB is down
       }
     }
   </script>
+  <p>With Prisma 7 you don't import <code>PrismaClient</code> from <code>@prisma/client</code>: <code>npx prisma generate</code> writes the client into your project, and you import it from the generated client (<code>src/generated/prisma/client.js</code>). The <code>@prisma/client</code> package stays installed because the generated code uses its runtime.</p>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
     <p>A service owns the business rules and uses <code>PrismaService</code> for data. Notice how it turns database-level facts (no row, unique conflict) into meaningful HTTP exceptions:</p>
     <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
       import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
       import * as bcrypt from 'bcrypt';
-      import { PrismaService } from '../prisma/prisma.service';
-      import { CreateUserDto } from './dto/create-user.dto';
+      import { Prisma } from '../generated/prisma/client.js';
+      import { PrismaService } from '../prisma/prisma.service.js';
+      import { CreateUserDto } from './dto/create-user.dto.js';
 
       @Injectable()
       export class UsersService {
@@ -883,7 +891,7 @@
   <script type="text/x-code" data-lang="typescript">
     // ❌ The service builds its own dependencies
     class OrdersService {
-      private prisma = new PrismaClient();          // a new DB connection pool per service!
+      private prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: '...' }) }); // a new DB connection pool per service!
       private mailer = new SmtpMailer('smtp://...'); // hard-coded, can't fake it in tests
     }
   </script>
@@ -988,7 +996,7 @@
       describe('UsersService', () => {
         let service: UsersService;
         const prismaMock = {
-          user: { findUnique: jest.fn() },
+          user: { findUnique: vi.fn() },   // vi.fn() = a Vitest mock function
         };
 
         beforeEach(async () => {
@@ -1187,13 +1195,13 @@
     <strong>In a real NestJS project</strong>
     <p>A production app typically registers one of each globally, then adds more specific ones where needed:</p>
     <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
-      import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+      import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 
       @Module({
-        imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, UsersModule, OrdersModule],
+        imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersModule, OrdersModule],
         providers: [
-          { provide: APP_GUARD, useClass: JwtAuthGuard },              // 2. who are you?
-          { provide: APP_GUARD, useClass: RolesGuard },                // 2. are you allowed?
+          // 2. the global guards (JwtAuthGuard: who are you? RolesGuard: are you allowed?)
+          //    are registered in AuthModule, next to the JwtModule they need (see point 9)
           { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },  // 3/6. timing + logs
           { provide: APP_PIPE, useValue: new ValidationPipe({ whitelist: true, transform: true }) }, // 4.
           { provide: APP_FILTER, useClass: PrismaExceptionFilter },    // 7. DB errors → HTTP
@@ -1201,11 +1209,11 @@
       })
       export class AppModule implements NestModule {
         configure(consumer: MiddlewareConsumer) {
-          consumer.apply(RequestIdMiddleware).forRoutes('*');          // 1.
+          consumer.apply(RequestIdMiddleware).forRoutes('{*splat}');   // 1.
         }
       }
     </script>
-    <p>Multiple global guards run in the order they are registered, so <code>JwtAuthGuard</code> sets <code>request.user</code> before <code>RolesGuard</code> reads it.</p>
+    <p>Multiple global guards run in the order they are registered (here inside <code>AuthModule</code>), so <code>JwtAuthGuard</code> sets <code>request.user</code> before <code>RolesGuard</code> reads it.</p>
   </div>
 
   <div class="box warn">
@@ -1292,7 +1300,7 @@
       configure(consumer: MiddlewareConsumer) {
         consumer
           .apply(RequestLoggerMiddleware)
-          .forRoutes('*');                                     // every route (see the Nest 11 note below)
+          .forRoutes('{*splat}');                              // every route (see the wildcard note below)
 
         consumer
           .apply(RequireJsonMiddleware)
@@ -1305,7 +1313,7 @@
     }
   </script>
   <p><code>forRoutes()</code> accepts path strings, <code>{ path, method }</code> objects or controller classes. <code>exclude()</code> removes specific routes. <code>apply()</code> takes several middleware at once, and they run in the order given.</p>
-  <p><strong>Nest 11 note:</strong> Nest 11 uses Express 5, whose path matching changed. Named wildcards are now preferred, e.g. <code>forRoutes('{*splat}')</code> for all routes or <code>'users/*splat'</code> for a sub-tree. Plain <code>'*'</code> still works for "everything" in Nest 11 (it is converted automatically with a warning), but use the new syntax in new code.</p>
+  <p><strong>Wildcard note (since Nest 11):</strong> Nest 11 moved to Express 5, whose path matching changed, and NestJS 12 keeps it. Named wildcards are now preferred, e.g. <code>forRoutes('{*splat}')</code> for all routes or <code>'users/*splat'</code> for a sub-tree. Plain <code>'*'</code> is still converted automatically for "everything" (other old-style wildcards such as <code>'users/*'</code> are converted with a warning), but use the new syntax in new code.</p>
 
   <p><strong>Step 4: functional middleware.</strong> If the middleware has no dependencies, a plain function is enough:</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/middleware/request-id.middleware.ts">
@@ -1319,7 +1327,7 @@
       next();
     }
 
-    // app.module.ts → consumer.apply(requestId).forRoutes('*');
+    // app.module.ts → consumer.apply(requestId).forRoutes('{*splat}');
   </script>
 
   <p><strong>Step 5: global middleware in <code>main.ts</code>.</strong> Third-party Express middleware (helmet, cookie-parser, compression) is usually registered with <code>app.use()</code>:</p>
@@ -1388,7 +1396,7 @@
           consumer
             .apply(MaintenanceMiddleware)
             .exclude({ path: 'health', method: RequestMethod.GET })
-            .forRoutes('*');
+            .forRoutes('{*splat}');
         }
       </script>
     </details>
@@ -1517,8 +1525,8 @@
     <p>Prisma throws its own errors, which would become 500s. A dedicated filter maps the common Prisma error codes to proper HTTP responses, so services don't need try/catch everywhere:</p>
     <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
       import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
       import type { Response } from 'express';
+      import { Prisma } from '../../generated/prisma/client.js';
 
       @Catch(Prisma.PrismaClientKnownRequestError)
       export class PrismaExceptionFilter implements ExceptionFilter {
@@ -1529,7 +1537,8 @@
             case 'P2002':   // unique constraint failed
               return res.status(HttpStatus.CONFLICT).json({
                 statusCode: 409,
-                message: `Duplicate value for ${String(exception.meta?.target ?? 'field')}`,
+                // Prisma 7 (driver adapter) no longer fills meta.target; meta.modelName is still set
+                message: `This ${String(exception.meta?.modelName ?? 'record')} already exists`,
               });
             case 'P2025':   // record to update/delete not found
               return res.status(HttpStatus.NOT_FOUND).json({ statusCode: 404, message: 'Record not found' });
@@ -1733,7 +1742,7 @@
     <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
       import { Type } from 'class-transformer';
       import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
-      import { OrderStatus } from '@prisma/client';
+      import { OrderStatus } from '../../generated/prisma/client.js';
 
       export class ListOrdersQueryDto {
         @IsOptional() @IsEnum(OrderStatus)
@@ -1782,8 +1791,9 @@
           @IsNumber({ maxDecimalPlaces: 2 }) @IsPositive()
           price!: number;
 
+          // No "= 0" here: PartialType copies it, so PATCH { "price": 30 } would reset stock to 0. The DB's @default(0) applies.
           @IsOptional() @IsInt() @Min(0)
-          stock: number = 0;
+          stock?: number;
 
           @IsOptional() @IsArray() @IsString({ each: true })
           tags?: string[];
@@ -1890,7 +1900,7 @@
   <script type="text/x-code" data-lang="typescript" data-title="auth/roles.guard.ts">
     import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
     import { Reflector } from '@nestjs/core';
-    import { ROLES_KEY } from './roles.decorator';
+    import { ROLES_KEY } from './roles.decorator.js';
 
     @Injectable()
     export class RolesGuard implements CanActivate {
@@ -1942,16 +1952,20 @@
       if (isPublic) return true;
       // ...verify token as before
     </script>
-    <script type="text/x-code" data-lang="typescript" data-title="app.module.ts / auth.controller.ts">
+    <script type="text/x-code" data-lang="typescript" data-title="auth.module.ts / auth.controller.ts">
+      // auth.module.ts: the module that imports JwtModule
       providers: [
+        AuthService,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: APP_GUARD, useClass: RolesGuard },
       ]
 
+      // auth.controller.ts
       @Public()
       @Post('auth/login')
       login(@Body() dto: LoginDto) {}
     </script>
+    <p><code>APP_GUARD</code> providers are global wherever they are declared, so register them in <code>AuthModule</code>: <code>JwtAuthGuard</code> injects <code>JwtService</code>, which only exists in the module that imports <code>JwtModule</code>, and declaring the guard in <code>AppModule</code> makes startup fail with "can't resolve dependencies".</p>
     <p>For ownership rules ("a user may only see their own orders"), the guard usually isn't enough, because it would need to load the order. Do that check in the service with a Prisma query like <code>findFirst({ where: { id, userId } })</code>.</p>
   </div>
 
@@ -2218,7 +2232,7 @@
   <p><strong>Step 2: a param decorator with <code>createParamDecorator</code>.</strong> The factory receives an optional <code>data</code> argument (what you pass in the parentheses) and the <code>ExecutionContext</code>. Whatever it returns becomes the parameter's value.</p>
   <script type="text/x-code" data-lang="typescript" data-title="auth/current-user.decorator.ts">
     import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-    import type { JwtPayload } from './jwt-auth.guard';
+    import type { JwtPayload } from './jwt-auth.guard.js';
 
     export const CurrentUser = createParamDecorator(
       (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
@@ -2463,7 +2477,7 @@
 
     // app.module.ts → ConfigModule.forRoot({ isGlobal: true, validate })
   </script>
-  <p>(Many projects use Joi via <code>validationSchema</code>, or Zod, instead. The idea is identical.)</p>
+  <p>(Many projects pass a schema to <code>validationSchema</code> instead. In <code>@nestjs/config</code> 12 it accepts any Standard Schema, such as Zod; Joi needs v18+. The idea is identical.)</p>
 
   <p><strong>Step 5: namespaced config with <code>registerAs</code>.</strong> For bigger apps, group related settings into typed objects instead of reading raw keys everywhere:</p>
   <script type="text/x-code" data-lang="typescript" data-title="config/jwt.config.ts">
@@ -2475,8 +2489,8 @@
     }));
   </script>
   <script type="text/x-code" data-lang="typescript">
-    import { ConfigType } from '@nestjs/config';
-    import jwtConfig from './config/jwt.config';
+    import type { ConfigType } from '@nestjs/config';
+    import jwtConfig from './config/jwt.config.js';
 
     // app.module.ts
     ConfigModule.forRoot({ isGlobal: true, load: [jwtConfig], validate });
@@ -2505,12 +2519,21 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Prisma reads <code>DATABASE_URL</code> itself from the environment (see <code>schema.prisma</code>), so it must be present both for the app and for CLI commands like <code>prisma migrate</code>. Nest uses the same variable, validated at start-up:</p>
+    <p>Prisma needs <code>DATABASE_URL</code> twice: CLI commands like <code>prisma migrate</code> read it in <code>prisma.config.ts</code>, and the app passes it to the driver adapter in <code>PrismaService</code>. Prisma 7 no longer loads <code>.env</code> by itself, so <code>prisma.config.ts</code> loads it with <code>dotenv</code>. Nest uses the same variable, validated at start-up:</p>
     <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
       datasource db {
-        provider = "postgresql"
-        url      = env("DATABASE_URL")
+        provider = "postgresql"   // Prisma 7: no url here, it lives in prisma.config.ts
       }
+    </script>
+    <script type="text/x-code" data-lang="typescript" data-title="prisma.config.ts">
+      import 'dotenv/config';   // the Prisma CLI does not read .env on its own
+      import { defineConfig } from 'prisma/config';
+
+      export default defineConfig({
+        schema: 'prisma/schema.prisma',
+        migrations: { path: 'prisma/migrations' },
+        datasource: { url: process.env.DATABASE_URL },
+      });
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
       async function bootstrap() {
@@ -2519,7 +2542,7 @@
         app.enableCors({ origin: config.get<string>('CORS_ORIGIN')?.split(',') });
         await app.listen(config.get<number>('PORT') ?? 3000);
       }
-      bootstrap();
+      await bootstrap();
     </script>
     <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml (excerpt)">
       services:
@@ -2618,16 +2641,15 @@
     // orders.module.ts → imports: [UsersModule]      🔁 cycle
   </script>
 
-  <p><strong>Step 2: the errors you'll see.</strong> At start-up Nest prints something like:</p>
+  <p><strong>Step 2: the errors you'll see.</strong> In an ES module project (what <code>nest new</code> creates in NestJS 12), Node stops at start-up, before Nest even gets to work, with an error like:</p>
   <script type="text/x-code" data-lang="plaintext">
-    Nest cannot create the UsersModule instance.
-    The module at index [0] of the UsersModule "imports" array is undefined.
+    file:///…/dist/orders/orders.module.js:14
+            imports: [UsersModule],
+                      ^
 
-    Potential causes:
-    - A circular dependency between modules. Use forwardRef() to avoid it.
-    - The module at index [0] is of type "undefined". Check your import statements and the type of the module.
+    ReferenceError: Cannot access 'UsersModule' before initialization
   </script>
-  <p>Why "undefined"? It's a JavaScript problem, not only a Nest one. When <code>users.module.ts</code> imports <code>orders.module.ts</code>, which imports <code>users.module.ts</code> again, Node gives back the half-loaded file, where <code>UsersModule</code> is not defined yet. The decorator then receives <code>undefined</code>. The same can happen between two service files, and even through a barrel <code>index.ts</code> file.</p>
+  <p>Why? It's a JavaScript problem, not only a Nest one. When <code>users.module.ts</code> imports <code>orders.module.ts</code>, which imports <code>users.module.ts</code> again, Node runs <code>orders.module.ts</code> while <code>users.module.ts</code> is still half-loaded, so <code>UsersModule</code> is not defined yet. The decorator reads it too early and the ES module throws. (In a CommonJS project the value is silently <code>undefined</code> instead, and Nest reports that a module in the <code>"imports"</code> array is undefined.) The same can happen between two service files, and even through a barrel <code>index.ts</code> file.</p>
 
   <p><strong>Step 3: <code>forwardRef()</code>, the quick fix.</strong> It wraps the reference in a function, so it's only evaluated later, when both files have finished loading. You need it on <strong>both sides</strong>, at both levels (modules and providers):</p>
   <script type="text/x-code" data-lang="typescript" data-title="users.module.ts / orders.module.ts">
@@ -2648,20 +2670,24 @@
   <script type="text/x-code" data-lang="typescript" data-title="users.service.ts / orders.service.ts">
     import { forwardRef, Inject, Injectable } from '@nestjs/common';
 
+    // ESM: hides the class from the constructor metadata, which would read it too early
+    export type WrapperType<T> = T;
+
     @Injectable()
     export class UsersService {
       constructor(
-        @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
+        @Inject(forwardRef(() => OrdersService)) private readonly ordersService: WrapperType<OrdersService>,
       ) {}
     }
 
     @Injectable()
     export class OrdersService {
       constructor(
-        @Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
+        @Inject(forwardRef(() => UsersService)) private readonly usersService: WrapperType<UsersService>,
       ) {}
     }
   </script>
+  <p>Why <code>WrapperType</code>? With <code>emitDecoratorMetadata</code>, TypeScript writes each constructor parameter's class into the compiled file, and in an ES module that read happens too early and throws the same <code>ReferenceError</code>. Behind a generic type alias TypeScript records just <code>Object</code>, and <code>forwardRef</code> supplies the real token.</p>
   <p>Downsides: the order in which the two are created is not guaranteed, so you must not use the other service inside the constructor (only in methods), it doesn't work well with request-scoped providers, and it hides a design smell.</p>
 
   <p><strong>Step 4: better fixes through module design.</strong></p>
@@ -2728,7 +2754,7 @@
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
-      <li>Adding <code>forwardRef</code> on only one side of the cycle. Both the module imports and both <code>@Inject()</code>s need it.</li>
+      <li>Adding <code>forwardRef</code> on only one side of the cycle. Both the module imports and both <code>@Inject()</code>s need it (and, in ES modules, both parameter types need the <code>WrapperType</code>).</li>
       <li>Using the forward-referenced service in a constructor. It may not be ready yet; use it only inside methods.</li>
       <li>Creating cycles through barrel files (<code>index.ts</code> re-exporting everything). Import directly from the file instead.</li>
       <li>Treating <code>forwardRef</code> as the final solution. It's a patch; the design problem stays.</li>
@@ -2757,8 +2783,8 @@
     <h3>Interview questions</h3>
     <details><summary>What is a circular dependency in NestJS and how do you resolve it?</summary>
       <p>Two providers or modules that depend on each other, so neither can be created first. The quick fix is <code>forwardRef(() =&gt; X)</code> in both module <code>imports</code> and both <code>@Inject()</code>s. The better fix is to restructure: extract shared logic, use events, or query the data layer directly.</p></details>
-    <details><summary>Why do circular imports produce <code>undefined</code>?</summary>
-      <p>Node's module loader returns a partially initialized module when a cycle is detected, so a class exported later in that file is still <code>undefined</code> when the other file reads it. <code>forwardRef</code> defers reading it until both files are fully loaded.</p></details>
+    <details><summary>Why do circular imports produce <code>undefined</code> or a <code>ReferenceError</code>?</summary>
+      <p>Node's module loader hands back a partially initialized module when a cycle is detected, so a class exported later in that file isn't ready when the other file reads it: in CommonJS it is still <code>undefined</code>, in ES modules reading it throws <code>ReferenceError: Cannot access 'X' before initialization</code>. <code>forwardRef</code> defers reading it until both files are fully loaded.</p></details>
     <details><summary>What are the limitations of <code>forwardRef</code>?</summary>
       <p>Creation order is not guaranteed, so the injected instance must not be used in a constructor. It is problematic with request-scoped providers, and it hides tight coupling that makes code harder to test and reason about.</p></details>
   </div>

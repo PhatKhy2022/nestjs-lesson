@@ -634,17 +634,16 @@
       // Cast is safe because ValidationPipe whitelists fields. Remove after OrderMapper lands.
       const order = await this.prisma.order.create({ data: dto as Prisma.OrderUncheckedCreateInput });
     </script>
-    <script type="text/x-code" data-lang="javascript" data-title="eslint.config.mjs (excerpt)">
-      export default [
-        // ...
-        {
-          rules: {
-            '@typescript-eslint/no-explicit-any': 'error',  // stop new 'any' from being added
-            'max-lines': ['warn', { max: 400, skipComments: true }],
-            'no-warning-comments': ['warn', { terms: ['todo', 'fixme'], location: 'start' }],
-          },
-        },
-      ];
+    <script type="text/x-code" data-lang="json" data-title=".oxlintrc.json (excerpt)">
+      // NestJS 12 projects lint with oxlint (npm run lint) instead of ESLint
+      {
+        "rules": {
+          // ...
+          "typescript/no-explicit-any": "error",  // stop new 'any' from being added (the scaffold sets it to "off")
+          "max-lines": ["warn", { "max": 400, "skipComments": true }],
+          "no-warning-comments": ["warn", { "terms": ["todo", "fixme"], "location": "start" }]
+        }
+      }
     </script>
   </div>
 
@@ -661,7 +660,7 @@
 
   <div class="box try">
     <strong>Practice exercise</strong>
-    <p>You have time for <strong>two</strong> items this sprint. Choose and justify: (1) upgrade NestJS 9 → 11 (Node 16 is end-of-life and has known CVEs), (2) rename confusing variables in <code>reports.service.ts</code> (changed twice a year), (3) add tests to the payment webhook handler (changed monthly, caused 2 incidents), (4) replace Moment.js with date-fns across the app, (5) split a 2,000-line <code>UsersService</code> that every sprint touches.</p>
+    <p>You have time for <strong>two</strong> items this sprint. Choose and justify: (1) upgrade NestJS 9 → 12 (Node 16 is end-of-life and has known CVEs), (2) rename confusing variables in <code>reports.service.ts</code> (changed twice a year), (3) add tests to the payment webhook handler (changed monthly, caused 2 incidents), (4) replace Moment.js with date-fns across the app, (5) split a 2,000-line <code>UsersService</code> that every sprint touches.</p>
     <details>
       <summary>Show answer</summary>
       <p><strong>Pick (3) and (1).</strong></p>
@@ -737,7 +736,7 @@
 
   <p><strong>Step 1: characterization tests</strong> that record current behavior, including weird cases:</p>
   <script type="text/x-code" data-lang="typescript" data-title="shipping.spec.ts">
-    import { calcShipping } from './shipping';
+    import { calcShipping } from './shipping.js';
 
     describe('calcShipping (characterization)', () => {
       it('returns 0 for no order / no items', () => {
@@ -755,6 +754,7 @@
       });
     });
   </script>
+  <p>(The <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
 
   <p><strong>Step 2+: small refactorings</strong>, each one followed by a green test run and a commit:</p>
   <ul>
@@ -991,8 +991,9 @@
     ## Quick start
     cp .env.example .env
     docker compose up -d db
-    npm ci
+    npm ci                     # postinstall runs prisma generate
     npx prisma migrate dev
+    npx prisma db seed         # Prisma 7: migrate dev no longer seeds automatically
     npm run start:dev          # http://localhost:3000/docs
 
     ## Tests
@@ -1137,7 +1138,7 @@
     const moduleRef = await Test.createTestingModule({
       providers: [
         OrdersService,
-        { provide: MailerService, useValue: { sendOrderConfirmation: jest.fn() } }, // fake
+        { provide: MailerService, useValue: { sendOrderConfirmation: vi.fn() } }, // fake (Vitest)
       ],
     }).compile();
   </script>
@@ -1150,7 +1151,7 @@
               "Which variable is undefined on that line?" → "user"
               "Where does user come from?" → "findUnique... oh, it's a Promise, I forgot await."
               "Nice. How could we catch this automatically next time?"
-              → "The ESLint rule @typescript-eslint/no-floating-promises!"
+              → "The lint rule typescript/no-floating-promises! (oxlint, already on in NestJS 12)"
   </script>
 
   <p><strong>Teaching through code review.</strong> Reviews are the most frequent mentoring moment. Explain the principle, link to a resource, and praise what's good.</p>
@@ -1249,21 +1250,35 @@
     Response travels back: serialization (JSON size!), gzip, network, browser render
   </script>
 
-  <p><strong>Example 1: the connection pool math.</strong> Each Prisma client keeps a pool of database connections. The default size is <code>num_cpus × 2 + 1</code>. PostgreSQL's default <code>max_connections</code> is 100. Now look at the whole system:</p>
+  <p><strong>Example 1: the connection pool math.</strong> Each Prisma client keeps a pool of database connections. In Prisma 7 that pool belongs to the <code>pg</code> driver behind the adapter, and its default size (<code>max</code>) is 10. PostgreSQL's default <code>max_connections</code> is 100. Now look at the whole system:</p>
   <table>
     <tr><th>Situation</th><th>Connections</th><th>Result</th></tr>
-    <tr><td>3 instances × 2 vCPU → 5 per pool</td><td>15</td><td>✅ fine</td></tr>
-    <tr><td>Black Friday: autoscaling to 25 instances</td><td>125 (+ migrations, admin tools, workers)</td><td>❌ "too many connections", the whole site goes down <em>because</em> it scaled</td></tr>
+    <tr><td>3 instances × 10 per pool</td><td>30</td><td>✅ fine</td></tr>
+    <tr><td>Black Friday: autoscaling to 25 instances</td><td>250 (+ migrations, admin tools, workers)</td><td>❌ "too many connections", the whole site goes down <em>because</em> it scaled</td></tr>
   </table>
   <p>A backend-only view says "add more instances". A system view sees that the database is the shared limit. Fixes: set an explicit pool size per instance, cap autoscaling, or put a connection pooler (PgBouncer, or your cloud's equivalent) in front of Postgres.</p>
   <script type="text/x-code" data-lang="ini" data-title=".env (production)">
-    # Explicit pool per instance + how long to wait for a free connection
-    DATABASE_URL=postgresql://shop_app:***@db.internal:5432/shop?schema=public&connection_limit=5&pool_timeout=10
+    # Prisma 7 ignores connection_limit / pool_timeout in the URL: the pool is set on the adapter (below)
+    DATABASE_URL=postgresql://shop_app:***@db.internal:5432/shop?schema=public
 
-    # Through PgBouncer in transaction mode (Prisma needs pgbouncer=true there)
-    # DATABASE_URL=postgresql://shop_app:***@pgbouncer.internal:6432/shop?pgbouncer=true&connection_limit=5
-    # DIRECT_URL is used by "prisma migrate" (migrations must bypass PgBouncer)
+    # Through PgBouncer in transaction mode: the app uses the pooled URL
+    # (add ?pgbouncer=true only for PgBouncer older than 1.21.0)
+    # DATABASE_URL=postgresql://shop_app:***@pgbouncer.internal:6432/shop
+    # DIRECT_URL is used by "prisma migrate" via prisma.config.ts (migrations must bypass PgBouncer)
     # DIRECT_URL=postgresql://shop_app:***@db.internal:5432/shop
+  </script>
+  <script type="text/x-code" data-lang="typescript" data-title="src/prisma/prisma.service.ts + prisma.config.ts (excerpts)">
+    // Explicit pool per instance + how long to wait for a free connection
+    super({
+      adapter: new PrismaPg({
+        connectionString: process.env.DATABASE_URL,
+        max: 5,                          // pg default: 10
+        connectionTimeoutMillis: 10_000, // pg default: 0 = wait forever
+      }),
+    });
+
+    // prisma.config.ts, when you use PgBouncer: the CLI (migrations) goes straight to PostgreSQL
+    datasource: { url: process.env.DIRECT_URL },
   </script>
 
   <p><strong>Example 2: the timeout chain.</strong> Every layer has a timeout. Inner layers must give up <em>before</em> outer layers, otherwise work continues for a user who is already gone.</p>
@@ -1314,7 +1329,7 @@
         }
       }
     </script>
-    <p>Combine it with Prisma query logging (<code>new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })</code> and a listener that logs queries above 200 ms) to see whether time is spent in the database or in your code.</p>
+    <p>Combine it with Prisma query logging (<code>new PrismaClient({ adapter, log: [{ emit: 'event', level: 'query' }] })</code> and a listener that logs queries above 200 ms) to see whether time is spent in the database or in your code.</p>
   </div>
 
   <div class="box warn">
@@ -1459,8 +1474,8 @@
     <p>An idempotent payment endpoint. If the mobile app retries after a timeout, the customer is not charged twice:</p>
     <script type="text/x-code" data-lang="typescript" data-title="payments.service.ts">
       import { ConflictException, Injectable } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
       import { createHash } from 'node:crypto';
+      import { Prisma } from '../generated/prisma/client.js'; // Prisma 7: the generated client
 
       @Injectable()
       export class PaymentsService {

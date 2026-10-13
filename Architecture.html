@@ -596,7 +596,8 @@
 
   <p><strong>Step 1: define the contract.</strong> Write down <em>what</em> the business needs, in business words, without saying <em>how</em>. In Nest, an <code>abstract class</code> is the best way to do this, because (unlike an interface) it exists at runtime and can be used as an injection token:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/orders.repository.ts">
-    import { Order, OrderItem, OrderStatus, Product } from '@prisma/client';
+    // Prisma 7 generates the client (models, enums, types) into src/generated/prisma
+    import { Order, OrderItem, OrderStatus, Product } from '../generated/prisma/client.js';
 
     export type OrderWithItems = Order & { items: OrderItem[] };
 
@@ -679,8 +680,8 @@
     describe('OrdersService', () => {
       let service: OrdersService;
       const repo = {
-        findById: jest.fn(),
-        updateStatus: jest.fn(),
+        findById: vi.fn(),        // Vitest mock functions (vi is global in a NestJS 12 project)
+        updateStatus: vi.fn(),
       };
 
       beforeEach(async () => {
@@ -837,7 +838,7 @@
     import {
       ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, IsString, MaxLength, ValidateNested,
     } from 'class-validator';
-    import { OrderItemDto } from './order-item.dto';
+    import { OrderItemDto } from './order-item.dto.js';
 
     export class CreateOrderDto {
       @IsArray()
@@ -853,6 +854,7 @@
       note?: string;
     }
   </script>
+  <p>(NestJS 12 projects are ES modules, so the relative import ends in <code>.js</code>. The <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
 
   <p><strong>Step 3: turn on the global ValidationPipe</strong> with the safe options:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
@@ -867,7 +869,7 @@
       );
       await app.listen(3000);
     }
-    bootstrap();
+    await bootstrap();
   </script>
   <p><code>whitelist</code> matters for security. Without it, a client could send <code>{ "items": [...], "status": "PAID", "totalCents": 0 }</code>, and if you spread the body into Prisma, they just paid nothing. This attack is called <em>mass assignment</em>.</p>
 
@@ -926,8 +928,8 @@
     <strong>In a real NestJS project</strong>
     <p>Each feature has a <code>dto/</code> folder with one class per file. Request DTOs use class-validator; enum fields reuse the Prisma enum:</p>
     <script type="text/x-code" data-lang="typescript" data-title="orders/dto/update-order-status.dto.ts">
-      import { OrderStatus } from '@prisma/client';
       import { IsEnum } from 'class-validator';
+      import { OrderStatus } from '../../generated/prisma/client.js';
 
       export class UpdateOrderStatusDto {
         @IsEnum(OrderStatus)
@@ -1125,9 +1127,9 @@
     <strong>In a real NestJS project</strong>
     <p><code>nest g resource orders</code> generates a feature folder for you. Larger codebases often group features under <code>src/modules/</code> and add a path alias (<code>@modules/orders</code>). Some teams also add an <code>index.ts</code> per feature that exports only the module, the public service and public DTOs, which documents the feature's public API:</p>
     <script type="text/x-code" data-lang="typescript" data-title="products/index.ts">
-      export { ProductsModule } from './products.module';
-      export { ProductsService } from './products.service';
-      export { ProductSummaryDto } from './dto/product-summary.dto';
+      export { ProductsModule } from './products.module.js';
+      export { ProductsService } from './products.service.js';
+      export { ProductSummaryDto } from './dto/product-summary.dto.js';
       // ProductsRepository is deliberately not exported
     </script>
   </div>
@@ -1489,7 +1491,7 @@
 
   <p><strong>Step 1: type the Prisma shape.</strong> Prisma can generate the exact type for a query with <code>include</code>, using <code>Prisma.OrderGetPayload</code>:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/infra/order.mapper.ts">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../../generated/prisma/client.js';
 
     export const orderInclude = { items: true } satisfies Prisma.OrderInclude;
     export type PrismaOrderWithItems = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
@@ -1497,7 +1499,7 @@
 
   <p><strong>Step 2: persistence ⇄ domain mapper</strong>, used only by the repository:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/infra/order.mapper.ts (continued)">
-    import { Order } from '../domain/order';
+    import { Order } from '../domain/order.js';
 
     export class OrderPersistenceMapper {
       static toDomain(row: PrismaOrderWithItems): Order {
@@ -2019,9 +2021,9 @@
       // ...
     }
 
-    // Nest at startup: "A circular dependency between modules. Use forwardRef() to avoid it."
+    // At startup (ES modules): "ReferenceError: Cannot access 'OrdersService' before initialization"
   </script>
-  <p><code>forwardRef()</code> makes the error go away, but the design problem remains: two features that can't exist without each other are really one big feature.</p>
+  <p><code>forwardRef()</code> (plus a type wrapper in ES modules, see Lesson 2) makes the error go away, but the design problem remains: two features that can't exist without each other are really one big feature.</p>
 
   <p><strong>Fix 1: invert the direction with events.</strong> The orders feature shouldn't need to <em>know</em> that loyalty points exist. It announces "an order was paid", and whoever cares listens. Install <code>@nestjs/event-emitter</code>:</p>
   <script type="text/x-code" data-lang="bash">
@@ -2142,7 +2144,7 @@
 
   <div class="box try">
     <strong>Practice exercise</strong>
-    <p><code>ProductsService</code> injects <code>OrdersService</code> to block deleting a product that appears in an order, and <code>OrdersService</code> injects <code>ProductsService</code> to read prices. Nest reports a circular dependency. Remove the cycle without <code>forwardRef()</code>.</p>
+    <p><code>ProductsService</code> injects <code>OrdersService</code> to block deleting a product that appears in an order, and <code>OrdersService</code> injects <code>ProductsService</code> to read prices. The app fails at startup with a circular dependency. Remove the cycle without <code>forwardRef()</code>.</p>
     <details>
       <summary>Show answer</summary>
       <p>Orders legitimately depends on products (it needs prices). The reverse check, "is this product used in any order?", can be answered from the products side without importing the orders feature, since <code>OrderItem.productId</code> references <code>Product</code> with a foreign key. Two good options:</p>
