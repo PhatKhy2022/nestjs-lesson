@@ -307,11 +307,12 @@
   <h3>How it works</h3>
   <p><strong>Setting up.</strong> Inside a Nest project:</p>
   <script type="text/x-code" data-lang="bash">
-    npm install -D prisma           # the CLI (migrate, generate, studio…)
-    npm install @prisma/client      # the runtime client your code imports
-    npx prisma init --datasource-provider postgresql
-    # creates prisma/schema.prisma and a .env file with DATABASE_URL
+    npm install -D prisma tsx                             # the CLI (migrate, generate, studio…) + a TS script runner
+    npm install @prisma/client @prisma/adapter-pg dotenv  # client runtime, PostgreSQL driver adapter, .env loader
+    npx prisma init --datasource-provider postgresql --output ../src/generated/prisma
+    # creates prisma/schema.prisma, prisma.config.ts and a .env file with DATABASE_URL
   </script>
+  <p>(If npm's <code>latest</code> tag points at a Prisma 8 release candidate when you install, pin the major version: <code>prisma@7</code>, <code>@prisma/client@7</code>.)</p>
   <script type="text/x-code" data-lang="ini" data-title=".env">
     # postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
     DATABASE_URL="postgresql://shop:shop@localhost:5432/shop?schema=public"
@@ -321,13 +322,13 @@
   <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
     // 1. WHERE is the database?
     datasource db {
-      provider = "postgresql"
-      url      = env("DATABASE_URL")   // read from .env, never hard-code passwords
+      provider = "postgresql"               // the connection URL now lives in prisma.config.ts
     }
 
     // 2. WHAT should be generated from this file?
     generator client {
-      provider = "prisma-client-js"     // generates the TypeScript client into node_modules
+      provider = "prisma-client"            // Prisma 7 generator (replaces "prisma-client-js")
+      output   = "../src/generated/prisma"  // where the TypeScript client is written
     }
 
     // 3. WHICH tables exist? One model = one table.
@@ -345,7 +346,24 @@
       stock Int     @default(0)
     }
   </script>
-  <p>Newer Prisma 6 releases also offer a <code>prisma-client</code> generator (which requires an <code>output</code> path) and a <code>prisma.config.ts</code> file for CLI settings. The ideas in this lesson are the same; the examples use the classic <code>prisma-client-js</code> generator and <code>import { PrismaClient } from '@prisma/client'</code>, which is what most existing NestJS projects use.</p>
+  <p><strong>The config file.</strong> In Prisma 7 the connection URL and the other CLI settings (schema path, migrations folder, seed command) live in <code>prisma.config.ts</code> in the project root:</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.config.ts">
+    // Prisma 7 reads its settings from this file. It does not load .env by itself, so we do.
+    import 'dotenv/config';
+    import { defineConfig } from 'prisma/config';
+
+    export default defineConfig({
+      schema: 'prisma/schema.prisma',
+      migrations: {
+        path: 'prisma/migrations',
+        seed: 'tsx prisma/seed.ts', // run by `npx prisma db seed` (point 10)
+      },
+      datasource: {
+        url: process.env.DATABASE_URL, // read from .env, never hard-code passwords
+      },
+    });
+  </script>
+  <p>The <code>prisma-client</code> generator writes plain TypeScript into <code>src/generated/prisma</code>. That folder is generated code: add it to <code>.gitignore</code> and recreate it with <code>npx prisma generate</code>. Your code imports from the generated client (<code>src/generated/prisma/client.js</code>), not from <code>@prisma/client</code>; the <code>@prisma/client</code> package stays installed because the generated code uses its runtime.</p>
 
   <p><strong>Reading a model line.</strong> Every field is <code>name  Type  attributes</code>:</p>
   <table>
@@ -380,15 +398,19 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>You wrap the client in an injectable service, export it from a global module, and inject it wherever you need the database:</p>
+    <p>You wrap the client in an injectable service, export it from a global module, and inject it wherever you need the database. In Prisma 7 the client talks to PostgreSQL through a <strong>driver adapter</strong> (<code>PrismaPg</code>, built on the <code>pg</code> package), which you pass to the constructor:</p>
     <script type="text/x-code" data-lang="typescript" data-title="prisma/prisma.service.ts">
       import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-      import { PrismaClient } from '@prisma/client';
+      import { PrismaPg } from '@prisma/adapter-pg';
+      import { PrismaClient } from '../generated/prisma/client.js';
 
       @Injectable()
       export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
         constructor() {
-          super({ log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'] });
+          super({
+            adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+            log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],
+          });
         }
 
         async onModuleInit() {
@@ -402,7 +424,7 @@
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="prisma/prisma.module.ts">
       import { Global, Module } from '@nestjs/common';
-      import { PrismaService } from './prisma.service';
+      import { PrismaService } from './prisma.service.js';
 
       @Global()                        // available everywhere without importing PrismaModule
       @Module({
@@ -421,16 +443,16 @@
         }
       }
     </script>
-    <p>Import <code>PrismaModule</code> once in <code>AppModule</code>. There is exactly one <code>PrismaClient</code> (and so one connection pool) for the whole app.</p>
+    <p>Import <code>PrismaModule</code> once in <code>AppModule</code>. There is exactly one <code>PrismaClient</code> (and so one connection pool) for the whole app. (The <code>.js</code> extension in <code>'./prisma.service.js'</code> is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
   </div>
 
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
-      <li>Hard-coding the connection string in <code>schema.prisma</code>, or committing <code>.env</code> to git.</li>
-      <li>Creating <code>new PrismaClient()</code> in several services. Each one opens its own pool and you run out of connections. Use one injected <code>PrismaService</code>.</li>
+      <li>Hard-coding the connection string in <code>prisma.config.ts</code>, or committing <code>.env</code> to git.</li>
+      <li>Creating <code>new PrismaClient({ adapter })</code> in several services. Each one opens its own pool and you run out of connections. Use one injected <code>PrismaService</code>.</li>
       <li>Forgetting <code>@@map</code>/<code>@map</code> and ending up with quoted PascalCase tables (<code>"OrderItem"</code>) that are painful to query by hand. Decide on naming before the first migration.</li>
-      <li>Editing the schema and forgetting to run <code>prisma generate</code> (or a migration), so your types are out of date.</li>
+      <li>Editing the schema and forgetting to run <code>prisma generate</code> (in Prisma 7 a migration no longer does it for you), so your types are out of date.</li>
     </ul>
   </div>
 
@@ -455,11 +477,11 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>What are the three main blocks of a Prisma schema?</summary>
-      <p><code>datasource</code> (database provider and connection URL), <code>generator</code> (what to generate, usually the Prisma Client), and <code>model</code> (one per table, with fields, types and attributes). There are also <code>enum</code> blocks and, as a preview feature, <code>view</code> blocks.</p></details>
+      <p><code>datasource</code> (database provider; in Prisma 7 the connection URL lives in <code>prisma.config.ts</code>), <code>generator</code> (what to generate, usually the Prisma Client), and <code>model</code> (one per table, with fields, types and attributes). There are also <code>enum</code> blocks and, as a preview feature, <code>view</code> blocks.</p></details>
     <details><summary>What's the difference between <code>@</code> and <code>@@</code> attributes?</summary>
       <p><code>@</code> attributes apply to a single field (<code>@id</code>, <code>@unique</code>, <code>@default</code>, <code>@map</code>). <code>@@</code> attributes apply to the model as a whole and usually involve several fields (<code>@@id([a, b])</code>, <code>@@unique</code>, <code>@@index</code>, <code>@@map</code>).</p></details>
     <details><summary>How do you integrate Prisma into NestJS?</summary>
-      <p>Create a <code>PrismaService</code> that extends <code>PrismaClient</code>, connects in <code>onModuleInit</code> and disconnects in <code>onModuleDestroy</code>; provide and export it from a (usually global) <code>PrismaModule</code>; inject it into services or repositories via the constructor.</p></details>
+      <p>Create a <code>PrismaService</code> that extends <code>PrismaClient</code> (passing a driver adapter such as <code>PrismaPg</code> to <code>super()</code> in Prisma 7), connects in <code>onModuleInit</code> and disconnects in <code>onModuleDestroy</code>; provide and export it from a (usually global) <code>PrismaModule</code>; inject it into services or repositories via the constructor.</p></details>
   </div>
 
   <div class="box key"><strong>Remember</strong> <code>schema.prisma</code> is the single source of truth: datasource = where, generator = what to build, models = tables. Map names to snake_case early, and use one injected <code>PrismaService</code>.</div>
@@ -554,7 +576,7 @@
     }
   </script>
   <script type="text/x-code" data-lang="typescript">
-    import { OrderStatus } from '@prisma/client';
+    import { OrderStatus } from '../generated/prisma/client.js';
 
     await prisma.order.update({ where: { id: 101 }, data: { status: OrderStatus.PAID } }); // ✅
     await prisma.order.update({ where: { id: 101 }, data: { status: 'PAID' } });           // ✅ also typed
@@ -563,7 +585,7 @@
 
   <p><strong>Working with <code>Decimal</code>.</strong> Prices come back as <code>Prisma.Decimal</code> objects (from the decimal.js library), not numbers, so you don't lose precision. Do the math with its methods:</p>
   <script type="text/x-code" data-lang="typescript">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     const product = await prisma.product.findUniqueOrThrow({ where: { id: 2 } });
     const lineTotal = product.price.mul(3);          // Decimal('58.5')
@@ -658,6 +680,7 @@
   <p><strong>Your first migration.</strong> With the <code>User</code> and <code>Product</code> models from point 1:</p>
   <script type="text/x-code" data-lang="bash">
     npx prisma migrate dev --name init
+    npx prisma generate        # Prisma 7: migrate dev no longer does this for you
   </script>
   <script type="text/x-code" data-lang="plaintext" data-title="output (shortened)">
     Applying migration `20261005081500_init`
@@ -669,7 +692,6 @@
         └─ migration.sql
 
     Your database is now in sync with your schema.
-    ✔ Generated Prisma Client to ./node_modules/@prisma/client
   </script>
   <script type="text/x-code" data-lang="sql" data-title="prisma/migrations/20261005081500_init/migration.sql">
     -- CreateTable
@@ -690,7 +712,7 @@
     <li>Replayed the existing migrations on a temporary <em>shadow database</em> to find the current state, and checked for <em>drift</em> (manual changes to your dev DB).</li>
     <li>Compared that state to <code>schema.prisma</code> and wrote the difference as a new <code>migration.sql</code>.</li>
     <li>Applied it to your dev database and recorded it in the <code>_prisma_migrations</code> table.</li>
-    <li>Ran <code>prisma generate</code> so your TypeScript types match (Prisma 5/6).</li>
+    <li>Stopped there. Unlike Prisma 5/6, it no longer runs <code>prisma generate</code>, which is why the second command regenerates the client so your TypeScript types match.</li>
   </ol>
   <p>Commit the <code>prisma/migrations</code> folder to git. It is the history of your database.</p>
 
@@ -734,12 +756,13 @@
     <tr><td>Creates new migration files?</td><td>yes</td><td>no, only applies existing ones</td></tr>
     <tr><td>Needs a shadow database?</td><td>yes</td><td>no</td></tr>
     <tr><td>May reset the database?</td><td>yes, it offers to when it finds drift</td><td>never</td></tr>
-    <tr><td>Runs <code>generate</code> / seed?</td><td>yes (Prisma 5/6)</td><td>no</td></tr>
+    <tr><td>Runs <code>generate</code> / seed?</td><td>no since Prisma 7 (yes in Prisma 5/6)</td><td>no</td></tr>
   </table>
   <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
     {
       "scripts": {
         "db:migrate": "prisma migrate dev",
+        "db:generate": "prisma generate",
         "db:deploy": "prisma migrate deploy",
         "db:status": "prisma migrate status",
         "postinstall": "prisma generate",
@@ -751,7 +774,7 @@
   <p><strong>Other commands you'll meet:</strong></p>
   <script type="text/x-code" data-lang="bash">
     npx prisma migrate status     # which migrations are applied / pending / failed
-    npx prisma migrate reset      # DEV ONLY: drop the DB, re-apply all migrations, run the seed
+    npx prisma migrate reset      # DEV ONLY: drop the DB, re-apply all migrations (no seed since Prisma 7)
     npx prisma db push            # sync schema → DB WITHOUT creating migration files (quick prototypes)
     npx prisma migrate resolve --rolled-back 20261005090000_add_user_phone   # after fixing a failed prod migration
   </script>
@@ -760,7 +783,7 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>The usual workflow: change <code>schema.prisma</code> → <code>npm run db:migrate -- --name xyz</code> → review the SQL → commit schema and migration together in the same PR. In deployment, run <code>migrate deploy</code> once, <em>before</em> the new app version starts:</p>
+    <p>The usual workflow: change <code>schema.prisma</code> → <code>npm run db:migrate -- --name xyz</code> → <code>npm run db:generate</code> → review the SQL → commit schema and migration together in the same PR. In deployment, run <code>migrate deploy</code> once, <em>before</em> the new app version starts:</p>
     <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/deploy.yml (excerpt)">
       - name: Install
         run: npm ci                       # postinstall → prisma generate
@@ -809,7 +832,7 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>What is the difference between <code>prisma migrate dev</code> and <code>prisma migrate deploy</code>?</summary>
-      <p><code>migrate dev</code> is for development: it uses a shadow database to detect changes and drift, generates new migration files, applies them, regenerates the client, and may reset the DB. <code>migrate deploy</code> is for production/CI: it only applies pending, committed migrations, and never generates or resets anything.</p></details>
+      <p><code>migrate dev</code> is for development: it uses a shadow database to detect changes and drift, generates new migration files, applies them, and may reset the DB (since Prisma 7 it no longer regenerates the client or seeds; run <code>prisma generate</code> and <code>prisma db seed</code> yourself). <code>migrate deploy</code> is for production/CI: it only applies pending, committed migrations, and never generates or resets anything.</p></details>
     <details><summary>How do you rename a column without losing data in Prisma?</summary>
       <p>Change the schema, create the migration with <code>--create-only</code>, replace the generated DROP/ADD with <code>ALTER TABLE … RENAME COLUMN …</code>, then apply it. Alternatively keep the column name and only change the Prisma field name using <code>@map</code>.</p></details>
     <details><summary>When would you use <code>prisma db push</code>?</summary>
@@ -1032,11 +1055,12 @@
   </div>
 
   <h3>How it works</h3>
-  <p><strong>Generating.</strong> <code>npx prisma generate</code> reads <code>schema.prisma</code> and writes the client (with the classic generator, into <code>node_modules/.prisma/client</code>, re-exported by <code>@prisma/client</code>). <code>migrate dev</code> runs it for you; in CI, add <code>"postinstall": "prisma generate"</code> so a fresh <code>npm ci</code> always has up-to-date types.</p>
+  <p><strong>Generating.</strong> <code>npx prisma generate</code> reads <code>schema.prisma</code> and writes the client into the generator's <code>output</code> folder (<code>src/generated/prisma</code>; you import it from <code>src/generated/prisma/client.js</code>). Since Prisma 7, <code>migrate dev</code> no longer runs it for you, so run it after every schema change; in CI, add <code>"postinstall": "prisma generate"</code> so a fresh <code>npm ci</code> always has up-to-date types.</p>
 
   <p><strong>What gets generated</strong> for the <code>User</code> model:</p>
   <script type="text/x-code" data-lang="typescript">
-    import { PrismaClient, Prisma, User, Role } from '@prisma/client';
+    import { PrismaPg } from '@prisma/adapter-pg';
+    import { PrismaClient, Prisma, User, Role } from '../generated/prisma/client.js';
 
     // 1. The model type: exactly one row of the table
     //    type User = { id: number; email: string; name: string; passwordHash: string; role: Role; createdAt: Date }
@@ -1047,7 +1071,9 @@
     const order: Prisma.UserOrderByWithRelationInput = { createdAt: 'desc' };
 
     // 3. A model delegate with typed methods
-    const prisma = new PrismaClient();
+    const prisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    });
     prisma.user.findMany({ where, orderBy: order });
   </script>
 
@@ -1078,11 +1104,11 @@
     prisma.order.update({ where: { id: 1 }, data: { status: 'DONE' } }); // ❌ not an OrderStatus
     prisma.user.findUnique({ where: { name: 'An' } });        // ❌ name is not @unique
   </script>
-  <p>Now imagine renaming <code>name</code> to <code>fullName</code> in the schema. After <code>prisma migrate dev</code>, <code>npm run build</code> lists every service, DTO mapper and test that still uses <code>name</code>. That's the "end-to-end" part: database → generated types → your code.</p>
+  <p>Now imagine renaming <code>name</code> to <code>fullName</code> in the schema. After <code>prisma migrate dev</code> and <code>prisma generate</code>, <code>npm run build</code> lists every service, DTO mapper and test that still uses <code>name</code>. That's the "end-to-end" part: database → generated types → your code.</p>
 
   <p><strong>Reusable result types</strong> with <code>Prisma.validator</code>/<code>satisfies</code> and <code>GetPayload</code>:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/order.types.ts">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     // Define the shape once…
     export const orderWithItems = {
@@ -1100,6 +1126,7 @@
   <p><strong>Hiding sensitive fields.</strong> Since Prisma 6.2, <code>omit</code> is stable: per query, or globally when creating the client. A global omit means <code>passwordHash</code> can never leak by accident:</p>
   <script type="text/x-code" data-lang="typescript">
     const prisma = new PrismaClient({
+      adapter,                                        // the PrismaPg adapter, as in point 1
       omit: { user: { passwordHash: true } },        // never returned by default
     });
 
@@ -1113,15 +1140,15 @@
     });
   </script>
 
-  <p><strong>One client, one connection pool.</strong> <code>PrismaClient</code> manages a pool of database connections (by default <code>num_cpus * 2 + 1</code>, configurable with <code>?connection_limit=</code> in the URL). Create it once per process. That's exactly what the singleton <code>PrismaService</code> from point 1 gives you.</p>
+  <p><strong>One client, one connection pool.</strong> <code>PrismaClient</code> uses a pool of database connections. In Prisma 7 that pool belongs to the <code>pg</code> driver and is configured on the adapter: <code>new PrismaPg({ connectionString, max: 10, connectionTimeoutMillis: 5_000 })</code> (<code>pg</code> defaults to <code>max: 10</code> and no connection timeout at all; URL parameters such as <code>?connection_limit=</code> are ignored with the adapter). Create it once per process. That's exactly what the singleton <code>PrismaService</code> from point 1 gives you.</p>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
     <p>Use generated types inside services and repositories, but keep <strong>DTOs</strong> (validated API input) and <strong>response shapes</strong> as your own classes. The database shape and the API shape often differ (hashes, internal flags, Decimal formatting):</p>
     <script type="text/x-code" data-lang="typescript" data-title="users/users.service.ts">
       import { Injectable, NotFoundException } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
-      import { PrismaService } from '../prisma/prisma.service';
+      import { Prisma } from '../generated/prisma/client.js';
+      import { PrismaService } from '../prisma/prisma.service.js';
 
       const publicUser = {
         select: { id: true, email: true, name: true, role: true, createdAt: true },
@@ -1158,7 +1185,7 @@
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="typescript">
-        import { Prisma, PrismaClient } from '@prisma/client';
+        import { Prisma, PrismaClient } from '../generated/prisma/client.js';
 
         const productCard = {
           select: {
@@ -1184,7 +1211,7 @@
     <details><summary>What does "end-to-end type safety" mean with Prisma?</summary>
       <p>The schema is the source of truth; Prisma generates TypeScript types from it, and query results are typed according to <code>select</code>/<code>include</code>. Any schema change that breaks code shows up as compile errors, from the database layer through services to anything that consumes those types.</p></details>
     <details><summary>When does the Prisma Client need to be regenerated?</summary>
-      <p>Whenever <code>schema.prisma</code> changes: <code>migrate dev</code> does it automatically (Prisma 5/6), otherwise run <code>prisma generate</code>. In CI and Docker builds, run it after installing dependencies (e.g. with a <code>postinstall</code> script).</p></details>
+      <p>Whenever <code>schema.prisma</code> changes: run <code>prisma generate</code> (since Prisma 7, <code>migrate dev</code> no longer does it automatically as it did in Prisma 5/6). In CI and Docker builds, run it after installing dependencies (e.g. with a <code>postinstall</code> script).</p></details>
     <details><summary>Should you use Prisma's generated types as your API DTOs?</summary>
       <p>Generally no. Generated types disappear at runtime, so they can't be validated by <code>ValidationPipe</code>, and they mirror the database rather than the API contract. Use class-based DTOs for input and explicit select/response types for output.</p></details>
   </div>
@@ -1540,7 +1567,7 @@
     <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
       import { Type } from 'class-transformer';
       import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
-      import { OrderStatus } from '@prisma/client';
+      import { OrderStatus } from '../../generated/prisma/client.js';
 
       export class ListOrdersQuery {
         @IsOptional() @IsEnum(OrderStatus)
@@ -1587,7 +1614,7 @@
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="typescript">
-        import { Prisma } from '@prisma/client';
+        import { Prisma } from '../generated/prisma/client.js';
 
         async function searchProducts(opts: {
           q?: string; minPrice?: number; maxPrice?: number; inStock?: boolean; page: number; pageSize: number;
@@ -1746,7 +1773,7 @@
     <p>A service turns a validated DTO into a mutation and maps Prisma errors to HTTP errors:</p>
     <script type="text/x-code" data-lang="typescript" data-title="products/products.service.ts">
       import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
+      import { Prisma } from '../generated/prisma/client.js';
 
       @Injectable()
       export class ProductsService {
@@ -2034,12 +2061,15 @@
   </div>
 
   <h3>How it works</h3>
-  <p><strong>1. Write the script.</strong> It uses <code>PrismaClient</code> directly. It is not part of the Nest app, so there's no dependency injection here.</p>
+  <p><strong>1. Write the script.</strong> It uses <code>PrismaClient</code> directly. It is not part of the Nest app, so there's no dependency injection here: the script loads <code>.env</code> and creates the adapter itself.</p>
   <script type="text/x-code" data-lang="typescript" data-title="prisma/seed.ts">
-    import { PrismaClient, Prisma, Role } from '@prisma/client';
+    import 'dotenv/config';
+    import { PrismaPg } from '@prisma/adapter-pg';
     import * as bcrypt from 'bcrypt';
+    import { PrismaClient, Prisma, Role } from '../src/generated/prisma/client.js';
 
-    const prisma = new PrismaClient();
+    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+    const prisma = new PrismaClient({ adapter });
 
     async function main() {
       const passwordHash = await bcrypt.hash('Password123!', 10);
@@ -2091,27 +2121,29 @@
     main()
       .catch((e) => {
         console.error(e);
-        process.exit(1);          // make CI fail if seeding fails
+        process.exitCode = 1;     // make CI fail if seeding fails
       })
       .finally(() => prisma.$disconnect());
   </script>
 
-  <p><strong>2. Tell Prisma how to run it</strong> (Prisma 5/6 read this from <code>package.json</code>; newer setups can put the same command in <code>prisma.config.ts</code>):</p>
-  <script type="text/x-code" data-lang="json" data-title="package.json">
-    {
-      "prisma": {
-        "seed": "ts-node prisma/seed.ts"
-      }
-    }
+  <p><strong>2. Tell Prisma how to run it</strong> in <code>prisma.config.ts</code> (Prisma 5/6 read this from a <code>"prisma": { "seed": … }</code> block in <code>package.json</code>):</p>
+  <script type="text/x-code" data-lang="typescript" data-title="prisma.config.ts">
+    export default defineConfig({
+      // ...
+      migrations: {
+        path: 'prisma/migrations',
+        seed: 'tsx prisma/seed.ts', // run by `npx prisma db seed`
+      },
+    });
   </script>
-  <p>(<code>tsx prisma/seed.ts</code> also works and is faster. Since a Nest project already has <code>ts-node</code>, it's the common default.)</p>
+  <p>(<code>tsx</code> runs the TypeScript file directly, without a build step. Install it with <code>npm install -D tsx</code>.)</p>
 
   <p><strong>3. Run it.</strong></p>
   <script type="text/x-code" data-lang="bash">
-    npx prisma db seed            # run the seed explicitly
-    npx prisma migrate reset      # drop DB → apply all migrations → run the seed (DEV ONLY)
+    npx prisma db seed                                       # run the seed explicitly
+    npx prisma migrate reset --force && npx prisma db seed   # drop DB → apply all migrations → seed (DEV ONLY)
   </script>
-  <p>In Prisma 5/6, <code>migrate dev</code> also runs the seed automatically when it had to reset the database. <code>migrate deploy</code> never seeds.</p>
+  <p>In Prisma 5/6, <code>migrate reset</code> (and <code>migrate dev</code>, when it had to reset the database) also ran the seed automatically. Since Prisma 7 neither does, so run <code>prisma db seed</code> yourself. <code>migrate deploy</code> never seeds.</p>
 
   <p><strong>Idempotency is the key design rule.</strong> A seed should be safe to run many times. Compare:</p>
   <script type="text/x-code" data-lang="typescript">
@@ -2156,7 +2188,7 @@
     <strong>In a real NestJS project</strong>
     <p>For e2e tests, use a separate database (<code>.env.test</code>), apply migrations once, and clean tables between tests. A small helper keeps tests independent:</p>
     <script type="text/x-code" data-lang="typescript" data-title="test/utils/reset-db.ts">
-      import { PrismaClient } from '@prisma/client';
+      import { PrismaClient } from '../../src/generated/prisma/client.js';
 
       export async function resetDb(prisma: PrismaClient) {
         // One statement, fast, resets id sequences, follows FKs
@@ -2181,12 +2213,12 @@
       {
         "scripts": {
           "db:seed": "prisma db seed",
-          "db:reset": "prisma migrate reset --force",
-          "test:e2e": "dotenv -e .env.test -- prisma migrate deploy && dotenv -e .env.test -- jest --config ./test/jest-e2e.json --runInBand"
+          "db:reset": "prisma migrate reset --force && prisma db seed",
+          "test:e2e": "dotenv -e .env.test -- prisma migrate deploy && dotenv -e .env.test -- vitest run --config ./vitest.config.e2e.ts --no-file-parallelism"
         }
       }
     </script>
-    <p>(<code>dotenv</code> here is the <code>dotenv-cli</code> package; it loads a different env file for one command. <code>--runInBand</code> runs test files one at a time so they don't wipe each other's data.)</p>
+    <p>(<code>dotenv</code> here is the <code>dotenv-cli</code> package; it loads a different env file for one command. <code>--no-file-parallelism</code> makes Vitest run test files one at a time so they don't wipe each other's data.)</p>
   </div>
 
   <div class="box warn">
@@ -2196,7 +2228,7 @@
       <li>Hard-coding ids (<code>userId: 1</code>). After a reset or in another environment, the id may differ. Use the returned objects or look up by a unique field.</li>
       <li>Committing real customer data or real passwords in seed files.</li>
       <li>Running <code>migrate reset</code> or a demo seed against staging/production by accident. Check <code>DATABASE_URL</code> first.</li>
-      <li>Forgetting <code>process.exit(1)</code> on error, so CI shows green even though seeding failed.</li>
+      <li>Forgetting <code>process.exitCode = 1</code> on error, so CI shows green even though seeding failed.</li>
     </ul>
   </div>
 
@@ -2231,7 +2263,7 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>How do you configure and run a seed with Prisma?</summary>
-      <p>Write <code>prisma/seed.ts</code> using PrismaClient, register the command (e.g. <code>"prisma": { "seed": "ts-node prisma/seed.ts" }</code> in package.json), then run <code>prisma db seed</code>. It also runs after <code>prisma migrate reset</code>.</p></details>
+      <p>Write <code>prisma/seed.ts</code> using PrismaClient (with the <code>PrismaPg</code> adapter), register the command in <code>prisma.config.ts</code> (<code>migrations: { seed: 'tsx prisma/seed.ts' }</code>), then run <code>prisma db seed</code>. Since Prisma 7 it no longer runs automatically after <code>prisma migrate reset</code>, so chain both (e.g. a <code>db:reset</code> script).</p></details>
     <details><summary>What makes a good seed script?</summary>
       <p>It's idempotent (upsert, skipDuplicates), deterministic (fixed Faker seed, no hard-coded ids), fast (createMany for bulk), contains no real personal data, and exits non-zero on failure.</p></details>
     <details><summary>How do you isolate database state between e2e tests?</summary>
@@ -2248,14 +2280,14 @@
 
   <div class="box plain">
     <strong>In plain words</strong>
-    <p>Prisma Studio is a spreadsheet-like window onto your database, opened in the browser. It reads your Prisma schema, so it shows your <em>models</em> (with their Prisma field names and relations), not raw tables. You can look at rows, filter them, click from an order to its user, and edit values, all without writing a query. Think of it as the "inspect element" of your database while you develop.</p>
+    <p>Prisma Studio is a spreadsheet-like window onto your database, opened in the browser. Since Prisma 7 it reads the database itself, so it shows your real <em>tables</em> and columns (<code>orders</code>, <code>user_id</code>), not the Prisma model and field names. You can look at rows, filter them, click from an order to its user, and edit values, all without writing a query. Think of it as the "inspect element" of your database while you develop.</p>
   </div>
 
   <h3>How it works</h3>
-  <p><strong>Starting it.</strong> It uses the same <code>DATABASE_URL</code> as the rest of the Prisma CLI:</p>
+  <p><strong>Starting it.</strong> It connects with the same URL as the rest of the Prisma CLI (<code>datasource.url</code> in <code>prisma.config.ts</code>, so your <code>DATABASE_URL</code>), or with <code>--url</code>:</p>
   <script type="text/x-code" data-lang="bash">
     npx prisma studio
-    # Prisma Studio is up on http://localhost:5555
+    # Prisma Studio is running at: http://localhost:51212   (Prisma 7's default port)
 
     npx prisma studio --port 5556 --browser none     # another port, don't auto-open a browser
 
@@ -2266,15 +2298,15 @@
   <p><strong>What you can do:</strong></p>
   <table>
     <tr><th>Task</th><th>How in Studio</th><th>Equivalent code/SQL</th></tr>
-    <tr><td>Browse a model</td><td>pick <code>Order</code> in the model list</td><td><code>prisma.order.findMany()</code></td></tr>
-    <tr><td>Filter</td><td>"Filters" → <code>status</code> equals <code>PENDING</code></td><td><code>where: { status: 'PENDING' }</code></td></tr>
+    <tr><td>Browse a table</td><td>pick <code>orders</code> in the table list</td><td><code>prisma.order.findMany()</code></td></tr>
+    <tr><td>Filter</td><td>"Add filter" → <code>status</code> equals <code>PENDING</code></td><td><code>where: { status: 'PENDING' }</code></td></tr>
     <tr><td>Show/hide columns, sort</td><td>"Fields" menu, click a column header</td><td><code>select</code>, <code>orderBy</code></td></tr>
-    <tr><td>Follow relations</td><td>click the <code>user</code> or <code>items</code> cell of an order</td><td><code>include: { user: true }</code></td></tr>
-    <tr><td>Edit a value</td><td>double-click a cell, change it, "Save 1 change"</td><td><code>prisma.order.update(...)</code></td></tr>
-    <tr><td>Add a row</td><td>"Add record", fill fields, save</td><td><code>prisma.order.create(...)</code></td></tr>
-    <tr><td>Delete rows</td><td>select rows → "Delete records"</td><td><code>prisma.order.deleteMany(...)</code></td></tr>
+    <tr><td>Follow relations</td><td>follow an order's <code>user_id</code> to its user</td><td><code>include: { user: true }</code></td></tr>
+    <tr><td>Edit a value</td><td>double-click a cell, change it, "Save changes"</td><td><code>prisma.order.update(...)</code></td></tr>
+    <tr><td>Add a row</td><td>"Insert row", fill fields, save</td><td><code>prisma.order.create(...)</code></td></tr>
+    <tr><td>Delete rows</td><td>select rows → "Delete"</td><td><code>prisma.order.deleteMany(...)</code></td></tr>
   </table>
-  <p>Edits are collected and only written when you click <strong>Save</strong>, and you can discard them before that. Database rules still apply: if you set a duplicate email or a non-existent <code>userId</code>, the save fails with the same unique/foreign key error your app would get.</p>
+  <p>Edits are collected and only written when you click <strong>Save</strong>, and you can discard them before that. Database rules still apply: if you set a duplicate email or a non-existent <code>user_id</code>, the save fails with the same unique/foreign key error your app would get.</p>
 
   <p><strong>Typical moments to open Studio:</strong></p>
   <ul>
@@ -2287,7 +2319,7 @@
   <p><strong>What Studio is not.</strong> It's a developer tool, not an admin panel or a SQL client:</p>
   <ul>
     <li>Edits go <strong>straight to the database</strong>, skipping your NestJS validation, business rules, audit logs and events. Setting <code>status = 'PAID'</code> in Studio won't decrement stock or send an email.</li>
-    <li>It doesn't run arbitrary SQL, show query plans or manage indexes. Use <code>psql</code>, pgAdmin, DBeaver or TablePlus for that (and for <code>EXPLAIN ANALYZE</code> from Lesson 3).</li>
+    <li>It's not a full SQL client. Prisma 7's Studio can run ad-hoc SQL queries, but for query plans and index management use <code>psql</code>, pgAdmin, DBeaver or TablePlus (and for <code>EXPLAIN ANALYZE</code> from Lesson 3).</li>
     <li>It's not meant for production data: whoever can reach it has full read/write access, and there's no per-user permission system.</li>
   </ul>
   <script type="text/x-code" data-lang="plaintext">
@@ -2325,7 +2357,7 @@
       volumes:
         pgdata:
     </script>
-    <p>A common debugging flow: <code>GET /me/orders</code> returns <code>[]</code> → open Studio → filter <code>Order</code> by <code>userId</code> → discover the orders belong to user 2 while your JWT says <code>sub: 1</code>. The bug is in the test data, not the query.</p>
+    <p>A common debugging flow: <code>GET /me/orders</code> returns <code>[]</code> → open Studio → filter <code>orders</code> by <code>user_id</code> → discover the orders belong to user 2 while your JWT says <code>sub: 1</code>. The bug is in the test data, not the query.</p>
   </div>
 
   <div class="box warn">
@@ -2333,8 +2365,8 @@
     <ul>
       <li>Opening Studio with a <code>.env</code> that points at production, then "just fixing one value".</li>
       <li>Using Studio edits to simulate business actions (marking orders as paid), then being confused that side effects didn't happen.</li>
-      <li>Exposing port 5555 on a shared or public server.</li>
-      <li>Expecting Studio to show tables that aren't in <code>schema.prisma</code> (it only knows your models).</li>
+      <li>Exposing Studio's port (51212 by default) on a shared or public server.</li>
+      <li>Looking for Prisma model and field names (<code>OrderItem</code>, <code>createdAt</code>): Studio shows the database names (<code>order_items</code>, <code>created_at</code>).</li>
       <li>Forgetting to click Save, and thinking the edit was applied.</li>
     </ul>
   </div>
@@ -2344,7 +2376,7 @@
     <p>Using only Prisma Studio: (1) find the user with email <code>an@shop.dev</code>; (2) open their orders; (3) change the stock of the "USB-C Cable" to 25; (4) try to set a second user's email to <code>an@shop.dev</code>. What happens in step 4, and which SQL query would confirm step 3?</p>
     <details>
       <summary>Show answer</summary>
-      <p>Steps 1–3: open <code>User</code>, add a filter <code>email</code> equals <code>an@shop.dev</code>, click the <code>orders</code> cell to jump to the related orders; open <code>Product</code>, double-click the <code>stock</code> cell of USB-C Cable, type 25, click "Save 1 change". In step 4, the save fails with a unique constraint error on <code>email</code>: the same P2002 your API would map to a 409. To confirm step 3:</p>
+      <p>Steps 1–3: open <code>users</code>, add a filter <code>email</code> equals <code>an@shop.dev</code> and note An's id; open <code>orders</code> and filter <code>user_id</code> by that id; open <code>products</code>, double-click the <code>stock</code> cell of USB-C Cable, type 25, save. In step 4, the save fails with a unique constraint error on <code>email</code>: the same violation your API sees as P2002 and maps to a 409. To confirm step 3:</p>
       <script type="text/x-code" data-lang="sql">
         SELECT id, name, stock FROM products WHERE name = 'USB-C Cable';
         -- id | name        | stock
@@ -2356,11 +2388,11 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>What is Prisma Studio and when do you use it?</summary>
-      <p>A browser-based GUI (<code>npx prisma studio</code>, port 5555) to view and edit data through your Prisma models. It's used in development to verify seeds and migrations, debug data issues and prepare manual test scenarios.</p></details>
+      <p>A browser-based GUI (<code>npx prisma studio</code>, port 51212 by default in Prisma 7) to view and edit the data in your database tables. It's used in development to verify seeds and migrations, debug data issues and prepare manual test scenarios.</p></details>
     <details><summary>Why shouldn't you edit production data with Prisma Studio?</summary>
       <p>Edits bypass application validation, business logic, side effects and audit trails, there's no fine-grained access control, and mistakes are immediate. Production changes should go through the app, a reviewed script/migration, or a proper admin tool.</p></details>
     <details><summary>Does Prisma Studio enforce database constraints?</summary>
-      <p>Yes. It writes through Prisma to the real database, so NOT NULL, UNIQUE, foreign key and CHECK constraints all apply, and failed saves show the corresponding error.</p></details>
+      <p>Yes. It writes to the real database, so NOT NULL, UNIQUE, foreign key and CHECK constraints all apply, and failed saves show the corresponding error.</p></details>
   </div>
 
   <div class="box key"><strong>Remember</strong> Prisma Studio (<code>npx prisma studio</code>) is your development window into the data: great for checking seeds, debugging and setting up test cases, but it bypasses your app's rules and doesn't belong anywhere near production.</div>
@@ -2454,7 +2486,7 @@
 
   <p><strong>Dynamic SQL, safely.</strong> Parameters can only replace <em>values</em>, never identifiers (table/column names) or keywords like <code>ASC</code>. Use <code>Prisma.sql</code>, <code>Prisma.join</code>, <code>Prisma.empty</code> for composition, and a <strong>whitelist</strong> for identifiers:</p>
   <script type="text/x-code" data-lang="typescript">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     const ids = [1, 2, 3];
     // IN list → IN ($1, $2, $3)
@@ -2485,8 +2517,8 @@
     <p>Keep raw SQL in a dedicated place (a repository or "queries" class), type the result rows explicitly, and convert database types before returning JSON:</p>
     <script type="text/x-code" data-lang="typescript" data-title="reports/reports.repository.ts">
       import { Injectable } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
-      import { PrismaService } from '../prisma/prisma.service';
+      import { Prisma } from '../generated/prisma/client.js';
+      import { PrismaService } from '../prisma/prisma.service.js';
 
       type ProductSalesRow = { productId: number; name: string; unitsSold: number; revenue: Prisma.Decimal };
 
@@ -2536,7 +2568,7 @@
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="typescript">
-        import { Prisma } from '@prisma/client';
+        import { Prisma } from '../generated/prisma/client.js';
 
         async function userSpend(userId: number, status?: string) {
           const statusFilter = status ? Prisma.sql`AND status = ${status}::"OrderStatus"` : Prisma.empty;

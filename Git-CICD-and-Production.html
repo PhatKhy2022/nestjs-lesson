@@ -470,7 +470,7 @@
   </div>
 
   <h3>How it works</h3>
-  <p><strong>A review checklist.</strong> Good reviewers look at things in order of importance. Formatting comes last, because tools (Prettier, ESLint) should handle it automatically.</p>
+  <p><strong>A review checklist.</strong> Good reviewers look at things in order of importance. Formatting comes last, because tools (Prettier, oxlint) should handle it automatically.</p>
   <table>
     <tr><th>Area</th><th>Questions to ask</th></tr>
     <tr><td>Correctness</td><td>Does it do what the ticket asks? Edge cases: empty list, <code>null</code>, duplicates, very large input, concurrent requests?</td></tr>
@@ -811,10 +811,12 @@
 
   <p><strong>Step 1: a naive Dockerfile (and why it is bad).</strong></p>
   <script type="text/x-code" data-lang="dockerfile" data-title="❌ Dockerfile (naive)">
-    FROM node:22
+    FROM node:24
     WORKDIR /app
-    COPY . .                 # copies everything, including .env and node_modules from your laptop
-    RUN npm install          # re-runs on EVERY code change (no cache benefit)
+    # copies everything, including .env and node_modules from your laptop
+    COPY . .
+    # re-runs on EVERY code change (no cache benefit)
+    RUN npm install
     RUN npm run build
     CMD ["npm", "run", "start:prod"]
   </script>
@@ -825,48 +827,55 @@
     # syntax=docker/dockerfile:1
 
     # ---------- base: shared settings ----------
-    FROM node:22-alpine AS base
+    FROM node:24-alpine AS base
     WORKDIR /app
-    # Prisma's query engine needs OpenSSL on Alpine
+    # The Prisma CLI's schema engine (prisma migrate) needs OpenSSL on Alpine
     RUN apk add --no-cache openssl
 
     # ---------- deps: ALL dependencies (needed to build) ----------
     FROM base AS deps
-    COPY package.json package-lock.json ./
-    RUN npm ci                                  # exact versions from the lockfile
-
-    # ---------- build: compile TypeScript + generate Prisma client ----------
-    FROM deps AS build
+    # prisma.config.ts + prisma/ come first: our "postinstall": "prisma generate" runs during npm ci
+    COPY package.json package-lock.json prisma.config.ts ./
     COPY prisma ./prisma
-    RUN npx prisma generate                     # creates node_modules/.prisma/client
+    # exact versions from the lockfile
+    RUN npm ci
+
+    # ---------- build: generate Prisma client + compile TypeScript ----------
+    FROM deps AS build
     COPY tsconfig*.json nest-cli.json ./
     COPY src ./src
-    RUN npm run build                           # outputs dist/
+    # fresh src/generated/prisma (replaces any copy from your laptop)
+    RUN npx prisma generate
+    # outputs dist/, with the client compiled into dist/generated
+    RUN npm run build
 
     # ---------- prod-deps: only runtime dependencies ----------
     FROM base AS prod-deps
     COPY package.json package-lock.json ./
-    RUN npm ci --omit=dev && npm cache clean --force
+    # The prisma CLI is a devDependency, so skip our postinstall here (the client is already in dist/)
+    RUN npm pkg delete scripts.postinstall && npm ci --omit=dev && npm cache clean --force
 
     # ---------- runtime: the small image we actually ship ----------
     FROM base AS runtime
     ENV NODE_ENV=production
     COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
-    COPY --chown=node:node --from=build /app/node_modules/.prisma ./node_modules/.prisma
     COPY --chown=node:node --from=build /app/dist ./dist
     COPY --chown=node:node --from=build /app/prisma ./prisma
+    # package.json says "type": "module", which Node needs to load dist/*.js as ESM
     COPY --chown=node:node package.json ./
-    USER node                                   # ✅ never run as root
+    # ✅ never run as root
+    USER node
     EXPOSE 3000
     HEALTHCHECK --interval=30s --timeout=3s --start-period=20s \
       CMD wget -qO- http://127.0.0.1:3000/health || exit 1
-    CMD ["node", "dist/main.js"]                # ✅ node is PID 1 → receives SIGTERM directly
+    # ✅ node is PID 1 → receives SIGTERM directly
+    CMD ["node", "dist/main.js"]
   </script>
   <p>Why each choice matters:</p>
   <ul>
-    <li><strong>Copy <code>package*.json</code> before the source code.</strong> Docker caches layers. If only <code>src/</code> changed, the <code>npm ci</code> layer is reused and the build takes seconds instead of minutes.</li>
+    <li><strong>Copy <code>package*.json</code> before the source code.</strong> Docker caches layers. If only <code>src/</code> changed, the <code>npm ci</code> layer is reused and the build takes seconds instead of minutes. (<code>prisma.config.ts</code> and <code>prisma/</code> come along because the <code>postinstall</code> script runs <code>prisma generate</code>, which needs the schema, so a schema change also re-runs <code>npm ci</code>.)</li>
     <li><strong><code>npm ci</code>, not <code>npm install</code>.</strong> It installs exactly what the lockfile says and fails if <code>package.json</code> and the lockfile disagree. Reproducible builds.</li>
-    <li><strong>Separate <code>prod-deps</code> stage.</strong> The final image has no TypeScript, Jest or ESLint. The generated Prisma client lives in <code>node_modules/.prisma</code>, so we copy it explicitly from the build stage.</li>
+    <li><strong>Separate <code>prod-deps</code> stage.</strong> The final image has no TypeScript, Vitest or oxlint. Prisma 7 generates its client as TypeScript into <code>src/generated/prisma</code>, so <code>nest build</code> compiles it into <code>dist/generated</code> together with your code. The runtime image only needs <code>dist/</code> plus normal dependencies (<code>@prisma/client</code>, <code>@prisma/adapter-pg</code>); there is no separate client folder to copy.</li>
     <li><strong><code>USER node</code>.</strong> The official Node image ships a non-root <code>node</code> user. If someone exploits your app, they are not root inside the container.</li>
     <li><strong><code>CMD ["node", ...]</code> in exec form.</strong> When the orchestrator stops the container, it sends <code>SIGTERM</code> to PID 1. With <code>npm</code> in between, the signal may not reach Node and the container gets killed hard after a timeout.</li>
   </ul>
@@ -885,7 +894,7 @@
     docker-compose*.yml
   </script>
 
-  <p><strong>Step 4: Docker Compose for NestJS + PostgreSQL 16.</strong> We also add a one-off <code>migrate</code> service. It builds the <code>build</code> stage (which still has the Prisma CLI), runs migrations, and exits. The API starts only after migrations succeed.</p>
+  <p><strong>Step 4: Docker Compose for NestJS + PostgreSQL 16.</strong> We also add a one-off <code>migrate</code> service. It builds the <code>build</code> stage (which still has the Prisma CLI, <code>prisma.config.ts</code> and the <code>prisma/</code> folder; the config reads <code>DATABASE_URL</code> from the environment), runs migrations, and exits. The API starts only after migrations succeed.</p>
   <script type="text/x-code" data-lang="yaml" data-title="docker-compose.yml">
     services:
       db:
@@ -956,7 +965,7 @@
     <p>Many teams use Compose only for local <em>dependencies</em> (Postgres, Redis) and run Nest itself with <code>npm run start:dev</code> for fast hot reload. The production image is built in CI. Two Nest-side details make containers behave well:</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
       import { NestFactory } from '@nestjs/core';
-      import { AppModule } from './app.module';
+      import { AppModule } from './app.module.js';
 
       async function bootstrap() {
         const app = await NestFactory.create(AppModule);
@@ -964,16 +973,16 @@
         const port = Number(process.env.PORT ?? 3000);
         await app.listen(port, '0.0.0.0'); // listen on all interfaces, not only 127.0.0.1 inside the container
       }
-      bootstrap();
+      await bootstrap();
     </script>
+    <p>The <code>.js</code> in <code>'./app.module.js'</code> is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name. (A NestJS 12 project is ESM, which is also why the runtime image keeps <code>package.json</code>.)</p>
     <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
       generator client {
-        provider      = "prisma-client-js"
-        // "native" for your laptop, linux-musl for the Alpine image (OpenSSL 3)
-        binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+        provider = "prisma-client"            // Prisma 7 generator: plain TypeScript, no native query engine
+        output   = "../src/generated/prisma"  // compiled by nest build into dist/generated/prisma
       }
     </script>
-    <p>Because <code>prisma generate</code> runs <em>inside</em> the Alpine build stage, Prisma usually detects the right engine on its own. Listing <code>binaryTargets</code> just makes it explicit and avoids "Query engine library not found" errors when the client is generated elsewhere.</p>
+    <p>Older Prisma versions shipped a native query engine with the client, so Alpine images needed <code>binaryTargets</code> in this block. Prisma 7's client has no query engine: it is TypeScript that talks to PostgreSQL through the <code>pg</code> driver, so there is nothing platform-specific to configure. Only the Prisma <em>CLI</em> still uses a native schema engine for migrations; <code>npm ci</code> downloads the right one inside the image, which is why the migration image is built from the <code>build</code> stage (full <code>node_modules</code>, <code>prisma.config.ts</code> and <code>prisma/</code>).</p>
   </div>
 
   <div class="box warn">
@@ -1066,18 +1075,19 @@
           - run: echo "Hello from CI on commit $GITHUB_SHA"
   </script>
 
-  <p><strong>Prepare scripts that CI can run.</strong> The default Nest <code>lint</code> script uses <code>--fix</code>, which silently changes files instead of failing. Add CI-friendly scripts:</p>
+  <p><strong>Prepare scripts that CI can run.</strong> The default NestJS 12 <code>lint</code> script (<code>oxlint --type-aware src/ test/</code>) fails only on <em>errors</em>: warnings are printed, but the exit code is still 0, so CI stays green. Add CI-friendly scripts:</p>
   <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
     {
       "scripts": {
+        "postinstall": "prisma generate",
         "build": "nest build",
-        "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-        "lint:ci": "eslint \"{src,apps,libs,test}/**/*.ts\" --max-warnings=0",
+        "lint": "oxlint --type-aware src/ test/",
+        "lint:ci": "oxlint --type-aware --deny-warnings src/ test/",
         "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
         "typecheck": "tsc --noEmit",
-        "test": "jest",
-        "test:cov": "jest --coverage",
-        "test:e2e": "jest --config ./test/jest-e2e.json"
+        "test": "vitest run",
+        "test:cov": "vitest run --coverage",
+        "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
       }
     }
   </script>
@@ -1109,15 +1119,14 @@
 
           - uses: actions/setup-node@v4
             with:
-              node-version: 22
+              node-version: 24
               cache: npm                     # caches ~/.npm keyed by package-lock.json
 
-          - run: npm ci
-          - run: npx prisma generate         # types for PrismaClient are needed to compile
+          - run: npm ci                      # postinstall runs "prisma generate" (src/generated is gitignored)
           - run: npm run format:check
           - run: npm run lint:ci
           - run: npm run typecheck
-          - run: npm run test:cov -- --ci
+          - run: npm run test:cov
           - run: npm run build
 
       e2e:
@@ -1146,11 +1155,11 @@
           - uses: actions/checkout@v4
           - uses: actions/setup-node@v4
             with:
-              node-version: 22
+              node-version: 24
               cache: npm
           - run: npm ci
           - run: npx prisma migrate deploy   # also proves migrations apply cleanly on an empty DB
-          - run: npm run test:e2e -- --ci
+          - run: npm run test:e2e
   </script>
   <p>Some details explained:</p>
   <ul>
@@ -1158,7 +1167,9 @@
     <li><code>concurrency</code> saves minutes: if you push 3 commits quickly, only the newest run continues.</li>
     <li><code>permissions: contents: read</code> follows least privilege. The workflow's token can't push code.</li>
     <li><code>timeout-minutes</code> stops a hanging test (e.g. an open DB connection) from burning 6 hours of CI time.</li>
-    <li>Running <code>prisma migrate deploy</code> in CI catches broken migrations <em>before</em> they reach production.</li>
+    <li>Running <code>prisma migrate deploy</code> in CI catches broken migrations <em>before</em> they reach production. It reads the URL through <code>prisma.config.ts</code>, so the job must set <code>DATABASE_URL</code>.</li>
+    <li>There is no separate <code>prisma generate</code> step: the client in <code>src/generated</code> is gitignored, and the <code>postinstall</code> script recreates it during <code>npm ci</code>. Because <code>prisma.config.ts</code> uses <code>process.env.DATABASE_URL</code> (not the strict <code>env()</code> helper), this also works in the <code>quality</code> job, which has no database at all.</li>
+    <li>The test scripts use <code>vitest run</code>, which runs once and exits (plain <code>vitest</code> starts watch mode outside CI). Vitest has no Jest-style <code>--ci</code> flag, so don't pass one.</li>
   </ul>
 
   <p><strong>Make CI mandatory.</strong> On GitHub: Settings → Branches → add a branch protection rule (or a ruleset) for <code>main</code>: "Require status checks to pass" (select <em>Lint, types &amp; unit tests</em> and <em>E2E tests</em>), "Require a pull request before merging", and "Require approvals: 1". Now nobody, not even admins if you choose so, can merge red code.</p>
@@ -1168,7 +1179,7 @@
     npm i -D husky lint-staged
     npx husky init                                    # creates .husky/pre-commit
     echo "npx lint-staged" > .husky/pre-commit
-    # package.json: "lint-staged": { "*.ts": ["eslint --max-warnings=0", "prettier --check"] }
+    # package.json: "lint-staged": { "*.ts": ["oxlint --type-aware --deny-warnings", "prettier --check"] }
   </script>
   <p>Hooks can be skipped by developers, so they are a convenience. CI is the real gate.</p>
 
@@ -1179,8 +1190,8 @@
       import { INestApplication, ValidationPipe } from '@nestjs/common';
       import { Test } from '@nestjs/testing';
       import request from 'supertest';
-      import { AppModule } from '../src/app.module';
-      import { PrismaService } from '../src/prisma/prisma.service';
+      import { AppModule } from '../src/app.module.js';
+      import { PrismaService } from '../src/prisma/prisma.service.js';
 
       describe('Products (e2e)', () => {
         let app: INestApplication;
@@ -1202,7 +1213,7 @@
         });
 
         afterAll(async () => {
-          await app.close();               // ✅ closes Prisma too → Jest exits, CI doesn't hang
+          await app.close();               // ✅ closes Prisma too → no open connections, CI doesn't hang
         });
 
         it('returns a page of products', async () => {
@@ -1221,7 +1232,7 @@
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
-      <li>Running <code>eslint --fix</code> in CI. It "fixes" the files on the runner and passes, while the repo stays unfixed. Use a check-only script.</li>
+      <li>Running <code>oxlint --fix</code> (or <code>prettier --write</code>) in CI. It "fixes" the files on the runner and passes, while the repo stays unfixed. Use a check-only script.</li>
       <li>Using <code>npm install</code> instead of <code>npm ci</code>, so CI may install different versions than the lockfile.</li>
       <li>Flaky tests (random failures) that people "just re-run". Flakiness hides real bugs. Fix or quarantine them quickly.</li>
       <li>CI that is not required by branch protection, so people merge on red "because it's probably fine".</li>
@@ -1238,7 +1249,7 @@
         <li>Add <code>cache: npm</code> to <code>actions/setup-node@v4</code>, so <code>npm ci</code> reuses the downloaded packages (often 2 min → ~30 s).</li>
         <li>Split into two jobs, <code>quality</code> and <code>e2e</code>. Jobs run <strong>in parallel</strong> by default, so the PR shows the lint/unit result after ~2 minutes while e2e continues.</li>
         <li>Add <code>concurrency</code> with <code>cancel-in-progress: true</code> so outdated runs stop.</li>
-        <li>Optionally shard e2e with a matrix (<code>strategy.matrix.shard: [1, 2, 3]</code> and <code>jest --shard=${{ matrix.shard }}/3</code>; Jest 28+ supports <code>--shard</code>).</li>
+        <li>Optionally shard e2e with a matrix (<code>strategy.matrix.shard: [1, 2, 3]</code> and <code>npm run test:e2e -- --shard=${{ matrix.shard }}/3</code>; Vitest supports <code>--shard</code>).</li>
       </ul>
     </details>
   </div>
@@ -1411,11 +1422,16 @@
     <p>Zero-downtime deploys require the app to shut down gracefully: stop accepting new requests, finish the ones in flight, close the DB pool. With <code>app.enableShutdownHooks()</code> (see the Docker point), Nest calls lifecycle hooks on <code>SIGTERM</code>:</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/prisma/prisma.service.ts">
       import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-      import { PrismaClient } from '@prisma/client';
+      import { PrismaPg } from '@prisma/adapter-pg';
+      import { PrismaClient } from '../generated/prisma/client.js';
 
       @Injectable()
       export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
         private readonly logger = new Logger(PrismaService.name);
+
+        constructor() {
+          super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+        }
 
         async onModuleInit() {
           await this.$connect();
@@ -1526,9 +1542,13 @@
     ALTER TABLE "User" ADD COLUMN "lastName"  TEXT;
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="scripts/backfill-user-names.ts (step 2, run once)">
-    import { PrismaClient } from '@prisma/client';
+    import 'dotenv/config';                     // standalone script: load DATABASE_URL from .env
+    import { PrismaPg } from '@prisma/adapter-pg';
+    import { PrismaClient } from '../src/generated/prisma/client.js';
 
-    const prisma = new PrismaClient();
+    const prisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    });
     const BATCH = 1000;
 
     async function main() {
@@ -1726,7 +1746,7 @@
   <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
     import { Module } from '@nestjs/common';
     import { ConfigModule } from '@nestjs/config';
-    import { validate } from './config/env.validation';
+    import { validate } from './config/env.validation.js';
 
     @Module({
       imports: [
@@ -1749,7 +1769,7 @@
     import { NestFactory } from '@nestjs/core';
     import { ConfigService } from '@nestjs/config';
     import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-    import { AppModule } from './app.module';
+    import { AppModule } from './app.module.js';
 
     async function bootstrap() {
       const app = await NestFactory.create(AppModule);
@@ -1768,7 +1788,7 @@
       app.enableShutdownHooks();
       await app.listen(config.get<number>('PORT', 3000), '0.0.0.0');
     }
-    bootstrap();
+    await bootstrap();
   </script>
 
   <p><strong><code>NODE_ENV</code> vs <code>APP_ENV</code>.</strong> Many libraries (Express, some loggers) switch to slower debug behavior unless <code>NODE_ENV=production</code>. So set <code>NODE_ENV=production</code> in <em>both</em> staging and production (staging should behave like production), and use a separate <code>APP_ENV</code> to know <em>which</em> deployed environment you are in (for example, to tag errors in Sentry).</p>
@@ -1788,8 +1808,8 @@
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="src/auth/auth.service.ts">
       import { Inject, Injectable } from '@nestjs/common';
-      import { ConfigType } from '@nestjs/config';
-      import { authConfig } from '../config/auth.config';
+      import type { ConfigType } from '@nestjs/config';
+      import { authConfig } from '../config/auth.config.js';
 
       @Injectable()
       export class AuthService {
@@ -1882,7 +1902,7 @@
     import {
       HealthCheck, HealthCheckService, MemoryHealthIndicator, PrismaHealthIndicator,
     } from '@nestjs/terminus';
-    import { PrismaService } from '../prisma/prisma.service';
+    import { PrismaService } from '../prisma/prisma.service.js';
 
     @Controller('health')
     export class HealthController {
@@ -1913,8 +1933,8 @@
   <script type="text/x-code" data-lang="typescript" data-title="src/health/health.module.ts">
     import { Module } from '@nestjs/common';
     import { TerminusModule } from '@nestjs/terminus';
-    import { HealthController } from './health.controller';
-    import { PrismaModule } from '../prisma/prisma.module';
+    import { HealthController } from './health.controller.js';
+    import { PrismaModule } from '../prisma/prisma.module.js';
 
     @Module({
       imports: [TerminusModule, PrismaModule],
@@ -1948,11 +1968,12 @@
       sendDefaultPii: false,                     // ✅ don't send IPs/cookies by default
     });
   </script>
-  <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
-    import './instrument';                       // ✅ MUST be the first import
-    import { NestFactory } from '@nestjs/core';
-    import { AppModule } from './app.module';
-    // ...bootstrap as before
+  <p>Sentry must load <em>before</em> any other module so it can instrument them. In an ES module project (what <code>nest new</code> creates in NestJS 12), all <code>import</code>s are loaded before any code runs, so an <code>import './instrument.js'</code> at the top of <code>main.ts</code> is too late for auto-instrumentation. Sentry's docs say to preload the file with Node's <code>--import</code> flag instead:</p>
+  <script type="text/x-code" data-lang="json" data-title="package.json (scripts)">
+    "start:prod": "node --import ./dist/instrument.js dist/main"
+  </script>
+  <script type="text/x-code" data-lang="dockerfile" data-title="Dockerfile (runtime stage)">
+    CMD ["node", "--import", "./dist/instrument.js", "dist/main.js"]
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="src/app.module.ts">
     import { Module } from '@nestjs/common';

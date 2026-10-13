@@ -521,8 +521,8 @@
   <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
     import { ArgumentsHost, Catch, HttpStatus } from '@nestjs/common';
     import { BaseExceptionFilter } from '@nestjs/core';
-    import { Prisma } from '@prisma/client';
     import { Response } from 'express';
+    import { Prisma } from '../../generated/prisma/client.js'; // the Prisma 7 generated client
 
     @Catch(Prisma.PrismaClientKnownRequestError)
     export class PrismaExceptionFilter extends BaseExceptionFilter {
@@ -669,13 +669,13 @@
 
     { "message": "Validation failed (numeric string is expected)", "error": "Bad Request", "statusCode": 400 }
   </script>
-  <p>Other built-ins: <code>ParseBoolPipe</code>, <code>ParseFloatPipe</code>, <code>ParseArrayPipe</code>, <code>ParseFilePipe</code> (uploads), and in Nest 11 <code>ParseDatePipe</code>.</p>
+  <p>Other built-ins: <code>ParseBoolPipe</code>, <code>ParseFloatPipe</code>, <code>ParseArrayPipe</code>, <code>ParseFilePipe</code> (uploads), and (since Nest 11) <code>ParseDatePipe</code>.</p>
 
   <p><strong>3. Query DTOs.</strong> When an endpoint has several query parameters, group them in a class. Because query values are strings, add <code>@Type(() =&gt; Number)</code> so they're converted before validation:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
     import { Type } from 'class-transformer';
     import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
-    import { OrderStatus } from '@prisma/client';
+    import { OrderStatus } from '../../generated/prisma/client.js';
 
     export class ListOrdersQuery {
       @IsOptional()
@@ -1121,9 +1121,9 @@
 
   <p><strong>Step 1: a query DTO that validates every parameter.</strong> Notice <code>@IsIn</code> on the sort: clients can only sort by fields we allow.</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/dto/list-orders.query.ts">
-    import { OrderStatus } from '@prisma/client';
     import { Transform, Type } from 'class-transformer';
     import { IsDate, IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+    import { OrderStatus } from '../../generated/prisma/client.js';
 
     const SORTABLE = ['createdAt', '-createdAt', 'totalCents', '-totalCents'] as const;
     type OrderSort = (typeof SORTABLE)[number];
@@ -1163,7 +1163,7 @@
 
   <p><strong>Step 2: translate the query into a Prisma <code>where</code> and <code>orderBy</code>.</strong> Build the filter only from fields that were actually sent. Prisma ignores keys whose value is <code>undefined</code>, which makes this tidy:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders/orders.repository.ts">
-    import { Prisma } from '@prisma/client';
+    import { Prisma } from '../generated/prisma/client.js';
 
     function buildWhere(userId: number, q: ListOrdersQuery): Prisma.OrderWhereInput {
       return {
@@ -1357,10 +1357,10 @@
   <p><strong>Step 2: one global filter that catches everything</strong> and produces that shape, whether the error is a Nest <code>HttpException</code>, a domain error from Lesson 5, a Prisma error, or an unexpected crash:</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/filters/all-exceptions.filter.ts">
     import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
-    import { Prisma } from '@prisma/client';
     import { Request, Response } from 'express';
-    import { DomainError } from '../../orders/domain/order.errors'; // from Lesson 5
-    import { DOMAIN_STATUS } from './domain-status';               // e.g. { OUT_OF_STOCK: 409, ... }
+    import { Prisma } from '../../generated/prisma/client.js';
+    import { DomainError } from '../../orders/domain/order.errors.js'; // from Lesson 5
+    import { DOMAIN_STATUS } from './domain-status.js';               // e.g. { OUT_OF_STOCK: 409, ... }
 
     @Catch() // no argument = catch everything
     export class AllExceptionsFilter implements ExceptionFilter {
@@ -1416,6 +1416,7 @@
       }
     }
   </script>
+  <p>(The relative imports end in <code>.js</code> because NestJS 12 projects are ES modules. The <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.)</p>
   <p><code>HttpStatus[404]</code> gives <code>"NOT_FOUND"</code>, because <code>HttpStatus</code> is a numeric enum with reverse mapping (Lesson 1). That gives every Nest exception a sensible default code.</p>
 
   <p><strong>Step 3: give business errors their own codes.</strong> Throw exceptions with an explicit code when the client needs to react differently:</p>
@@ -1780,7 +1781,7 @@
 
       await app.listen(3000);
     }
-    bootstrap();
+    await bootstrap();
   </script>
   <p>Already, every route appears in the UI. But request and response bodies are empty, because TypeScript types don't exist at runtime. Swagger needs metadata.</p>
 
@@ -2058,10 +2059,10 @@
       BadRequestException, CallHandler, ConflictException, ExecutionContext,
       Injectable, NestInterceptor, UnprocessableEntityException,
     } from '@nestjs/common';
-    import { Prisma } from '@prisma/client';
     import { createHash } from 'node:crypto';
     import { Request, Response } from 'express';
     import { Observable, catchError, concatMap, from, of, throwError } from 'rxjs';
+    import { Prisma } from '../../generated/prisma/client.js';
 
     @Injectable()
     export class IdempotencyInterceptor implements NestInterceptor {

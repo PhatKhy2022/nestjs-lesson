@@ -379,7 +379,7 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>A new Nest project (<code>nest new</code>) sets <code>strictNullChecks</code> but not full <code>strict</code>. Many teams switch on <code>"strict": true</code> right away. With strict mode, Prisma's <code>findUnique()</code> returns <code>User | null</code>, so the compiler <em>forces</em> you to handle "user not found", which is usually where you throw a <code>NotFoundException</code>.</p>
+    <p>A new NestJS 12 project (<code>nest new</code>) already sets <code>"strict": true</code>, with only <code>strictPropertyInitialization</code> switched off. Keep it on. With strict mode, Prisma's <code>findUnique()</code> returns <code>User | null</code>, so the compiler <em>forces</em> you to handle "user not found", which is usually where you throw a <code>NotFoundException</code>.</p>
     <script type="text/x-code" data-lang="typescript" data-title="users.service.ts">
       async findOne(id: number) {
         const user = await this.prisma.user.findUnique({ where: { id } }); // User | null
@@ -503,7 +503,7 @@
     <strong>In a real NestJS project</strong>
     <p>A classic use of declaration merging is adding <code>user</code> to Express's <code>Request</code> after authentication:</p>
     <script type="text/x-code" data-lang="typescript" data-title="types/express.d.ts">
-      import { JwtPayload } from '../auth/jwt-payload.type';
+      import { JwtPayload } from '../auth/jwt-payload.type.js';
 
       declare global {
         namespace Express {
@@ -1061,7 +1061,7 @@
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Prisma generates enums for you from <code>schema.prisma</code>. Use them in DTOs with <code>@IsEnum</code>:</p>
+    <p>Prisma generates enums for you from <code>schema.prisma</code> (since Prisma 7, as exactly the <code>as const</code> object + type pair shown above, in the generated client). Use them in DTOs with <code>@IsEnum</code>:</p>
     <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
       enum Role {
         ADMIN
@@ -1074,7 +1074,7 @@
       }
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="update-role.dto.ts">
-      import { Role } from '@prisma/client';
+      import { Role } from '../../generated/prisma/client.js';
       import { IsEnum } from 'class-validator';
 
       export class UpdateRoleDto {
@@ -1382,6 +1382,11 @@
     <script type="text/x-code" data-lang="typescript" data-title="prisma.service.ts / exceptions">
       @Injectable()
       export class PrismaService extends PrismaClient implements OnModuleInit {
+        constructor() {
+          // Prisma 7: the parent constructor needs a driver adapter (PrismaPg from @prisma/adapter-pg)
+          super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+        }
+
         async onModuleInit() {
           await this.$connect();
         }
@@ -1867,7 +1872,7 @@
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
-      <li><strong>Forgetting <code>await</code></strong>: <code>const user = this.prisma.user.findUnique(...)</code> gives you a Promise, not a user. Errors also escape your <code>try/catch</code>. Turn on the ESLint rule <code>@typescript-eslint/no-floating-promises</code>.</li>
+      <li><strong>Forgetting <code>await</code></strong>: <code>const user = this.prisma.user.findUnique(...)</code> gives you a Promise, not a user. Errors also escape your <code>try/catch</code>. Keep the lint rule <code>typescript/no-floating-promises</code> on: a NestJS 12 project lints with oxlint, and its generated <code>.oxlintrc.json</code> already sets it to <code>"error"</code> (in ESLint it's <code>@typescript-eslint/no-floating-promises</code>).</li>
       <li>Using <code>await</code> inside a <code>for</code> loop over independent items, which makes it slow. Use <code>Promise.all</code>. But beware of firing 10,000 DB queries at once: batch them.</li>
       <li><code>array.forEach(async (x) =&gt; ...)</code>: <code>forEach</code> doesn't wait. Use <code>for...of</code> or <code>Promise.all(array.map(...))</code>.</li>
       <li>Swallowing errors: <code>catch (e) {}</code> with nothing inside hides bugs. Log the error and rethrow, or handle it properly.</li>
@@ -2066,11 +2071,12 @@
     export interface Circle { radius: number; }
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="app.ts">
-    import { area, PI, Circle } from './math';
-    import { area as circleArea } from './math';   // rename on import
-    import * as MathUtils from './math';            // everything as an object
+    import { area, PI, Circle } from './math.js';
+    import { area as circleArea } from './math.js';   // rename on import
+    import * as MathUtils from './math.js';            // everything as an object
     MathUtils.area(2);
   </script>
+  <p>Note the <code>'./math.js'</code>: NestJS 12 projects are ES modules, and the <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.</p>
 
   <p><strong>Default export:</strong> one per file, and the importer chooses the name:</p>
   <script type="text/x-code" data-lang="typescript">
@@ -2078,35 +2084,35 @@
     export default class Logger {}
 
     // app.ts
-    import Logger from './logger';
-    import Whatever from './logger';  // also works — that's the problem: names drift
+    import Logger from './logger.js';
+    import Whatever from './logger.js';  // also works — that's the problem: names drift
   </script>
   <p>Most TypeScript and NestJS codebases prefer <strong>named exports</strong>: names stay consistent, auto-import works better, and renaming is safer.</p>
 
   <p><strong>Type-only imports:</strong> import something only as a type. It is fully removed from the JavaScript output:</p>
   <script type="text/x-code" data-lang="typescript">
-    import type { User } from './user.types';
-    import { type Order, createOrder } from './orders';
+    import type { User } from './user.types.js';
+    import { type Order, createOrder } from './orders.js';
   </script>
 
   <p><strong>Barrel files</strong>: an <code>index.ts</code> that re-exports from a folder, so imports get shorter:</p>
   <script type="text/x-code" data-lang="typescript" data-title="users/index.ts">
-    export * from './users.service';
-    export * from './users.controller';
-    export * from './dto/create-user.dto';
+    export * from './users.service.js';
+    export * from './users.controller.js';
+    export * from './dto/create-user.dto.js';
   </script>
   <script type="text/x-code" data-lang="typescript">
     // Before
-    import { UsersService } from './users/users.service';
-    import { CreateUserDto } from './users/dto/create-user.dto';
+    import { UsersService } from './users/users.service.js';
+    import { CreateUserDto } from './users/dto/create-user.dto.js';
     // After
-    import { UsersService, CreateUserDto } from './users';
+    import { UsersService, CreateUserDto } from './users/index.js'; // ESM has no folder imports: name index.js
   </script>
   <p>⚠️ <strong>Downside:</strong> barrels can create <em>circular imports</em> (A imports the barrel, the barrel imports B, B imports A). At runtime, one of them is <code>undefined</code>. In Nest, this shows up as the dreaded "Nest can't resolve dependencies… [?]" or "A circular dependency between modules" error. Use barrels for the public API of a folder, but import directly inside the same feature.</p>
 
   <p><strong>Namespaces</strong> are an older TypeScript way of grouping code (<code>namespace Utils { ... }</code>), from before ES modules existed. In modern code, <strong>use modules instead</strong>. You'll still see namespaces in <code>.d.ts</code> files, like <code>declare global { namespace Express { ... } }</code>.</p>
 
-  <p><strong>CommonJS vs ES modules:</strong> Node.js has two module systems. <code>require()</code>/<code>module.exports</code> is CommonJS, and <code>import</code>/<code>export</code> is ESM. You <em>write</em> <code>import</code>/<code>export</code> in TS, and the compiler converts it based on <code>"module"</code> in tsconfig. NestJS projects compile to <strong>CommonJS</strong> by default.</p>
+  <p><strong>CommonJS vs ES modules:</strong> Node.js has two module systems. <code>require()</code>/<code>module.exports</code> is CommonJS, and <code>import</code>/<code>export</code> is ESM. You <em>write</em> <code>import</code>/<code>export</code> in TS, and the compiler converts it based on <code>"module"</code> in tsconfig. NestJS 12 projects created by <code>nest new</code> are <strong>ESM</strong> (<code>"type": "module"</code> in <code>package.json</code>, <code>"module": "nodenext"</code> in tsconfig), so the output keeps <code>import</code>/<code>export</code>. There is no <code>require()</code> in app code, and <code>__dirname</code> becomes <code>import.meta.dirname</code>.</p>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
@@ -2153,11 +2159,11 @@
         }
 
         // utils/index.ts
-        export * from './string';
-        export * from './date';
+        export * from './string.js';
+        export * from './date.js';
 
         // anywhere
-        import { slugify, formatDate } from './utils';
+        import { slugify, formatDate } from './utils/index.js';
       </script>
     </details>
   </div>
@@ -2186,31 +2192,34 @@
   </div>
 
   <h3>How it works</h3>
-  <p>A typical NestJS <code>tsconfig.json</code>, explained line by line:</p>
+  <p>A typical NestJS 12 <code>tsconfig.json</code> (TypeScript 6), explained line by line:</p>
   <script type="text/x-code" data-lang="json" data-title="tsconfig.json">
     {
       "compilerOptions": {
-        "module": "commonjs",                // output require()/module.exports for Node
-        "target": "ES2021",                  // which JS syntax version to output
+        "module": "nodenext",                // ESM output (import/export) following Node's rules
+        "moduleResolution": "nodenext",      // how import strings are found (see below)
+        "target": "ES2023",                  // which JS syntax version to output
         "outDir": "./dist",                  // where compiled .js files go
-        "baseUrl": "./",                     // root for non-relative imports
         "sourceMap": true,                   // map JS errors back to your .ts lines
         "declaration": true,                 // emit .d.ts type files
         "removeComments": true,
         "incremental": true,                 // faster rebuilds
+        "isolatedModules": true,             // every file must compile on its own
 
         "experimentalDecorators": true,      // needed by NestJS
         "emitDecoratorMetadata": true,       // needed by NestJS DI
 
         "strict": true,                      // ⭐ turn on all strict checks
+        "strictPropertyInitialization": false, // DTO fields are filled by Nest (see below)
         "skipLibCheck": true,                // don't type-check node_modules .d.ts (faster)
+        "types": ["vitest/globals", "node"], // global types: describe/it/expect, process…
         "forceConsistentCasingInFileNames": true,
         "noImplicitOverride": true,
         "noFallthroughCasesInSwitch": true,
 
-        "paths": {                           // import aliases
-          "@common/*": ["src/common/*"],
-          "@modules/*": ["src/modules/*"]
+        "paths": {                           // import aliases (no "baseUrl": deprecated in TS 6)
+          "@common/*": ["./src/common/*"],
+          "@modules/*": ["./src/modules/*"]
         }
       }
     }
@@ -2229,7 +2238,7 @@
   </table>
   <p>Extra flags worth knowing: <code>noUnusedLocals</code>, <code>noUnusedParameters</code>, and <code>noUncheckedIndexedAccess</code> (makes <code>arr[0]</code> typed as <code>T | undefined</code>, which is very safe but noisier).</p>
 
-  <p><strong><code>strictPropertyInitialization</code> and DTOs:</strong> DTO fields are filled in by the framework, not by a constructor, so TypeScript complains. Use the <code>!</code> (definite assignment) operator:</p>
+  <p><strong><code>strictPropertyInitialization</code> and DTOs:</strong> DTO fields are filled in by the framework, not by a constructor, so with this flag on TypeScript complains. That's why the NestJS 12 scaffold switches it off. If you keep it on, use the <code>!</code> (definite assignment) operator:</p>
   <script type="text/x-code" data-lang="typescript">
     export class CreateUserDto {
       @IsEmail()
@@ -2240,25 +2249,27 @@
   <p><strong>Path aliases (<code>paths</code>)</strong> replace deep relative imports:</p>
   <script type="text/x-code" data-lang="typescript">
     // Before
-    import { Roles } from '../../../common/decorators/roles.decorator';
-    // After
-    import { Roles } from '@common/decorators/roles.decorator';
+    import { Roles } from '../../../common/decorators/roles.decorator.js';
+    // After (ESM: the .js stays, even with an alias)
+    import { Roles } from '@common/decorators/roles.decorator.js';
   </script>
-  <p>⚠️ <code>paths</code> only tells the <em>type checker</em> where to look. The compiled JavaScript still contains <code>'@common/...'</code>, which Node doesn't understand. The Nest CLI handles this for you during build, but tools like Jest need their own mapping (<code>moduleNameMapper</code>). Otherwise, plain <code>node dist/main</code> needs a helper like <code>tsconfig-paths</code>.</p>
+  <p>⚠️ <code>paths</code> only tells the <em>type checker</em> where to look. The compiled JavaScript still contains <code>'@common/...'</code>, which Node doesn't understand. The Nest CLI rewrites the aliases for you during <code>nest build</code>, and Vitest resolves them through <code>resolve: { tsconfigPaths: true }</code> in the generated <code>vitest.config.ts</code>. Code compiled with plain <code>tsc</code> keeps the aliases and fails when Node runs it.</p>
 
-  <p><strong><code>moduleResolution</code></strong> decides <em>how</em> an import string is turned into a file. <code>"node"</code> (Node 10 style, the Nest default with CommonJS) checks <code>./x.ts</code>, <code>./x/index.ts</code> and <code>node_modules</code>. <code>"node16"</code>/<code>"nodenext"</code> follow modern Node ESM rules (file extensions required, <code>package.json</code> <code>exports</code> respected). <code>"bundler"</code> is meant for code going through Vite, webpack or esbuild.</p>
+  <p><strong><code>moduleResolution</code></strong> decides <em>how</em> an import string is turned into a file. <code>"node"</code> (Node 10 style, the old Nest default with CommonJS) checks <code>./x.ts</code>, <code>./x/index.ts</code> and <code>node_modules</code>; TypeScript 6 deprecates it. <code>"node16"</code>/<code>"nodenext"</code> follow modern Node rules (in ESM files: file extensions required, no folder imports, <code>package.json</code> <code>exports</code> respected), and NestJS 12 uses <code>"nodenext"</code>. <code>"bundler"</code> is meant for code going through Vite, webpack or esbuild.</p>
 
   <p><strong>Multiple configs:</strong> Nest projects also have <code>tsconfig.build.json</code>, which <code>extends</code> the main file and excludes tests from the production build:</p>
   <script type="text/x-code" data-lang="json" data-title="tsconfig.build.json">
     {
       "extends": "./tsconfig.json",
+      "compilerOptions": { "rootDir": "./src" },   // so the output is dist/main.js
+      "include": ["src"],
       "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
     }
   </script>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>When you create a project with <code>nest new</code>, check whether <code>"strict": true</code> is on (newer versions set some flags but not all). Turning it on early is cheap. Turning it on later in a big codebase means fixing hundreds of errors. Also make sure <code>experimentalDecorators</code> and <code>emitDecoratorMetadata</code> stay <code>true</code>. Without them, dependency injection stops working.</p>
+    <p>A project created with <code>nest new</code> (NestJS 12) has <code>"strict": true</code> on by default, with only <code>strictPropertyInitialization</code> off. Keep it that way: switching it off now and back on later in a big codebase means fixing hundreds of errors. Also make sure <code>experimentalDecorators</code> and <code>emitDecoratorMetadata</code> stay <code>true</code>. Without them, dependency injection stops working.</p>
     <p>Useful command: <code>npx tsc --noEmit</code> type-checks the whole project without building. It's great in CI.</p>
   </div>
 
@@ -2266,7 +2277,7 @@
     <strong>Common mistakes</strong>
     <ul>
       <li>Leaving <code>strict</code> off and fighting null bugs at runtime instead.</li>
-      <li>Adding <code>paths</code> but forgetting Jest's <code>moduleNameMapper</code>, so tests fail with "Cannot find module '@common/...'".</li>
+      <li>Writing an alias import without the extension (<code>'@common/decorators/roles.decorator'</code>) in an ESM project, so <code>tsc</code> fails with "Cannot find module '@common/...'". Keep the <code>.js</code>.</li>
       <li>Disabling <code>emitDecoratorMetadata</code>, after which Nest can't resolve any constructor dependencies.</li>
       <li>Turning off checks (<code>skipLibCheck</code> is fine, but <code>noImplicitAny: false</code> is not) just to silence errors.</li>
     </ul>
@@ -2274,26 +2285,24 @@
 
   <div class="box try">
     <strong>Practice exercise</strong>
-    <p>Set up a path alias <code>@shared/*</code> that points to <code>src/shared/*</code>, and the matching Jest config so tests can resolve it.</p>
+    <p>Set up a path alias <code>@shared/*</code> that points to <code>src/shared/*</code>, and make sure Vitest can resolve it in tests.</p>
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="json" data-title="tsconfig.json (excerpt)">
         {
           "compilerOptions": {
-            "baseUrl": "./",
-            "paths": { "@shared/*": ["src/shared/*"] }
+            "paths": { "@shared/*": ["./src/shared/*"] }   // relative to tsconfig.json, no baseUrl
           }
         }
       </script>
-      <script type="text/x-code" data-lang="json" data-title="package.json → jest (excerpt)">
-        {
-          "jest": {
-            "rootDir": "src",
-            "moduleNameMapper": {
-              "^@shared/(.*)$": "<rootDir>/shared/$1"
-            }
-          }
-        }
+      <script type="text/x-code" data-lang="typescript" data-title="vitest.config.ts (excerpt)">
+        export default defineConfig({
+          resolve: { tsconfigPaths: true },   // already in the generated config: reads "paths" from tsconfig.json
+          test: { /* … */ },
+        });
+
+        // in any file or test:
+        import { slugify } from '@shared/slugify.js';
       </script>
     </details>
   </div>
@@ -2303,12 +2312,12 @@
     <details><summary>What does <code>"strict": true</code> enable?</summary>
       <p>A family of checks: <code>noImplicitAny</code>, <code>strictNullChecks</code>, <code>strictPropertyInitialization</code>, <code>strictFunctionTypes</code>, <code>strictBindCallApply</code>, <code>useUnknownInCatchVariables</code>, <code>alwaysStrict</code> and others. New strict checks added in future TS versions are included automatically.</p></details>
     <details><summary>Why might path aliases work in the editor but fail at runtime?</summary>
-      <p><code>paths</code> affects type resolution only. The emitted JavaScript keeps the alias, so the runtime (Node, Jest) needs its own mapping: a build step that rewrites paths, <code>tsconfig-paths</code>, or <code>moduleNameMapper</code>.</p></details>
+      <p><code>paths</code> affects type resolution only. The emitted JavaScript keeps the alias, so the runtime (Node, the test runner) needs its own mapping: a build step that rewrites paths (<code>nest build</code> does), or the test runner's resolver (Vitest's <code>resolve.tsconfigPaths</code>).</p></details>
     <details><summary>Difference between <code>target</code> and <code>module</code>?</summary>
-      <p><code>target</code> sets the JavaScript syntax level of the output (e.g. ES2021). <code>module</code> sets the module system used for imports and exports (e.g. CommonJS or ESNext).</p></details>
+      <p><code>target</code> sets the JavaScript syntax level of the output (e.g. ES2023). <code>module</code> sets the module system used for imports and exports (e.g. CommonJS, or NodeNext for Node ESM as in NestJS 12).</p></details>
   </div>
 
-  <div class="box key"><strong>Remember</strong> Turn on <code>strict</code>, keep the decorator flags on for Nest, use <code>paths</code> (and map them for Jest), and run <code>tsc --noEmit</code> in CI.</div>
+  <div class="box key"><strong>Remember</strong> Turn on <code>strict</code>, keep the decorator flags on for Nest, use <code>paths</code> (Vitest reads them via <code>tsconfigPaths</code>), and run <code>tsc --noEmit</code> in CI.</div>
 </section>
 
   </main>

@@ -423,10 +423,10 @@
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.service.ts">
       import { ConflictException, Injectable } from '@nestjs/common';
-      import { Prisma } from '@prisma/client';
       import * as argon2 from 'argon2';
-      import { PrismaService } from '../prisma/prisma.service';
-      import { RegisterDto } from './dto/register.dto';
+      import { Prisma } from '../generated/prisma/client.js';
+      import { PrismaService } from '../prisma/prisma.service.js';
+      import { RegisterDto } from './dto/register.dto.js';
 
       @Injectable()
       export class AuthService {
@@ -449,6 +449,7 @@
       }
     </script>
     <p>Note the <code>select</code>: the response must never contain <code>passwordHash</code>, not even a hashed value.</p>
+    <p>Two NestJS 12 / Prisma 7 details in the imports: <code>Prisma</code> comes from the generated client (<code>src/generated/prisma/client.js</code>), not from <code>@prisma/client</code>; and the <code>.js</code> extension is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name.</p>
   </div>
 
   <div class="box warn">
@@ -599,7 +600,7 @@
       export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // for DB expiry + cookie maxAge
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/types/jwt-payload.type.ts">
-      import { Role } from '@prisma/client';
+      import { Role } from '../../generated/prisma/client.js';
 
       export type JwtPayload = {
         sub: number;     // user id
@@ -612,9 +613,9 @@
       import { ConfigService } from '@nestjs/config';
       import { JwtModule } from '@nestjs/jwt';
       import { PassportModule } from '@nestjs/passport';
-      import { ACCESS_TOKEN_TTL } from './auth.constants';
-      import { AuthController } from './auth.controller';
-      import { AuthService } from './auth.service';
+      import { ACCESS_TOKEN_TTL } from './auth.constants.js';
+      import { AuthController } from './auth.controller.js';
+      import { AuthService } from './auth.service.js';
 
       @Module({
         imports: [
@@ -716,7 +717,7 @@
 
   <p><strong>Step 1: <code>validateUser</code> in the service.</strong> The strategy should stay thin. The real logic (find the user, compare the hash) lives in <code>AuthService</code>, where it is easy to test.</p>
   <script type="text/x-code" data-lang="typescript" data-title="auth/types/auth-user.type.ts">
-    import { Role } from '@prisma/client';
+    import { Role } from '../../generated/prisma/client.js';
 
     // what we put on req.user after a successful login — never includes passwordHash
     export type AuthUser = { id: number; email: string; name: string | null; role: Role };
@@ -746,8 +747,8 @@
     import { Injectable, UnauthorizedException } from '@nestjs/common';
     import { PassportStrategy } from '@nestjs/passport';
     import { Strategy } from 'passport-local';
-    import { AuthService } from '../auth.service';
-    import { AuthUser } from '../types/auth-user.type';
+    import { AuthService } from '../auth.service.js';
+    import { AuthUser } from '../types/auth-user.type.js';
 
     @Injectable()
     export class LocalStrategy extends PassportStrategy(Strategy) { // default name: 'local'
@@ -770,7 +771,7 @@
     import { ConfigService } from '@nestjs/config';
     import { PassportStrategy } from '@nestjs/passport';
     import { ExtractJwt, Strategy } from 'passport-jwt';
-    import { JwtPayload } from '../types/jwt-payload.type';
+    import { JwtPayload } from '../types/jwt-payload.type.js';
 
     @Injectable()
     export class JwtStrategy extends PassportStrategy(Strategy) { // default name: 'jwt'
@@ -822,13 +823,13 @@
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
       import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
       import { AuthGuard } from '@nestjs/passport';
-      import { AuthService } from './auth.service';
-      import { CurrentUser } from './decorators/current-user.decorator';
-      import { LoginDto } from './dto/login.dto'; // { @IsEmail() email; @IsString() password }
-      import { RegisterDto } from './dto/register.dto';
-      import { LocalAuthGuard } from './guards/local-auth.guard';
-      import { AuthUser } from './types/auth-user.type';
-      import { JwtPayload } from './types/jwt-payload.type';
+      import { AuthService } from './auth.service.js';
+      import { CurrentUser } from './decorators/current-user.decorator.js';
+      import { LoginDto } from './dto/login.dto.js'; // { @IsEmail() email; @IsString() password }
+      import { RegisterDto } from './dto/register.dto.js';
+      import { LocalAuthGuard } from './guards/local-auth.guard.js';
+      import type { AuthUser } from './types/auth-user.type.js';
+      import type { JwtPayload } from './types/jwt-payload.type.js';
 
       @Controller('auth')
       export class AuthController {
@@ -975,7 +976,7 @@
     import { ExecutionContext, Injectable } from '@nestjs/common';
     import { Reflector } from '@nestjs/core';
     import { AuthGuard } from '@nestjs/passport';
-    import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+    import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
     @Injectable()
     export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -997,7 +998,7 @@
   <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
     import { Module } from '@nestjs/common';
     import { APP_GUARD } from '@nestjs/core';
-    import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+    import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 
     @Module({
       imports: [/* ConfigModule, PrismaModule, AuthModule, UsersModule, ... */],
@@ -1011,7 +1012,7 @@
 
   <p><strong>Customising the error.</strong> <code>AuthGuard</code> has a <code>handleRequest(err, user, info)</code> hook. <code>info</code> tells you <em>why</em> Passport failed, which is useful for a clearer message:</p>
   <script type="text/x-code" data-lang="typescript">
-    import { TokenExpiredError } from 'jsonwebtoken';
+    import { TokenExpiredError } from '@nestjs/jwt'; // same class as jsonwebtoken's; a named import from 'jsonwebtoken' fails in ESM
 
     handleRequest<TUser = unknown>(err: unknown, user: TUser, info: unknown): TUser {
       if (info instanceof TokenExpiredError) {
@@ -1133,7 +1134,7 @@
   <p><strong>Step 1: a <code>@Roles()</code> decorator.</strong> It stores the allowed roles as metadata on the route. We reuse the <code>Role</code> enum generated by Prisma, so roles in code and in the database can never drift apart.</p>
   <script type="text/x-code" data-lang="typescript" data-title="auth/decorators/roles.decorator.ts">
     import { SetMetadata } from '@nestjs/common';
-    import { Role } from '@prisma/client';
+    import { Role } from '../../generated/prisma/client.js';
 
     export const ROLES_KEY = 'roles';
     export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
@@ -1146,9 +1147,9 @@
   <script type="text/x-code" data-lang="typescript" data-title="auth/guards/roles.guard.ts">
     import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
     import { Reflector } from '@nestjs/core';
-    import { Role } from '@prisma/client';
-    import { ROLES_KEY } from '../decorators/roles.decorator';
-    import { JwtPayload } from '../types/jwt-payload.type';
+    import { Role } from '../../generated/prisma/client.js';
+    import { ROLES_KEY } from '../decorators/roles.decorator.js';
+    import { JwtPayload } from '../types/jwt-payload.type.js';
 
     @Injectable()
     export class RolesGuard implements CanActivate {
@@ -1176,7 +1177,7 @@
 
   <p><strong>Step 3: permission-based access.</strong> Roles become clumsy as an app grows. You start writing <code>@Roles('ADMIN', 'MANAGER', 'SUPPORT')</code> everywhere, and adding a new role means editing dozens of controllers. The fix: routes ask for a <em>permission</em> (an action), and one central map says which role has which permissions.</p>
   <script type="text/x-code" data-lang="typescript" data-title="auth/permissions.ts">
-    import { Role } from '@prisma/client';
+    import { Role } from '../generated/prisma/client.js';
 
     export type Permission =
       | 'product:create' | 'product:update' | 'product:delete'
@@ -1309,7 +1310,7 @@
           ADMIN:   [/* everything, as before */],
         };
       </script>
-      <p>Then run <code>npx prisma migrate dev --name add-support-role</code>. Because <code>ROLE_PERMISSIONS</code> is a <code>Record&lt;Role, …&gt;</code>, TypeScript reports an error until you add the <code>SUPPORT</code> key, so you can't forget it. The <code>refund</code> route should use <code>@RequirePermissions('order:refund')</code> instead of <code>@Roles(Role.ADMIN)</code>. Controllers using permissions need no change.</p>
+      <p>Then run <code>npx prisma migrate dev --name add-support-role</code> and <code>npx prisma generate</code> (in Prisma 7, <code>migrate dev</code> no longer regenerates the client, so the <code>Role</code> type would stay old). Because <code>ROLE_PERMISSIONS</code> is a <code>Record&lt;Role, …&gt;</code>, TypeScript reports an error until you add the <code>SUPPORT</code> key, so you can't forget it. The <code>refund</code> route should use <code>@RequirePermissions('order:refund')</code> instead of <code>@Roles(Role.ADMIN)</code>. Controllers using permissions need no change.</p>
     </details>
   </div>
 
@@ -1487,13 +1488,13 @@
     <p>Step 6 of our flow: the controller sends the refresh token as an httpOnly cookie and returns only the access token in the JSON body. Install <code>cookie-parser</code> and enable it in <code>main.ts</code>.</p>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
       // npm i cookie-parser && npm i -D @types/cookie-parser
-      import cookieParser from 'cookie-parser'; // needs "esModuleInterop" (default in Nest 11 projects);
-                                                // older projects: import * as cookieParser from 'cookie-parser';
+      import cookieParser from 'cookie-parser'; // needs "esModuleInterop" (default in NestJS 12 projects);
+                                                // older CommonJS projects: import * as cookieParser from 'cookie-parser';
       // ...
       app.use(cookieParser());
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="auth/auth.controller.ts">
-      import { CookieOptions, Request, Response } from 'express';
+      import type { CookieOptions, Request, Response } from 'express';
 
       const REFRESH_COOKIE = 'refresh_token';
       const cookieOptions: CookieOptions = {
@@ -1615,10 +1616,10 @@
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts (session version)">
     import { NestFactory } from '@nestjs/core';
-    import session from 'express-session';    // default imports need "esModuleInterop" (on in Nest 11)
+    import session from 'express-session';    // default imports need "esModuleInterop" (on in NestJS 12)
     import { RedisStore } from 'connect-redis';   // connect-redis v8 (v7: import RedisStore from 'connect-redis')
     import { createClient } from 'redis';
-    import { AppModule } from './app.module';
+    import { AppModule } from './app.module.js';
 
     async function bootstrap() {
       const app = await NestFactory.create(AppModule);
@@ -1642,10 +1643,10 @@
       );
       await app.listen(3000);
     }
-    bootstrap();
+    await bootstrap();
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="types/session.d.ts">
-    import { Role } from '@prisma/client';
+    import { Role } from '../generated/prisma/client.js';
     import 'express-session';
 
     declare module 'express-session' {
@@ -1832,8 +1833,8 @@
       import { ConfigService } from '@nestjs/config';
       import { PassportStrategy } from '@nestjs/passport';
       import { Profile, Strategy } from 'passport-google-oauth20';
-      import { AuthService } from '../auth.service';
-      import { AuthUser } from '../types/auth-user.type';
+      import { AuthService } from '../auth.service.js';
+      import { AuthUser } from '../types/auth-user.type.js';
 
       @Injectable()
       export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {

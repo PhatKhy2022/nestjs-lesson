@@ -303,12 +303,12 @@ const defaultData = [
     phase: "8. Testing",
     goal: "Be confident changing code without breaking existing behavior.",
     tasks: [
-      ["Unit tests", "Jest fundamentals"],
+      ["Unit tests", "Vitest fundamentals"],
       ["Testing services", "mocking Prisma and repositories"],
       ["Testing controllers", "mocking providers"],
       ["e2e tests", "Supertest and TestingModule"],
       ["Test database", "isolated test data strategy"],
-      ["Mocking", "jest.mock and manual mocks"],
+      ["Mocking", "vi.mock and manual mocks"],
       ["Test edge cases", "validation errors, empty states, auth failures"],
       ["Test coverage", "use coverage as a signal, not the only goal"]
     ]
@@ -405,13 +405,32 @@ function loadData() {
   }));
 
   try {
-    return JSON.parse(saved);
+    return refreshBuiltInText(JSON.parse(saved));
   } catch {
     return defaultData.map(p => ({
       ...p,
       tasks: p.tasks.map(t => ({ title: t[0], note: t[1], completed: false, custom: false }))
     }));
   }
+}
+
+// Saved progress stores its own copy of every task's text. Refresh the built-in phase names,
+// goals, titles and notes from defaultData (matched by position) so wording changes reach
+// returning visitors, keeping their checkmarks and custom tasks.
+function refreshBuiltInText(saved) {
+  saved.forEach((phase, i) => {
+    const fresh = defaultData[i];
+    if (!fresh) return;
+    const builtIn = phase.tasks.filter(t => !t.custom);
+    if (builtIn.length !== fresh.tasks.length) return; // roadmap changed shape: keep as saved
+    phase.phase = fresh.phase;
+    phase.goal = fresh.goal;
+    builtIn.forEach((task, k) => {
+      task.title = fresh.tasks[k][0];
+      task.note = fresh.tasks[k][1];
+    });
+  });
+  return saved;
 }
 
 function saveData() {
