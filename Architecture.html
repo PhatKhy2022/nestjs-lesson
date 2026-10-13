@@ -477,7 +477,7 @@
     }
   </script>
 
-  <p><strong>The dependency rule.</strong> Arrows only point downwards: Controller → Service → Repository → Database. A repository never calls a service, and a service never imports <code>Request</code> from Express. If you follow this one rule, most "where does this code go?" questions answer themselves.</p>
+  <p><strong>The dependency rule.</strong> Arrows only point downwards: Controller → Service → Repository → Database. A repository never calls a service, and a service never imports <code>FastifyRequest</code> from <code>fastify</code> (or any other HTTP type). If you follow this one rule, most "where does this code go?" questions answer themselves.</p>
   <script type="text/x-code" data-lang="plaintext" data-title="request flow">
     HTTP POST /orders
        │
@@ -562,7 +562,7 @@
     <h3>Interview questions</h3>
     <details><summary>What is the responsibility of each layer in a NestJS app?</summary>
       <p>The controller handles HTTP: routing, reading params and body, choosing status codes. The service holds business logic and use cases. The repository handles persistence (Prisma queries). Each layer depends only on the one below it.</p></details>
-    <details><summary>Why shouldn't a service receive the Express <code>Request</code> object?</summary>
+    <details><summary>Why shouldn't a service receive the Fastify request object (<code>FastifyRequest</code>)?</summary>
       <p>It ties business logic to HTTP. The service can no longer be reused from a queue worker, a cron job or a GraphQL resolver, and tests have to build fake request objects. Pass only the values the service needs.</p></details>
     <details><summary>Where do you throw <code>NotFoundException</code>: service or controller?</summary>
       <p>In practice, most Nest teams throw it in the service because it's convenient and Nest maps it to 404 automatically. Stricter designs throw a domain error in the service and map it to HTTP in an exception filter, which keeps the service fully HTTP-free. Both are acceptable. Be consistent.</p></details>
@@ -859,7 +859,7 @@
   <p><strong>Step 3: turn on the global ValidationPipe</strong> with the safe options:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
       app.useGlobalPipes(
         new ValidationPipe({
           whitelist: true,             // strip properties that have no decorator
@@ -867,7 +867,7 @@
           transform: true,             // give me a real CreateOrderDto instance, convert types
         }),
       );
-      await app.listen(3000);
+      await app.listen(3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
     }
     await bootstrap();
   </script>
@@ -1334,7 +1334,7 @@
   <p><strong>Mapping domain errors to HTTP</strong> happens once, at the edge, in an exception filter:</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/filters/domain-exception.filter.ts">
     import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
-    import { Response } from 'express';
+    import type { FastifyReply } from 'fastify';
 
     const STATUS_BY_CODE: Record<string, number> = {
       ORDER_EMPTY: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -1346,9 +1346,9 @@
     @Catch(DomainError)
     export class DomainExceptionFilter implements ExceptionFilter {
       catch(error: DomainError, host: ArgumentsHost) {
-        const res = host.switchToHttp().getResponse<Response>();
+        const reply = host.switchToHttp().getResponse<FastifyReply>();
         const status = STATUS_BY_CODE[error.code] ?? HttpStatus.BAD_REQUEST;
-        res.status(status).json({ statusCode: status, code: error.code, message: error.message });
+        reply.status(status).send({ statusCode: status, code: error.code, message: error.message });
       }
     }
 

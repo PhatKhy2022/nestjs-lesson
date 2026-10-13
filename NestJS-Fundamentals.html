@@ -319,11 +319,15 @@
   <p><strong>Step 1: the smallest module.</strong> Every app has one root module, usually <code>AppModule</code>. <code>main.ts</code> gives it to <code>NestFactory</code>, which builds the whole app from it.</p>
   <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
     import { NestFactory } from '@nestjs/core';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
     import { AppModule } from './app.module.js';
 
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule); // reads AppModule and everything it imports
-      await app.listen(process.env.PORT ?? 3000);
+      const app = await NestFactory.create<NestFastifyApplication>(
+        AppModule,            // reads AppModule and everything it imports
+        new FastifyAdapter(), // these lessons run Nest on Fastify (see Controllers)
+      );
+      await app.listen(process.env.PORT ?? 3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
     }
     await bootstrap();
   </script>
@@ -509,7 +513,7 @@
       }
     }
   </script>
-  <p>Nest serializes whatever you return to JSON. If you return a <code>Promise</code>, Nest waits for it. You don't call <code>res.json()</code> like in Express.</p>
+  <p>Nest serializes whatever you return to JSON. If you return a <code>Promise</code>, Nest waits for it. You don't call <code>reply.send()</code> yourself.</p>
 
   <p><strong>Step 2: reading data from the request.</strong> Parameter decorators pull out parts of the request:</p>
   <table>
@@ -518,7 +522,7 @@
     <tr><td><code>@Query('page')</code></td><td>A query-string value</td><td><code>GET /users?page=2</code> → <code>'2'</code></td></tr>
     <tr><td><code>@Body()</code></td><td>The parsed JSON body</td><td><code>POST /users</code> with <code>{ "email": "..." }</code></td></tr>
     <tr><td><code>@Headers('authorization')</code></td><td>A request header</td><td><code>Bearer eyJ...</code></td></tr>
-    <tr><td><code>@Req()</code> / <code>@Res()</code></td><td>The raw Express request / response</td><td>Use rarely (see below)</td></tr>
+    <tr><td><code>@Req()</code> / <code>@Res()</code></td><td>The Fastify request / reply objects</td><td>Use rarely (see below)</td></tr>
   </table>
   <script type="text/x-code" data-lang="typescript" data-title="users.controller.ts">
     import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
@@ -584,18 +588,31 @@
     // ✅ declare @Get('me') ABOVE @Get(':id')
   </script>
 
-  <p><strong>Step 5: why avoid <code>@Res()</code>.</strong> As soon as you inject the raw response with <code>@Res()</code>, Nest stops sending the response for you, and interceptors that transform the return value no longer work. If you only need to set a header or cookie, use <code>@Res({ passthrough: true })</code> so Nest still handles the body:</p>
+  <p><strong>Step 5: why avoid <code>@Res()</code>.</strong> As soon as you inject the Fastify reply with <code>@Res()</code>, Nest stops sending the response for you, and interceptors that transform the return value no longer work. If you only need to set a header or cookie, use <code>@Res({ passthrough: true })</code> so Nest still handles the body:</p>
   <script type="text/x-code" data-lang="typescript">
-    import type { Response } from 'express';
+    import type { FastifyReply } from 'fastify';
 
     @Post('login')
-    async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    async login(@Body() dto: LoginDto, @Res({ passthrough: true }) reply: FastifyReply) {
       const { accessToken, refreshToken } = await this.authService.login(dto);
-      res.cookie('refresh_token', refreshToken, { httpOnly: true, sameSite: 'strict' });
+      // setCookie comes from the @fastify/cookie plugin (registered in main.ts, see point 6)
+      reply.setCookie('refresh_token', refreshToken, { httpOnly: true, sameSite: 'strict' });
       return { accessToken };           // ✅ Nest still serializes this
     }
   </script>
-  <p>(Using <code>import type</code> is fine here because <code>Response</code> is only used as a type on a decorated parameter, not as a DI token.)</p>
+  <p>(Using <code>import type</code> is fine here because <code>FastifyReply</code> is an interface used only as a type on a decorated parameter, not as a DI token.)</p>
+
+  <p><strong>Express or Fastify?</strong> Nest doesn't contain its own HTTP server; it talks to one through an <em>adapter</em>. Express is Nest's default. These lessons use <strong>Fastify</strong> (<code>@nestjs/platform-fastify</code>, the <code>new FastifyAdapter()</code> in <code>main.ts</code>): it's faster, schema-friendly, and it's what <code>shop-api</code> runs on. Your modules, controllers, services, guards, pipes, interceptors and DTOs are identical on both. Only code that touches the raw request/response differs. If you meet Express code online, this is how it translates:</p>
+  <table>
+    <tr><th>Express</th><th>Fastify (these lessons)</th></tr>
+    <tr><td><code>Request</code>, <code>Response</code> from <code>'express'</code></td><td><code>FastifyRequest</code>, <code>FastifyReply</code> from <code>'fastify'</code></td></tr>
+    <tr><td><code>res.status(404).json(body)</code></td><td><code>reply.status(404).send(body)</code></td></tr>
+    <tr><td><code>res.cookie(name, value, { maxAge })</code>: <code>maxAge</code> in milliseconds</td><td><code>reply.setCookie(name, value, { maxAge })</code> (<code>@fastify/cookie</code>): <code>maxAge</code> in <strong>seconds</strong></td></tr>
+    <tr><td><code>app.use(helmet())</code></td><td><code>await app.register(helmet)</code> (<code>@fastify/helmet</code>, a Fastify plugin)</td></tr>
+    <tr><td><code>app.set('trust proxy', 1)</code></td><td><code>new FastifyAdapter({ trustProxy: '10.0.0.0/8' })</code> (your proxy's address range)</td></tr>
+    <tr><td><code>FileInterceptor('file')</code> (multer)</td><td><code>@fastify/multipart</code> with <code>req.file()</code></td></tr>
+    <tr><td><code>app.listen(3000)</code></td><td><code>app.listen(3000, '0.0.0.0')</code>: Fastify listens only on localhost unless you give a host</td></tr>
+  </table>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
@@ -670,7 +687,7 @@
     <details><summary>Why must DTOs be classes and not interfaces?</summary>
       <p>Interfaces are erased at compile time. Classes exist at runtime, so <code>ValidationPipe</code> and <code>class-transformer</code> can read the decorators on them and validate or transform the incoming data.</p></details>
     <details><summary>What happens when you use <code>@Res()</code> in a handler?</summary>
-      <p>Nest switches to "library-specific mode": you must send the response yourself (<code>res.json()</code>), and features that work on the return value (interceptors mapping the result, <code>@HttpCode</code>) no longer apply. <code>@Res({ passthrough: true })</code> keeps the standard behavior while giving access to the response object.</p></details>
+      <p>Nest switches to "library-specific mode": you must send the response yourself (<code>reply.send()</code> on Fastify), and features that work on the return value (interceptors mapping the result, <code>@HttpCode</code>) no longer apply. <code>@Res({ passthrough: true })</code> keeps the standard behavior while giving access to the response object.</p></details>
   </div>
 
   <div class="box key"><strong>Remember</strong> Controllers map HTTP to methods and nothing more. Read inputs with <code>@Param</code>/<code>@Query</code>/<code>@Body</code>, convert them with pipes, and delegate to a service.</div>
@@ -827,7 +844,7 @@
       <li>Forgetting <code>@Injectable()</code> on a class that has constructor dependencies.</li>
       <li>Creating services with <code>new UsersService()</code> yourself. You bypass DI and must pass dependencies manually; tests can no longer swap them.</li>
       <li>Storing per-request data (current user, request id) in a field of a singleton service. All users share that instance, so data leaks between requests.</li>
-      <li>Letting services depend on HTTP objects (<code>Request</code>, <code>Response</code>). Pass plain values (user id, DTO) instead so the service stays reusable.</li>
+      <li>Letting services depend on HTTP objects (<code>FastifyRequest</code>, <code>FastifyReply</code>). Pass plain values (user id, DTO) instead so the service stays reusable.</li>
     </ul>
   </div>
 
@@ -974,11 +991,11 @@
   <script type="text/x-code" data-lang="typescript">
     import { Inject, Injectable, Scope } from '@nestjs/common';
     import { REQUEST } from '@nestjs/core';
-    import type { Request } from 'express';
+    import type { FastifyRequest } from 'fastify';
 
     @Injectable({ scope: Scope.REQUEST })
     export class TenantContext {
-      constructor(@Inject(REQUEST) private readonly req: Request) {}
+      constructor(@Inject(REQUEST) private readonly req: FastifyRequest) {}
 
       get tenantId(): string {
         return this.req.headers['x-tenant-id'] as string;
@@ -1105,7 +1122,7 @@
   <p><strong>What each layer is for:</strong></p>
   <table>
     <tr><th>Layer</th><th>Knows the target handler?</th><th>Best for</th></tr>
-    <tr><td>Middleware</td><td>No</td><td>Logging raw requests, request ids, CORS, cookies, body parsing</td></tr>
+    <tr><td>Middleware</td><td>No</td><td>Logging raw requests, request ids, early rejections (maintenance mode)</td></tr>
     <tr><td>Guard</td><td>Yes (<code>ExecutionContext</code>)</td><td>Yes/no decisions: is the user logged in? do they have the role?</td></tr>
     <tr><td>Interceptor</td><td>Yes</td><td>Wrapping the handler: timing, caching, mapping the response, timeouts</td></tr>
     <tr><td>Pipe</td><td>Per argument</td><td>Validating and transforming input (<code>@Body</code>, <code>@Param</code>, <code>@Query</code>)</td></tr>
@@ -1121,11 +1138,12 @@
       Injectable, NestInterceptor, NestMiddleware, PipeTransform,
     } from '@nestjs/common';
     import { Observable, tap } from 'rxjs';
-    import type { NextFunction, Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
 
     @Injectable()
     export class DemoMiddleware implements NestMiddleware {
-      use(req: Request, res: Response, next: NextFunction) {
+      // on Fastify, middleware gets the raw Node.js request/response
+      use(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
         console.log('1. middleware');
         next();
       }
@@ -1240,7 +1258,7 @@
     <details><summary>Describe the NestJS request lifecycle.</summary>
       <p>Middleware → guards → interceptors (before) → pipes → handler → interceptors (after) → response. If an exception is thrown at any point, exception filters handle it. Within each layer, global bindings run first, then controller, then route (filters are the reverse: route first).</p></details>
     <details><summary>What is the difference between middleware and a guard?</summary>
-      <p>Middleware is a plain Express-style function with <code>req</code>, <code>res</code>, <code>next</code>; it doesn't know which handler will execute. A guard receives an <code>ExecutionContext</code>, so it can read the handler and class metadata (e.g. required roles) and returns a boolean that decides whether the request continues.</p></details>
+      <p>Middleware is a plain function with <code>req</code>, <code>res</code>, <code>next</code> (on Fastify, the raw Node.js request and response); it doesn't know which handler will execute. A guard receives an <code>ExecutionContext</code>, so it can read the handler and class metadata (e.g. required roles) and returns a boolean that decides whether the request continues.</p></details>
     <details><summary>Why use <code>APP_GUARD</code> instead of <code>app.useGlobalGuards()</code>?</summary>
       <p><code>useGlobalGuards()</code> takes an instance you create with <code>new</code>, outside the DI container, so it can't inject dependencies. Registering with <code>APP_GUARD</code> in a module lets Nest construct it with full DI.</p></details>
   </div>
@@ -1255,35 +1273,36 @@
 
   <div class="box plain">
     <strong>In plain words</strong>
-    <p>Middleware is the <em>doorman</em> of your app. Every request walks past it before anything else happens. The doorman can look at the request, add a sticker to it ("request #8812"), write in a logbook, or turn someone away. Then he says "go on" by calling <code>next()</code>. If he forgets to say "go on", the visitor waits at the door forever. Nest middleware is the same as Express middleware, just organized as a class with DI.</p>
+    <p>Middleware is the <em>doorman</em> of your app. Every request walks past it before anything else happens. The doorman can look at the request, add a sticker to it ("request #8812"), write in a logbook, or turn someone away. Then he says "go on" by calling <code>next()</code>. If he forgets to say "go on", the visitor waits at the door forever. Nest middleware is the classic <code>(req, res, next)</code> function you may know from Express, just organized as a class with DI.</p>
   </div>
 
   <h3>How it works</h3>
-  <p><strong>Step 1: the Express idea.</strong> A middleware is a function <code>(req, res, next)</code>. It must either send a response or call <code>next()</code>.</p>
+  <p><strong>Step 1: the Fastify idea.</strong> A middleware is a function <code>(req, res, next)</code>. It must either send a response or call <code>next()</code>. Plain Fastify expresses the same idea with a <em>hook</em>: a function that runs at a fixed point of every request, here <code>onRequest</code>, the very first one.</p>
   <script type="text/x-code" data-lang="javascript">
-    // Plain Express, for comparison
-    app.use((req, res, next) => {
+    // Plain Fastify, for comparison
+    fastify.addHook('onRequest', async (req, reply) => {
       console.log(req.method, req.url);
-      next();               // pass control to the next middleware / route
+      // an async hook passes control on when it returns: no next() to call
     });
   </script>
 
-  <p><strong>Step 2: a class middleware in Nest.</strong> Implement <code>NestMiddleware</code>. Because it's <code>@Injectable()</code>, it can inject services.</p>
+  <p><strong>Step 2: a class middleware in Nest.</strong> Implement <code>NestMiddleware</code>. Because it's <code>@Injectable()</code>, it can inject services. On Fastify, Nest middleware receives the <strong>raw Node.js</strong> request and response (<code>FastifyRequest['raw']</code>, <code>FastifyReply['raw']</code>), not Fastify's wrappers, so you use Node's API: <code>res.statusCode</code>, <code>res.setHeader()</code>, <code>res.on('finish')</code>.</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/middleware/request-logger.middleware.ts">
     import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
-    import type { NextFunction, Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
 
     @Injectable()
     export class RequestLoggerMiddleware implements NestMiddleware {
       private readonly logger = new Logger('HTTP');
 
-      use(req: Request, res: Response, next: NextFunction) {
+      use(req: FastifyRequest['raw'] & { originalUrl?: string }, res: FastifyReply['raw'], next: () => void) {
         const start = Date.now();
 
         // 'finish' fires after the response has been sent → we know the status code
         res.on('finish', () => {
           const ms = Date.now() - start;
-          this.logger.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${ms}ms`);
+          // originalUrl is set by Fastify's middleware layer; fall back to url just in case
+          this.logger.log(`${req.method} ${req.originalUrl ?? req.url} ${res.statusCode} - ${ms}ms`);
         });
 
         next();   // ⚠️ never forget this
@@ -1313,15 +1332,15 @@
     }
   </script>
   <p><code>forRoutes()</code> accepts path strings, <code>{ path, method }</code> objects or controller classes. <code>exclude()</code> removes specific routes. <code>apply()</code> takes several middleware at once, and they run in the order given.</p>
-  <p><strong>Wildcard note (since Nest 11):</strong> Nest 11 moved to Express 5, whose path matching changed, and NestJS 12 keeps it. Named wildcards are now preferred, e.g. <code>forRoutes('{*splat}')</code> for all routes or <code>'users/*splat'</code> for a sub-tree. Plain <code>'*'</code> is still converted automatically for "everything" (other old-style wildcards such as <code>'users/*'</code> are converted with a warning), but use the new syntax in new code.</p>
+  <p><strong>Wildcard note (since Nest 11):</strong> Nest 11 adopted Express 5's new path syntax, and NestJS 12 keeps it for middleware routes on Fastify too. Named wildcards are now preferred, e.g. <code>forRoutes('{*splat}')</code> for all routes or <code>'users/*splat'</code> for a sub-tree. Plain <code>'*'</code> is still converted automatically for "everything" (other old-style wildcards such as <code>'users/*'</code> are converted with a warning), but use the new syntax in new code.</p>
 
   <p><strong>Step 4: functional middleware.</strong> If the middleware has no dependencies, a plain function is enough:</p>
   <script type="text/x-code" data-lang="typescript" data-title="common/middleware/request-id.middleware.ts">
     import { randomUUID } from 'node:crypto';
-    import type { NextFunction, Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
 
-    export function requestId(req: Request, res: Response, next: NextFunction) {
-      const id = (req.headers['x-request-id'] as string) ?? randomUUID();
+    export function requestId(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
+      const id = (req.headers['x-request-id'] as string | undefined) ?? randomUUID();
       req.headers['x-request-id'] = id;       // available to later layers
       res.setHeader('X-Request-Id', id);      // returned to the client
       next();
@@ -1330,28 +1349,33 @@
     // app.module.ts → consumer.apply(requestId).forRoutes('{*splat}');
   </script>
 
-  <p><strong>Step 5: global middleware in <code>main.ts</code>.</strong> Third-party Express middleware (helmet, cookie-parser, compression) is usually registered with <code>app.use()</code>:</p>
+  <p><strong>Step 5: global plugins in <code>main.ts</code>.</strong> On Express, third-party middleware (helmet, cookie-parser, compression) is registered with <code>app.use()</code>. On Fastify these are <strong>plugins</strong> (<code>@fastify/helmet</code>, <code>@fastify/cookie</code>, <code>@fastify/compress</code>), registered with <code>await app.register(plugin, options)</code> before the app starts listening:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-    import helmet from 'helmet';
-    import cookieParser from 'cookie-parser';
+    import fastifyCookie from '@fastify/cookie';   // npm i @fastify/cookie (replaces cookie-parser)
+    import helmet from '@fastify/helmet';          // npm i @fastify/helmet
 
-    const app = await NestFactory.create(AppModule);
-    app.use(helmet());          // security headers
-    app.use(cookieParser());    // fills req.cookies
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+    await app.register(helmet);          // security headers (register it before anything that sends responses)
+    await app.register(fastifyCookie);   // fills req.cookies and adds reply.setCookie()
     app.enableCors({ origin: ['https://shop.example.com'], credentials: true });
   </script>
-  <p><code>app.use()</code> runs for every route but cannot use DI (you pass a function, not a Nest class). Class middleware applied through <code>configure()</code> can.</p>
+  <p>A plugin applies to every route but cannot use DI (you pass a Fastify plugin, not a Nest class). Class middleware applied through <code>configure()</code> can. (<code>app.use()</code> still exists on Fastify, but it only accepts connect-style middleware; prefer the <code>@fastify/*</code> plugin.)</p>
 
   <p><strong>When <em>not</em> to use middleware.</strong> Middleware runs before Nest knows which controller method will handle the request, so it can't read decorators like <code>@Roles('admin')</code> or <code>@Public()</code>. For anything that depends on the handler, use a guard or an interceptor.</p>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Typical uses: request ids for tracing, HTTP access logs, raw-body capture for webhook signature checks, and third-party Express middleware. For example, Stripe webhooks need the raw body to verify the signature, so you enable it in <code>main.ts</code>:</p>
+    <p>Typical uses: request ids for tracing, HTTP access logs, raw-body capture for webhook signature checks, and third-party Fastify plugins. For example, Stripe webhooks need the raw body to verify the signature, so you enable it in <code>main.ts</code>:</p>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-      const app = await NestFactory.create(AppModule, { rawBody: true });  // keeps req.rawBody
-      app.use(helmet());
+      const app = await NestFactory.create<NestFastifyApplication>(
+        AppModule,
+        new FastifyAdapter(),
+        { rawBody: true },   // keeps req.rawBody (a Buffer); req.body is still parsed
+      );
+      await app.register(helmet);
       app.setGlobalPrefix('api');
-      await app.listen(3000);
+      await app.listen(3000, '0.0.0.0');
+      // in the webhook handler: @Req() req: RawBodyRequest<FastifyRequest> → req.rawBody
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="payments.module.ts">
       export class PaymentsModule implements NestModule {
@@ -1382,9 +1406,12 @@
         export class MaintenanceMiddleware implements NestMiddleware {
           constructor(private readonly config: ConfigService) {}
 
-          use(req: Request, res: Response, next: NextFunction) {
+          // raw Node.js req/res on Fastify: set the status and end() the response yourself
+          use(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
             if (this.config.get('MAINTENANCE') === 'true') {
-              res.status(503).json({ message: 'Down for maintenance' });
+              res.statusCode = 503;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ message: 'Down for maintenance' }));
               return;                      // do NOT call next()
             }
             next();
@@ -1405,11 +1432,11 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>How do you apply middleware in NestJS?</summary>
-      <p>Implement <code>NestModule</code> on a module and use <code>consumer.apply(...).forRoutes(...)</code> in <code>configure()</code>, optionally with <code>.exclude()</code>. For global third-party middleware you can also call <code>app.use()</code> in <code>main.ts</code>.</p></details>
+      <p>Implement <code>NestModule</code> on a module and use <code>consumer.apply(...).forRoutes(...)</code> in <code>configure()</code>, optionally with <code>.exclude()</code>. Global third-party code is usually a Fastify plugin, registered with <code>await app.register()</code> in <code>main.ts</code> (<code>app.use()</code> also exists, for connect-style middleware).</p></details>
     <details><summary>Can middleware use dependency injection?</summary>
-      <p>Class-based middleware marked <code>@Injectable()</code> and applied through <code>MiddlewareConsumer</code> can inject providers available in that module. Functional middleware and anything passed to <code>app.use()</code> cannot.</p></details>
+      <p>Class-based middleware marked <code>@Injectable()</code> and applied through <code>MiddlewareConsumer</code> can inject providers available in that module. Functional middleware and anything passed to <code>app.register()</code> or <code>app.use()</code> cannot.</p></details>
     <details><summary>When would you choose middleware over an interceptor?</summary>
-      <p>When the logic is generic, works on the raw request/response, and doesn't need to know the target handler or modify the returned value (request ids, access logs, security headers, cookies). If you need handler metadata or the response body, use an interceptor.</p></details>
+      <p>When the logic is generic, works on the raw request/response, and doesn't need to know the target handler or modify the returned value (request ids, access logs, maintenance switches; security headers and cookies are Fastify plugins). If you need handler metadata or the response body, use an interceptor.</p></details>
   </div>
 
   <div class="box key"><strong>Remember</strong> Middleware is the first door: it sees every raw request, must call <code>next()</code>, and is applied with <code>configure()</code>, not with <code>providers</code>.</div>
@@ -1478,7 +1505,7 @@
     import {
       ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger,
     } from '@nestjs/common';
-    import type { Request, Response } from 'express';
+    import type { FastifyReply, FastifyRequest } from 'fastify';
 
     @Catch()                                   // no argument = catch everything
     export class AllExceptionsFilter implements ExceptionFilter {
@@ -1486,8 +1513,8 @@
 
       catch(exception: unknown, host: ArgumentsHost) {
         const ctx = host.switchToHttp();       // the same filter could also serve WebSockets/RPC
-        const res = ctx.getResponse<Response>();
-        const req = ctx.getRequest<Request>();
+        const reply = ctx.getResponse<FastifyReply>();
+        const req = ctx.getRequest<FastifyRequest>();
 
         const status =
           exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
@@ -1499,10 +1526,10 @@
           this.logger.error(exception);        // full details only in the server log
         }
 
-        res.status(status).json({
+        reply.status(status).send({           // Fastify: send(), not Express's json()
           ...(typeof body === 'string' ? { message: body } : body),
           statusCode: status,
-          path: req.url,
+          path: req.url,                       // the full URL, e.g. /api/orders?page=2
           timestamp: new Date().toISOString(),
         });
       }
@@ -1525,27 +1552,27 @@
     <p>Prisma throws its own errors, which would become 500s. A dedicated filter maps the common Prisma error codes to proper HTTP responses, so services don't need try/catch everywhere:</p>
     <script type="text/x-code" data-lang="typescript" data-title="common/filters/prisma-exception.filter.ts">
       import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
-      import type { Response } from 'express';
+      import type { FastifyReply } from 'fastify';
       import { Prisma } from '../../generated/prisma/client.js';
 
       @Catch(Prisma.PrismaClientKnownRequestError)
       export class PrismaExceptionFilter implements ExceptionFilter {
         catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
-          const res = host.switchToHttp().getResponse<Response>();
+          const reply = host.switchToHttp().getResponse<FastifyReply>();
 
           switch (exception.code) {
             case 'P2002':   // unique constraint failed
-              return res.status(HttpStatus.CONFLICT).json({
+              return reply.status(HttpStatus.CONFLICT).send({
                 statusCode: 409,
                 // Prisma 7 (driver adapter) no longer fills meta.target; meta.modelName is still set
                 message: `This ${String(exception.meta?.modelName ?? 'record')} already exists`,
               });
             case 'P2025':   // record to update/delete not found
-              return res.status(HttpStatus.NOT_FOUND).json({ statusCode: 404, message: 'Record not found' });
+              return reply.status(HttpStatus.NOT_FOUND).send({ statusCode: 404, message: 'Record not found' });
             case 'P2003':   // foreign key constraint failed
-              return res.status(HttpStatus.BAD_REQUEST).json({ statusCode: 400, message: 'Related record does not exist' });
+              return reply.status(HttpStatus.BAD_REQUEST).send({ statusCode: 400, message: 'Related record does not exist' });
             default:
-              return res.status(500).json({ statusCode: 500, message: 'Database error' });
+              return reply.status(500).send({ statusCode: 500, message: 'Database error' });
           }
         }
       }
@@ -1565,7 +1592,7 @@
       <li>Throwing plain <code>Error('Not found')</code> and getting a 500 instead of a 404. Use the HTTP exception classes or a filter that maps your domain errors.</li>
       <li>Sending <code>exception.message</code> or stack traces of unknown errors to the client. This leaks internals (SQL, file paths). Log them, send a generic message.</li>
       <li>Catching errors in every service method just to re-throw them. Let a global filter handle common cases.</li>
-      <li>Forgetting that a filter must send the response itself (<code>res.status().json()</code>); if it doesn't, the request hangs.</li>
+      <li>Forgetting that a filter must send the response itself (<code>reply.status().send()</code>); if it doesn't, the request hangs.</li>
     </ul>
   </div>
 
@@ -1832,14 +1859,14 @@
   <script type="text/x-code" data-lang="typescript" data-title="common/guards/api-key.guard.ts">
     import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
     import { ConfigService } from '@nestjs/config';
-    import type { Request } from 'express';
+    import type { FastifyRequest } from 'fastify';
 
     @Injectable()
     export class ApiKeyGuard implements CanActivate {
       constructor(private readonly config: ConfigService) {}
 
       canActivate(context: ExecutionContext): boolean {
-        const req = context.switchToHttp().getRequest<Request>();
+        const req = context.switchToHttp().getRequest<FastifyRequest>();
         const key = req.headers['x-api-key'];
         if (key !== this.config.getOrThrow<string>('INTERNAL_API_KEY')) {
           throw new UnauthorizedException('Invalid API key');   // 401 with a clear message
@@ -1866,7 +1893,7 @@
   <script type="text/x-code" data-lang="typescript" data-title="auth/jwt-auth.guard.ts">
     import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
     import { JwtService } from '@nestjs/jwt';
-    import type { Request } from 'express';
+    import type { FastifyRequest } from 'fastify';
 
     export interface JwtPayload { sub: number; email: string; role: 'USER' | 'ADMIN'; }
 
@@ -1875,7 +1902,7 @@
       constructor(private readonly jwt: JwtService) {}
 
       async canActivate(context: ExecutionContext): Promise<boolean> {
-        const req = context.switchToHttp().getRequest<Request & { user?: JwtPayload }>();
+        const req = context.switchToHttp().getRequest<FastifyRequest & { user?: JwtPayload }>();
         const [type, token] = req.headers.authorization?.split(' ') ?? [];
         if (type !== 'Bearer' || !token) throw new UnauthorizedException();
 
@@ -2222,9 +2249,9 @@
   <h3>How it works</h3>
   <p><strong>Step 1: the repetition problem.</strong> Without a custom decorator, every handler that needs the user digs into the raw request:</p>
   <script type="text/x-code" data-lang="typescript">
-    // ❌ repeated everywhere, untyped, and couples the handler to Express
+    // ❌ repeated everywhere, untyped, and couples the handler to Fastify
     @Get('me')
-    me(@Req() req: Request & { user: JwtPayload }) {
+    me(@Req() req: FastifyRequest & { user: JwtPayload }) {
       return this.usersService.findOne(req.user.sub);
     }
   </script>
@@ -2359,7 +2386,7 @@
       <script type="text/x-code" data-lang="typescript">
         export const ClientIp = createParamDecorator(
           (_data: unknown, ctx: ExecutionContext): string | undefined =>
-            ctx.switchToHttp().getRequest<Request>().ip,
+            ctx.switchToHttp().getRequest<FastifyRequest>().ip,
         );
 
         @Public()
@@ -2368,7 +2395,7 @@
           return this.authService.login(dto, ip);
         }
       </script>
-      <p>Behind a proxy or load balancer, enable Express's <code>trust proxy</code> setting so <code>req.ip</code> reflects the real client.</p>
+      <p>Behind a proxy or load balancer, tell Fastify which proxy to trust, by its IP or address range: <code>new FastifyAdapter({ trustProxy: '10.0.0.0/8' })</code>. Then <code>req.ip</code> reflects the real client. (Fastify 5 doesn't accept a hop count like Express's <code>1</code>, and <code>true</code> trusts everyone, which is only safe if nothing but the proxy can reach the app.)</p>
     </details>
   </div>
 
@@ -2537,10 +2564,10 @@
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
       async function bootstrap() {
-        const app = await NestFactory.create(AppModule);
+        const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
         const config = app.get(ConfigService);              // read config outside a class
         app.enableCors({ origin: config.get<string>('CORS_ORIGIN')?.split(',') });
-        await app.listen(config.get<number>('PORT') ?? 3000);
+        await app.listen(config.get<number>('PORT') ?? 3000, '0.0.0.0');   // '0.0.0.0': reachable from Docker
       }
       await bootstrap();
     </script>

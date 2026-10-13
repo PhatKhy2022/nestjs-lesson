@@ -826,9 +826,9 @@
       }
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
       app.enableShutdownHooks(); // makes onModuleDestroy run on SIGTERM/SIGINT
-      await app.listen(3000);
+      await app.listen(3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
     </script>
     <p>Load test before you change the pool. Example with the default pool (<code>max</code> 10) and an endpoint holding each connection ~40ms: about 10 / 0.04 = 250 requests per second before requests start queuing. If you need more, first make the query faster (an index often turns 40ms into 2ms, i.e. 20× the capacity), and only then raise <code>max</code> within PostgreSQL's budget.</p>
   </div>
@@ -1167,16 +1167,19 @@
 
   <p><strong>Who is "the client"?</strong> By default the throttler tracks by IP address (<code>req.ip</code>). Two traps:</p>
   <ul>
-    <li><strong>Behind a proxy or load balancer</strong>, every request appears to come from the proxy's IP, so all users share one counter. Tell Express to trust the proxy so <code>req.ip</code> is the real client IP taken from <code>X-Forwarded-For</code>.</li>
+    <li><strong>Behind a proxy or load balancer</strong>, every request appears to come from the proxy's IP, so all users share one counter. Tell Fastify to trust the proxy (<code>trustProxy</code> on the adapter) so <code>req.ip</code> is the real client IP taken from <code>X-Forwarded-For</code>.</li>
     <li><strong>For logged-in users</strong>, tracking by user ID is fairer: an office of 200 people behind one IP should not share a limit.</li>
   </ul>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-    import { NestExpressApplication } from '@nestjs/platform-express';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
-    app.set('trust proxy', 1); // ✅ trust exactly one proxy hop (your load balancer)
-    // ❌ app.set('trust proxy', true) trusts ANY X-Forwarded-For header, so a client
+    const app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter({ trustProxy: '10.0.0.0/8' }), // ✅ trust only your load balancer's address range
+    );
+    // ❌ trustProxy: true trusts ANY X-Forwarded-For header, so a client
     //    could send a fake one and get a fresh counter on every request.
+    //    (Fastify 5 doesn't accept a hop count like 1: name the proxy's IP/CIDR.)
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="user-throttler.guard.ts">
     import { Injectable } from '@nestjs/common';
@@ -1231,8 +1234,8 @@
     <strong>Common mistakes</strong>
     <ul>
       <li>Writing <code>ttl: 60</code> thinking it means 60 seconds. Since v5 it is 60 <em>milliseconds</em>; use <code>60_000</code>.</li>
-      <li>Forgetting <code>trust proxy</code> behind a load balancer, so every user shares one counter and real users get 429s.</li>
-      <li>Setting <code>trust proxy</code> to <code>true</code>, which lets clients fake their IP with an <code>X-Forwarded-For</code> header.</li>
+      <li>Forgetting <code>trustProxy</code> behind a load balancer, so every user shares one counter and real users get 429s.</li>
+      <li>Setting <code>trustProxy</code> to <code>true</code>, which lets clients fake their IP with an <code>X-Forwarded-For</code> header.</li>
       <li>Using in-memory storage with several instances and wondering why limits look higher than configured.</li>
       <li>Throttling health checks, so the orchestrator thinks the app is down and restarts it.</li>
     </ul>
@@ -1267,7 +1270,7 @@
     <details><summary>Why rate limit an API?</summary>
       <p>To protect shared resources (CPU, database, connection pool) from one client's excessive traffic, to make abuse such as scraping and brute force expensive, and to control cost. It keeps the service fair and available for everyone.</p></details>
     <details><summary>What problems appear when rate limiting across multiple instances?</summary>
-      <p>Each instance keeps its own counter, so the effective limit is multiplied by the number of instances, and counters are lost on restart. The fix is shared storage such as Redis. Behind a proxy you must also configure <code>trust proxy</code> correctly so you track the real client IP.</p></details>
+      <p>Each instance keeps its own counter, so the effective limit is multiplied by the number of instances, and counters are lost on restart. The fix is shared storage such as Redis. Behind a proxy you must also configure <code>trustProxy</code> correctly so you track the real client IP.</p></details>
     <details><summary>Should rate limiting be done in the app or in the infrastructure?</summary>
       <p>Both. The edge (CDN, WAF, gateway) stops large floods before they cost you anything. The app can apply smarter, business-aware limits: per user, per endpoint, per plan.</p></details>
   </div>
@@ -1315,7 +1318,6 @@
     npm i -D pino-pretty     # readable colored output in development only
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="app.module.ts">
-    import { randomUUID } from 'node:crypto';
     import { LoggerModule } from 'nestjs-pino';
 
     @Module({
@@ -1323,13 +1325,8 @@
         LoggerModule.forRoot({
           pinoHttp: {
             level: process.env.LOG_LEVEL ?? 'info',
-            // Correlation ID: reuse the caller's ID if present, otherwise create one
-            genReqId: (req, res) => {
-              const incoming = req.headers['x-request-id'];
-              const id = typeof incoming === 'string' && incoming.length <= 64 ? incoming : randomUUID();
-              res.setHeader('x-request-id', id); // return it so clients can report it
-              return id;
-            },
+            // No genReqId here: on Fastify, pino logs Fastify's own request.id,
+            // so the correlation ID is configured on the adapter (main.ts)
             // Never log secrets (Lesson 10 covers this in depth)
             redact: ['req.headers.authorization', 'req.headers.cookie', '*.password'],
             transport:
@@ -1341,11 +1338,24 @@
     export class AppModule {}
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
     import { Logger } from 'nestjs-pino';
+    import { randomUUID } from 'node:crypto';
 
-    const app = await NestFactory.create(AppModule, { bufferLogs: true });
+    const app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter({
+        // Correlation ID: reuse the caller's ID if present (taken as-is), otherwise create one
+        requestIdHeader: 'x-request-id',
+        genReqId: () => randomUUID(),
+      }),
+      { bufferLogs: true },
+    );
     app.useLogger(app.get(Logger)); // Nest's own logs (bootstrap, routes) now go through pino too
-    await app.listen(3000);
+    app.getHttpAdapter().getInstance().addHook('onRequest', async (req, reply) => {
+      reply.header('x-request-id', req.id); // return it so clients can report it
+    });
+    await app.listen(3000, '0.0.0.0');
   </script>
   <p>You keep using Nest's normal <code>Logger</code> class in services. It is now routed to pino, and each line automatically gets the <code>reqId</code> of the current request:</p>
   <script type="text/x-code" data-lang="typescript" data-title="orders.service.ts">
@@ -1377,14 +1387,16 @@
     <strong>In a real NestJS project</strong>
     <p>Log errors once, in one place, with context: a global exception filter is the natural spot. Log the full error with stack trace on the server, and return only a safe message plus the request ID to the client:</p>
     <script type="text/x-code" data-lang="typescript" data-title="all-exceptions.filter.ts">
+      import type { FastifyReply, FastifyRequest } from 'fastify';
+
       @Catch()
       export class AllExceptionsFilter implements ExceptionFilter {
         private readonly logger = new Logger('Exceptions');
 
         catch(exception: unknown, host: ArgumentsHost) {
           const ctx = host.switchToHttp();
-          const req = ctx.getRequest<Request & { id?: string }>();
-          const res = ctx.getResponse<Response>();
+          const req = ctx.getRequest<FastifyRequest>();
+          const reply = ctx.getResponse<FastifyReply>();
           const status = exception instanceof HttpException ? exception.getStatus() : 500;
 
           if (status >= 500) {
@@ -1392,7 +1404,7 @@
             this.logger.error({ err: exception, path: req.url }, 'Unhandled error');
           }
 
-          res.status(status).json({
+          reply.status(status).send({
             statusCode: status,
             message: status >= 500 ? 'Internal server error' : (exception as HttpException).message,
             requestId: req.id, // user can quote this to support
@@ -1624,6 +1636,7 @@
   <p><strong>Level 1: time every endpoint.</strong> A small interceptor logs the duration of each request. Look at percentiles (p95, p99), not averages: an average of 50ms can hide 5% of users waiting 3 seconds.</p>
   <script type="text/x-code" data-lang="typescript" data-title="timing.interceptor.ts">
     import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+    import type { FastifyRequest } from 'fastify';
     import { performance } from 'node:perf_hooks';
     import { Observable, tap } from 'rxjs';
 
@@ -1633,8 +1646,8 @@
 
       intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
         const start = performance.now();
-        const req = ctx.switchToHttp().getRequest();
-        const route = `${req.method} ${req.route?.path ?? req.url}`; // "/orders/:id", not "/orders/42"
+        const req = ctx.switchToHttp().getRequest<FastifyRequest>();
+        const route = `${req.method} ${req.routeOptions.url ?? req.url}`; // "/orders/:id", not "/orders/42"
 
         return next.handle().pipe(
           tap({

@@ -760,7 +760,7 @@
         - Added ThrottlerModule (global default 100 req/min)
         - `@Throttle({ default: { limit: 5, ttl: 60_000 } })` on POST /auth/login
         - Returns 429 Too Many Requests with Retry-After header
-        - app.set('trust proxy', 1) so the real client IP is used behind the load balancer
+        - `trustProxy` on the FastifyAdapter set to the load balancer's network, so the real client IP is used
 
         ## How to test
         - `npm run test:e2e -- auth` (new test: 6th attempt → 429)
@@ -965,17 +965,18 @@
     <p>Many teams use Compose only for local <em>dependencies</em> (Postgres, Redis) and run Nest itself with <code>npm run start:dev</code> for fast hot reload. The production image is built in CI. Two Nest-side details make containers behave well:</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
       import { NestFactory } from '@nestjs/core';
+      import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
       import { AppModule } from './app.module.js';
 
       async function bootstrap() {
-        const app = await NestFactory.create(AppModule);
+        const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
         app.enableShutdownHooks();        // run onModuleDestroy (e.g. prisma.$disconnect) on SIGTERM
         const port = Number(process.env.PORT ?? 3000);
         await app.listen(port, '0.0.0.0'); // listen on all interfaces, not only 127.0.0.1 inside the container
       }
       await bootstrap();
     </script>
-    <p>The <code>.js</code> in <code>'./app.module.js'</code> is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name. (A NestJS 12 project is ESM, which is also why the runtime image keeps <code>package.json</code>.)</p>
+    <p>The <code>'0.0.0.0'</code> is required: Fastify listens only on localhost by default, and inside a container that means traffic from <code>-p 3000:3000</code> never reaches the app. The <code>.js</code> in <code>'./app.module.js'</code> is correct even though the file is <code>.ts</code>: TypeScript keeps the specifier as written, and Node's ESM loader needs the real output file name. (A NestJS 12 project is ESM, which is also why the runtime image keeps <code>package.json</code>.)</p>
     <script type="text/x-code" data-lang="prisma" data-title="prisma/schema.prisma">
       generator client {
         provider = "prisma-client"            // Prisma 7 generator: plain TypeScript, no native query engine
@@ -1187,21 +1188,23 @@
     <strong>In a real NestJS project</strong>
     <p>E2E tests in Nest boot the real <code>AppModule</code> and hit it with Supertest. In CI they use the Postgres service above. Make sure the test app uses the same global setup as <code>main.ts</code> (pipes, prefixes), or tests pass while production behaves differently:</p>
     <script type="text/x-code" data-lang="typescript" data-title="test/orders.e2e-spec.ts">
-      import { INestApplication, ValidationPipe } from '@nestjs/common';
+      import { ValidationPipe } from '@nestjs/common';
+      import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
       import { Test } from '@nestjs/testing';
       import request from 'supertest';
       import { AppModule } from '../src/app.module.js';
       import { PrismaService } from '../src/prisma/prisma.service.js';
 
       describe('Products (e2e)', () => {
-        let app: INestApplication;
+        let app: NestFastifyApplication;
         let prisma: PrismaService;
 
         beforeAll(async () => {
           const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-          app = moduleRef.createNestApplication();
+          app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter()); // same adapter as main.ts
           app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true })); // same as main.ts
           await app.init();
+          await app.getHttpAdapter().getInstance().ready(); // Fastify loads plugins asynchronously
           prisma = app.get(PrismaService);
         });
 
@@ -1768,11 +1771,12 @@
   <script type="text/x-code" data-lang="typescript" data-title="src/main.ts">
     import { NestFactory } from '@nestjs/core';
     import { ConfigService } from '@nestjs/config';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
     import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
     import { AppModule } from './app.module.js';
 
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
       const config = app.get(ConfigService);
 
       app.enableCors({
@@ -1782,7 +1786,7 @@
 
       if (config.get<boolean>('SWAGGER_ENABLED')) {                    // ✅ a setting, not "if prod"
         const doc = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('Shop API').build());
-        SwaggerModule.setup('docs', app, doc);
+        SwaggerModule.setup('docs', app, doc); // on Fastify, needs `npm i @fastify/static` or the app won't start
       }
 
       app.enableShutdownHooks();
@@ -1791,7 +1795,7 @@
     await bootstrap();
   </script>
 
-  <p><strong><code>NODE_ENV</code> vs <code>APP_ENV</code>.</strong> Many libraries (Express, some loggers) switch to slower debug behavior unless <code>NODE_ENV=production</code>. So set <code>NODE_ENV=production</code> in <em>both</em> staging and production (staging should behave like production), and use a separate <code>APP_ENV</code> to know <em>which</em> deployed environment you are in (for example, to tag errors in Sentry).</p>
+  <p><strong><code>NODE_ENV</code> vs <code>APP_ENV</code>.</strong> Many libraries (some loggers, for example) switch to slower debug behavior unless <code>NODE_ENV=production</code>. So set <code>NODE_ENV=production</code> in <em>both</em> staging and production (staging should behave like production), and use a separate <code>APP_ENV</code> to know <em>which</em> deployed environment you are in (for example, to tag errors in Sentry).</p>
 
   <p><strong>Where do real secrets live?</strong> Not in Git and not in the Docker image. Use GitHub Environments secrets for the pipeline, and the platform's secret store at runtime (AWS Secrets Manager / SSM, GCP Secret Manager, Doppler, Vault, or your PaaS's env settings). Each environment has <em>different</em> secrets, so a leaked staging key can't touch production.</p>
 
@@ -2004,7 +2008,7 @@
     <script type="text/x-code" data-lang="typescript" data-title="src/common/all-exceptions.filter.ts">
       import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
       import * as Sentry from '@sentry/nestjs';
-      import { Request, Response } from 'express';
+      import type { FastifyReply, FastifyRequest } from 'fastify';
 
       @Catch()
       export class AllExceptionsFilter implements ExceptionFilter {
@@ -2012,8 +2016,8 @@
 
         catch(exception: unknown, host: ArgumentsHost) {
           const ctx = host.switchToHttp();
-          const req = ctx.getRequest<Request>();
-          const res = ctx.getResponse<Response>();
+          const req = ctx.getRequest<FastifyRequest>();
+          const reply = ctx.getResponse<FastifyReply>();
 
           const status = exception instanceof HttpException
             ? exception.getStatus()
@@ -2024,7 +2028,7 @@
             this.logger.error(`${req.method} ${req.url} failed`, (exception as Error)?.stack);
           }
 
-          res.status(status).json(
+          reply.status(status).send(
             exception instanceof HttpException
               ? exception.getResponse()
               : { statusCode: 500, message: 'Internal server error' }, // ✅ no stack trace to clients

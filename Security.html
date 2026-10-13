@@ -407,26 +407,42 @@
     }
   </script>
 
-  <p><strong>Limit size.</strong> Validation runs <em>after</em> the body is parsed, so also cap the body size, and validate uploads (size and type) before processing them:</p>
+  <p><strong>Limit size.</strong> Validation runs <em>after</em> the body is parsed, so also cap the body size (an option of the Fastify adapter), and validate uploads (size and type) before processing them. Uploads use the <code>@fastify/multipart</code> plugin, because <code>FileInterceptor</code> (multer) exists only for Express:</p>
   <script type="text/x-code" data-lang="typescript">
-    // main.ts (NestExpressApplication)
-    app.useBodyParser('json', { limit: '100kb' });   // ✅ default is 100kb; don't raise it globally
+    // main.ts
+    import multipart from '@fastify/multipart'; // npm i @fastify/multipart
+
+    const app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter({ bodyLimit: 100 * 1024 }), // ✅ 100 KB, not Fastify's 1 MiB default; don't raise it globally
+    );
+    await app.register(multipart);
 
     // uploads
+    import type { FastifyRequest } from 'fastify';
+
+    const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+
     @Post('avatar')
-    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
-    upload(
-      @UploadedFile(
-        new ParseFilePipe({
-          validators: [
-            new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
-            new FileTypeValidator({ fileType: /^image\/(png|jpeg|webp)$/ }),
-          ],
-        }),
-      )
-      file: Express.Multer.File,
-    ) { /* ... */ }
+    async upload(@Req() req: FastifyRequest) {
+      if (!req.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
+      // throwFileSizeLimit: false + file.truncated = a reliable 413 (the default throw is racy)
+      const data = await req.file({ limits: { fileSize: MAX_AVATAR_BYTES }, throwFileSizeLimit: false });
+      if (!data) throw new BadRequestException('No file uploaded');
+      const buffer = await data.toBuffer();
+      if (data.file.truncated) throw new PayloadTooLargeException('File is larger than 2 MB');
+
+      // Nest's file validators work on any { buffer, size, mimetype } object
+      await new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_AVATAR_BYTES }),
+          new FileTypeValidator({ fileType: /^image\/(png|jpeg|webp)$/ }), // checks the file's magic bytes
+        ],
+      }).transform({ buffer, size: buffer.length, mimetype: data.mimetype, originalname: data.filename, fieldname: data.fieldname });
+      /* ... store buffer ... */
+    }
   </script>
+  <p>Without the <code>isMultipart()</code> check, <code>req.file()</code> throws Fastify's own 406 error, which a catch-all exception filter would turn into a 500.</p>
 
   <p><strong>Sanitizing HTML.</strong> If users can submit rich text (product reviews, comments) that is later shown in a browser, stored HTML could contain scripts (stored XSS). Prefer accepting plain text and letting the frontend escape it when rendering. If you must accept HTML, clean it with an allow-list library:</p>
   <script type="text/x-code" data-lang="typescript">
@@ -609,7 +625,7 @@
     // (and validate sortBy with @IsIn(['price', 'newest', 'name']) in the DTO)
   </script>
 
-  <p><strong>Prisma's own "operator injection".</strong> Even without raw SQL, passing unvalidated objects into <code>where</code> is dangerous. If the query string is parsed into nested objects, a client could send a filter object instead of a string:</p>
+  <p><strong>Prisma's own "operator injection".</strong> Even without raw SQL, passing unvalidated objects into <code>where</code> is dangerous. Fastify's default query parser doesn't build nested objects, but a JSON body always can, and so can the query string if you switch to a nested parser such as <code>qs</code>. Then a client could send a filter object instead of a string:</p>
   <script type="text/x-code" data-lang="typescript">
     // ❌ query.email might be an object like { contains: '' } instead of a string,
     //    turning "find by exact email" into "match any email"
@@ -769,7 +785,7 @@
       maxAge: 600,                                          // cache preflight for 10 minutes
     });
   </script>
-  <p>A simpler form works too: <code>origin: ['https://shop.com', 'https://admin.shop.com']</code>. The <code>cors</code> package compares strings exactly.</p>
+  <p>A simpler form works too: <code>origin: ['https://shop.com', 'https://admin.shop.com']</code>. On Fastify, <code>enableCors</code> is backed by <code>@fastify/cors</code>, which compares strings exactly.</p>
 
   <p><strong>What CORS does NOT do.</strong></p>
   <ul>
@@ -798,7 +814,7 @@
         expect(res.headers['access-control-allow-origin']).toBeUndefined();
       });
     </script>
-    <p>Note: in tests, call <code>app.enableCors(...)</code> the same way as in <code>main.ts</code> (move the setup into a shared <code>configureApp(app)</code> function), because <code>Test.createTestingModule</code> doesn't run <code>main.ts</code>.</p>
+    <p>Note: in tests, call <code>app.enableCors(...)</code> the same way as in <code>main.ts</code> (move the setup into a shared <code>async configureApp(app)</code> function), because <code>Test.createTestingModule</code> doesn't run <code>main.ts</code>. Create the test app with <code>new FastifyAdapter()</code>, <code>await configureApp(app)</code>, then <code>await app.init()</code> and <code>await app.getHttpAdapter().getInstance().ready()</code> (point 4 shows the full setup).</p>
   </div>
 
   <div class="box warn">
@@ -850,32 +866,33 @@
 
   <div class="box plain">
     <strong>In plain words</strong>
-    <p>HTTP response headers are little instructions attached to every response that tell the browser how to behave: "only talk to me over HTTPS", "don't guess the file type", "don't show me inside someone else's frame". Browsers have many protections, but most are <em>off unless you ask for them</em>. <strong>Helmet</strong> is a middleware that adds a sensible set of these security headers in one line, like putting on a helmet before riding: it won't make you invincible, but it prevents a lot of common injuries.</p>
+    <p>HTTP response headers are little instructions attached to every response that tell the browser how to behave: "only talk to me over HTTPS", "don't guess the file type", "don't show me inside someone else's frame". Browsers have many protections, but most are <em>off unless you ask for them</em>. <strong>Helmet</strong> (on Fastify, the <code>@fastify/helmet</code> plugin) adds a sensible set of these security headers in one line, like putting on a helmet before riding: it won't make you invincible, but it prevents a lot of common injuries.</p>
   </div>
 
   <h3>How it works</h3>
-  <p><strong>Before Helmet.</strong> A fresh Nest app on Express sends very few headers, and one of them helps attackers:</p>
+  <p><strong>Before Helmet.</strong> A fresh Nest app on Fastify sends very few headers. Fastify doesn't advertise itself with an <code>X-Powered-By</code> header, but none of the browser protections are switched on either:</p>
   <script type="text/x-code" data-lang="bash">
     curl -I http://localhost:3000/health
   </script>
   <script type="text/x-code" data-lang="http">
     HTTP/1.1 200 OK
-    X-Powered-By: Express            ← ❌ advertises your framework (useful info for attackers)
     Content-Type: application/json; charset=utf-8
     Content-Length: 15
+                                     ← ❌ no HSTS, no nosniff, no CSP, no framing protection
   </script>
 
   <p><strong>Add Helmet.</strong></p>
   <script type="text/x-code" data-lang="bash">
-    npm i helmet
+    npm i @fastify/helmet
   </script>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-    import helmet from 'helmet';
+    import helmet from '@fastify/helmet';
+    import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 
     async function bootstrap() {
-      const app = await NestFactory.create(AppModule);
-      app.use(helmet());           // ✅ register early, before other middleware and routes
-      await app.listen(3000);
+      const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+      await app.register(helmet);  // ✅ a Fastify plugin: register it early, before anything else that sends responses
+      await app.listen(3000, '0.0.0.0'); // Fastify listens only on localhost unless you give a host
     }
   </script>
   <p><strong>After Helmet:</strong></p>
@@ -904,64 +921,61 @@
     <tr><td><code>X-Content-Type-Options: nosniff</code></td><td>Browser "guessing" that an uploaded text file is a script and running it</td></tr>
     <tr><td><code>X-Frame-Options</code> / <code>frame-ancestors</code></td><td>Clickjacking: your page loaded invisibly inside another site's frame</td></tr>
     <tr><td><code>Referrer-Policy</code></td><td>Leaking full URLs (which may contain IDs or tokens) to other sites</td></tr>
-    <tr><td>removes <code>X-Powered-By</code></td><td>Giving away which framework and version you run</td></tr>
+    <tr><td>no <code>X-Powered-By</code></td><td>Giving away which framework and version you run (Fastify never sends it, so there is nothing to remove)</td></tr>
   </table>
   <p>For a pure JSON API, the browser doesn't render your responses as pages, so some headers matter less. They cost nothing, though, and they protect anything else the API serves: error pages, Swagger UI, file downloads, uploaded images.</p>
 
   <p><strong>Configuring Helmet.</strong> Defaults are good; adjust only what you need, and keep the change as narrow as possible:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
     // ❌ Turning protections off globally because one page broke
-    app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+    await app.register(helmet, { contentSecurityPolicy: false, crossOriginResourcePolicy: false });
 
     // ✅ Narrow changes
-    app.use(
-      helmet({
-        // product images are loaded by the shop frontend on another origin
-        crossOriginResourcePolicy: { policy: 'same-site' },
-        // API never needs to be framed
-        frameguard: { action: 'deny' },
-        hsts: { maxAge: 31_536_000, includeSubDomains: true },
-      }),
-    );
+    await app.register(helmet, {
+      // product images are loaded by the shop frontend on another origin
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      // API never needs to be framed
+      frameguard: { action: 'deny' },
+      hsts: { maxAge: 31_536_000, includeSubDomains: true },
+    });
   </script>
 
-  <p><strong>Swagger UI and CSP.</strong> Swagger UI uses inline scripts, which the default CSP blocks, so <code>/docs</code> may appear blank. The safest fix is to not expose Swagger in production at all. If you need it in staging, relax CSP only for that path:</p>
+  <p><strong>Swagger UI and CSP.</strong> The safest choice is to not expose Swagger in production at all. Where you do serve it, the default CSP is enough on Fastify: <code>@nestjs/swagger</code> serves the docs page with same-origin scripts and inline styles, and the defaults allow both (<code>script-src 'self'</code>, <code>style-src 'self' https: 'unsafe-inline'</code>). So there's no need for a separate, looser policy for <code>/docs</code>:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-    import { Request, Response, NextFunction } from 'express';
-
-    const strict = helmet();
-    const forDocs = helmet({
-      contentSecurityPolicy: {
-        directives: {
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
-        },
-      },
-    });
-    app.use((req: Request, res: Response, next: NextFunction) =>
-      req.path.startsWith('/docs') ? forDocs(req, res, next) : strict(req, res, next),
-    );
+    // npm i @nestjs/swagger @fastify/static   (Swagger UI on Fastify needs @fastify/static)
+    await app.register(helmet); // ✅ default CSP; Swagger UI renders with it
 
     if (config.get('NODE_ENV') !== 'production') {
       SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
     }
   </script>
-  <p>If you use the Fastify adapter instead of Express, use <code>@fastify/helmet</code> and register it with <code>await app.register(helmet)</code>.</p>
+  <p>If you customise the CSP directives later, keep <code>'unsafe-inline'</code> in <code>style-src</code> (the default already has it), because Swagger UI uses inline styles.</p>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
     <p>Put security setup in one function used by both <code>main.ts</code> and e2e tests, and assert the headers in a test, so a refactor can't silently remove them:</p>
     <script type="text/x-code" data-lang="typescript" data-title="src/configure-app.ts">
-      export function configureApp(app: INestApplication, config: ConfigService) {
-        app.use(helmet());
+      // async, because registering a Fastify plugin is async
+      export async function configureApp(app: NestFastifyApplication, config: ConfigService) {
+        await app.register(helmet);
         app.enableCors({ origin: config.getOrThrow<string>('CORS_ORIGINS').split(','), credentials: true });
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+        return app;
       }
+      // main.ts: await configureApp(app, app.get(ConfigService));
     </script>
     <script type="text/x-code" data-lang="typescript" data-title="test/security-headers.e2e-spec.ts">
+      beforeAll(async () => {
+        const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+        app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+        await configureApp(app, app.get(ConfigService)); // registers Helmet before init
+        await app.init();
+        await app.getHttpAdapter().getInstance().ready(); // Fastify loads plugins asynchronously
+      });
+
       it('sends security headers', async () => {
         const res = await request(app.getHttpServer()).get('/health').expect(200);
-        expect(res.headers['x-powered-by']).toBeUndefined();
+        expect(res.headers['x-powered-by']).toBeUndefined(); // Fastify never sends it; keep the guard anyway
         expect(res.headers['x-content-type-options']).toBe('nosniff');
         expect(res.headers['strict-transport-security']).toContain('max-age=');
       });
@@ -971,8 +985,8 @@
   <div class="box warn">
     <strong>Common mistakes</strong>
     <ul>
-      <li>Registering Helmet <em>after</em> routes or other middleware that already sent the response, so its headers never get added.</li>
-      <li>Disabling CSP for the whole app to fix one page (often Swagger). Scope the change to that path.</li>
+      <li>Registering Helmet <em>after</em> other plugins or hooks that already sent the response, so its headers never get added. <code>await app.register(helmet)</code> comes first.</li>
+      <li>Disabling CSP for the whole app to fix one page. Relax only the directive that page needs (Swagger UI on Fastify needs none).</li>
       <li>Believing Helmet "secures the app". It only sets headers; it doesn't validate input, check auth or prevent injection.</li>
       <li>Setting HSTS with a long <code>max-age</code> and <code>includeSubDomains</code> before every subdomain supports HTTPS. Browsers will refuse HTTP to those subdomains for the whole period.</li>
     </ul>
@@ -984,18 +998,16 @@
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="typescript">
-        app.use(
-          helmet({
-            frameguard: { action: 'deny' },                 // X-Frame-Options: DENY
-            referrerPolicy: { policy: 'same-origin' },      // Referrer-Policy: same-origin
-          }),
-        );
+        await app.register(helmet, {
+          frameguard: { action: 'deny' },                 // X-Frame-Options: DENY
+          referrerPolicy: { policy: 'same-origin' },      // Referrer-Policy: same-origin
+        });
       </script>
       <script type="text/x-code" data-lang="bash">
         curl -sI http://localhost:3000/health | grep -iE 'x-frame-options|referrer-policy|x-powered-by'
         # x-frame-options: DENY
         # referrer-policy: same-origin
-        # (no x-powered-by line)
+        # (no x-powered-by line: Fastify never sends one)
       </script>
       <p>For full protection against framing in modern browsers, CSP's <code>frame-ancestors 'none'</code> is the newer equivalent; Helmet's default CSP already sets <code>frame-ancestors 'self'</code>, which you could tighten too.</p>
     </details>
@@ -1004,14 +1016,14 @@
   <div class="qa">
     <h3>Interview questions</h3>
     <details><summary>What does Helmet do?</summary>
-      <p>It is middleware that sets a collection of security-related HTTP response headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and others) and removes <code>X-Powered-By</code>, turning on browser protections that are off by default.</p></details>
+      <p>It sets a collection of security-related HTTP response headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and others), turning on browser protections that are off by default. On Fastify it is the <code>@fastify/helmet</code> plugin; on Express it is middleware that also removes <code>X-Powered-By</code>.</p></details>
     <details><summary>What is Content-Security-Policy for?</summary>
       <p>It tells the browser which sources of scripts, styles, images, frames, etc. are allowed. Even if an attacker manages to inject HTML, scripts from non-allowed sources or inline scripts won't run, which greatly limits XSS damage.</p></details>
     <details><summary>Does a JSON API need security headers?</summary>
-      <p>Yes, cheaply. <code>nosniff</code>, HSTS and framing protections still matter for error pages, docs, file downloads and any HTML the API returns, and removing <code>X-Powered-By</code> reduces fingerprinting. Defense in depth costs one line.</p></details>
+      <p>Yes, cheaply. <code>nosniff</code>, HSTS and framing protections still matter for error pages, docs, file downloads and any HTML the API returns. Defense in depth costs one line.</p></details>
   </div>
 
-  <div class="box key"><strong>Remember</strong> <code>app.use(helmet())</code> early in <code>main.ts</code>, keep the defaults, loosen only narrowly (e.g. Swagger path), and test that the headers are present.</div>
+  <div class="box key"><strong>Remember</strong> <code>await app.register(helmet)</code> early in <code>main.ts</code>, keep the defaults, loosen only narrowly (one directive, not the whole CSP), and test that the headers are present.</div>
 </section>
 
 <!-- ============================================================ 5 -->
@@ -1222,10 +1234,14 @@
                         Kubernetes ingress: holds the certificate,
                         renews it automatically)
   </script>
-  <p>This keeps certificate renewal out of your code. But it means the app sees an HTTP request, so it needs to know the original request was secure. The proxy sends <code>X-Forwarded-Proto: https</code>, and you tell Express to trust exactly your proxy (as in Lesson 9's rate limiting):</p>
+  <p>This keeps certificate renewal out of your code. But it means the app sees an HTTP request, so it needs to know the original request was secure. The proxy sends <code>X-Forwarded-Proto: https</code>, and you tell Fastify to trust exactly your proxy (as in Lesson 9's rate limiting) by naming its address or range. Fastify 5 doesn't accept a hop count like Express's <code>app.set('trust proxy', 1)</code>: a count can't check who the immediate peer is, so a client that reaches the app directly could fake <code>X-Forwarded-*</code>:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts">
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
-    app.set('trust proxy', 1); // ✅ now req.secure, req.protocol and req.ip reflect the real client
+    const app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter({ trustProxy: '10.0.0.0/8' }), // ✅ your proxy's IP/CIDR (string, comma list or array)
+    );
+    // now req.protocol, req.ip and req.host reflect the real client
+    // (there is no req.secure on Fastify: check req.protocol === 'https')
   </script>
 
   <p><strong>Never accept credentials over plain HTTP.</strong> Redirecting HTTP to HTTPS is fine for websites, but for an API the first request has <em>already</em> sent the token in clear text before the redirect happens. Better: don't serve the API on port 80 at all (or answer with an error), and use HSTS so browsers never even try HTTP:</p>
@@ -1234,18 +1250,18 @@
   </script>
   <p>Helmet sets this header by default (point 4). After the browser sees it once, it rewrites every <code>http://</code> request to that domain into <code>https://</code> locally for a year.</p>
 
-  <p><strong>Cookies must be secure too.</strong> If you store a refresh token in a cookie, these flags matter:</p>
+  <p><strong>Cookies must be secure too.</strong> If you store a refresh token in a cookie (set with <code>reply.setCookie</code> from <code>@fastify/cookie</code>), these flags matter:</p>
   <script type="text/x-code" data-lang="typescript" data-title="auth.controller.ts">
     // ❌ Readable by JavaScript (XSS can steal it), sent over HTTP, sent cross-site
-    res.cookie('refresh_token', token);
+    reply.setCookie('refresh_token', token);
 
     // ✅
-    res.cookie('refresh_token', token, {
+    reply.setCookie('refresh_token', token, {
       httpOnly: true,              // JavaScript cannot read it
       secure: true,                // only sent over HTTPS
       sameSite: 'strict',          // not sent with requests from other sites (CSRF protection)
       path: '/auth/refresh',       // only sent to the endpoint that needs it
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60,    // ⚠️ SECONDS in @fastify/cookie (Express's res.cookie used milliseconds)
     });
   </script>
 
@@ -1268,19 +1284,21 @@
     new https.Agent({ ca: fs.readFileSync('/etc/ssl/internal-ca.pem') });
   </script>
 
-  <p><strong>HTTPS in local development</strong> is usually not needed (cookies with <code>secure: true</code> are allowed on <code>localhost</code> in modern browsers). When you do need it, for example to test something that requires a secure context, create a locally trusted certificate (e.g. with <code>mkcert</code>) and pass it to Nest:</p>
+  <p><strong>HTTPS in local development</strong> is usually not needed (cookies with <code>secure: true</code> are allowed on <code>localhost</code> in modern browsers). When you do need it, for example to test something that requires a secure context, create a locally trusted certificate (e.g. with <code>mkcert</code>) and pass it to the Fastify adapter:</p>
   <script type="text/x-code" data-lang="typescript" data-title="main.ts (local only)">
     import { readFileSync } from 'node:fs';
 
-    const httpsOptions = process.env.LOCAL_HTTPS === 'true'
-      ? { key: readFileSync('./certs/localhost-key.pem'), cert: readFileSync('./certs/localhost.pem') }
-      : undefined;
-    const app = await NestFactory.create(AppModule, { httpsOptions });
+    const adapter = process.env.LOCAL_HTTPS === 'true'
+      ? new FastifyAdapter({
+          https: { key: readFileSync('./certs/localhost-key.pem'), cert: readFileSync('./certs/localhost.pem') },
+        })
+      : new FastifyAdapter();
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
   </script>
 
   <div class="box nest">
     <strong>In a real NestJS project</strong>
-    <p>Checklist for a production NestJS API: TLS terminated at the load balancer with automatically renewed certificates; only TLS 1.2+ enabled there; port 80 closed or rejecting API traffic; <code>trust proxy</code> set to the right number of hops; Helmet's HSTS on; cookies <code>httpOnly</code> + <code>secure</code> + <code>sameSite</code>; <code>sslmode=require</code> (or stricter, <code>verify-full</code> with the CA) for the database. Remember that the hop between the load balancer and the app is unencrypted, so keep it on a private network, or enable TLS there too if your security requirements demand end-to-end encryption.</p>
+    <p>Checklist for a production NestJS API: TLS terminated at the load balancer with automatically renewed certificates; only TLS 1.2+ enabled there; port 80 closed or rejecting API traffic; <code>trustProxy</code> set to your proxy's address range; Helmet's HSTS on; cookies <code>httpOnly</code> + <code>secure</code> + <code>sameSite</code>; <code>sslmode=require</code> (or stricter, <code>verify-full</code> with the CA) for the database. Remember that the hop between the load balancer and the app is unencrypted, so keep it on a private network, or enable TLS there too if your security requirements demand end-to-end encryption.</p>
   </div>
 
   <div class="box warn">
@@ -1288,7 +1306,7 @@
     <ul>
       <li>Disabling certificate verification (<code>NODE_TLS_REJECT_UNAUTHORIZED=0</code>, <code>rejectUnauthorized: false</code>) to make an error go away.</li>
       <li>Relying on an HTTP→HTTPS redirect for API calls. The token has already travelled in clear text.</li>
-      <li>Forgetting <code>trust proxy</code>, so <code>req.secure</code> is false and secure cookies or redirects misbehave.</li>
+      <li>Forgetting <code>trustProxy</code>, so <code>req.protocol</code> is <code>http</code>, <code>req.ip</code> is the proxy's address, and redirects, logs or rate limits misbehave.</li>
       <li>Connecting to a managed database or Redis over the public internet without TLS.</li>
       <li>Putting tokens or secrets in URLs (<code>?token=...</code>). HTTPS encrypts them on the wire, but URLs end up in proxy logs, browser history and <code>Referer</code> headers.</li>
     </ul>
@@ -1300,9 +1318,9 @@
     <details>
       <summary>Show answer</summary>
       <script type="text/x-code" data-lang="typescript">
-        app.set('trust proxy', 1);
+        new FastifyAdapter({ trustProxy: '10.0.0.0/8' }) // the load balancer's private address range (your VPC's CIDR)
       </script>
-      <p>The app receives connections from the load balancer, so without trusting it Express uses the connection's own protocol (HTTP) and IP (the load balancer's). With <code>trust proxy</code> set to one hop, Express reads <code>X-Forwarded-Proto</code> and <code>X-Forwarded-For</code> as set by that load balancer, so <code>req.protocol</code> becomes <code>https</code> and <code>req.ip</code> is the real client. Trusting exactly one hop (not <code>true</code>) prevents clients from faking those headers.</p>
+      <p>The app receives connections from the load balancer, so without trusting it Fastify uses the connection's own protocol (HTTP) and IP (the load balancer's). With <code>trustProxy</code> set to the load balancer's addresses, Fastify reads <code>X-Forwarded-Proto</code> and <code>X-Forwarded-For</code> on connections that come from it, so <code>req.protocol</code> becomes <code>https</code> and <code>req.ip</code> is the real client. Trusting exactly your proxy's addresses (not <code>true</code>, which trusts everyone) prevents clients from faking those headers.</p>
     </details>
   </div>
 
@@ -1311,7 +1329,7 @@
     <details><summary>What does HTTPS protect against?</summary>
       <p>Eavesdropping (confidentiality), tampering with requests or responses in transit (integrity), and impersonation of the server (authentication via certificates). It does not protect against bugs in your application, such as injection or broken authorization.</p></details>
     <details><summary>What is TLS termination and what must the app do about it?</summary>
-      <p>A load balancer or reverse proxy decrypts HTTPS and forwards plain HTTP to the app. The app must trust that proxy (<code>trust proxy</code>) to learn the original protocol and client IP from <code>X-Forwarded-*</code> headers, and the internal hop should stay on a private network.</p></details>
+      <p>A load balancer or reverse proxy decrypts HTTPS and forwards plain HTTP to the app. The app must trust that proxy (<code>trustProxy</code> on the Fastify adapter) to learn the original protocol and client IP from <code>X-Forwarded-*</code> headers, and the internal hop should stay on a private network.</p></details>
     <details><summary>What is HSTS?</summary>
       <p>The <code>Strict-Transport-Security</code> header tells browsers to use only HTTPS for the domain for a set period. It prevents downgrade attacks and accidental HTTP requests after the first visit.</p></details>
   </div>
@@ -1433,20 +1451,22 @@
     <strong>In a real NestJS project</strong>
     <p>Combine the layers: a team rule ("log IDs, not objects"), pino <code>redact</code> as a safety net, <code>select</code>/<code>@Exclude</code> for responses, a global exception filter that hides internals, and short log retention with restricted access. Personal data (emails, addresses, phone numbers) also deserves care because of privacy laws such as GDPR: prefer user IDs in logs. If a secret is ever found in logs, treat it like a leaked secret: rotate it (point 5), and purge the logs if possible.</p>
     <script type="text/x-code" data-lang="typescript" data-title="prisma-exception.filter.ts">
+      import type { FastifyReply } from 'fastify';
+
       @Catch(Prisma.PrismaClientKnownRequestError)
       export class PrismaExceptionFilter implements ExceptionFilter {
         private readonly logger = new Logger(PrismaExceptionFilter.name);
 
         catch(err: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
-          const res = host.switchToHttp().getResponse<Response>();
+          const reply = host.switchToHttp().getResponse<FastifyReply>();
           if (err.code === 'P2002') {
-            return res.status(409).json({ statusCode: 409, message: 'Resource already exists' });
+            return reply.status(409).send({ statusCode: 409, message: 'Resource already exists' });
           }
           if (err.code === 'P2025') {
-            return res.status(404).json({ statusCode: 404, message: 'Resource not found' });
+            return reply.status(404).send({ statusCode: 404, message: 'Resource not found' });
           }
           this.logger.error({ code: err.code, model: err.meta?.modelName }, 'Database error'); // no values
-          return res.status(500).json({ statusCode: 500, message: 'Internal server error' });
+          return reply.status(500).send({ statusCode: 500, message: 'Internal server error' });
         }
       }
     </script>
@@ -1548,7 +1568,7 @@
     export class LoginThrottlerGuard extends ThrottlerGuard {
       protected async getTracker(req: Record<string, any>): Promise<string> {
         const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-        return `login:${req.ip}:${email}`; // one IP hammering one account
+        return `login:${req.ip}:${email}`; // one IP hammering one account (the real client IP once trustProxy is set)
       }
     }
   </script>
@@ -1571,7 +1591,7 @@
       }
     }
   </script>
-  <p>Remember Lesson 9: use Redis storage for the throttler when you run several instances, and configure <code>trust proxy</code> correctly, or the limits are either useless or block everyone.</p>
+  <p>Remember Lesson 9: use Redis storage for the throttler when you run several instances, and set the Fastify adapter's <code>trustProxy</code> to your proxy's addresses (point 6), or the limits are either useless or block everyone.</p>
 
   <p><strong>Layer 2: per-account protection with progressive delays.</strong> IP limits alone are weak against distributed attacks (many IPs, one account). Track failures on the account itself and lock it <em>temporarily</em>, with the lock growing after repeated failures:</p>
   <script type="text/x-code" data-lang="prisma" data-title="schema.prisma">
@@ -1650,6 +1670,8 @@
     <strong>In a real NestJS project</strong>
     <p>Put it all in the auth module: <code>LoginThrottlerGuard</code> on login, OTP and reset endpoints; Redis-backed throttler storage; the lockout logic in <code>AuthService</code>; one generic error message; <code>forgot-password</code> always answering <code>202</code>. Then write e2e tests for the security behaviour, not only the happy path:</p>
     <script type="text/x-code" data-lang="typescript" data-title="test/auth-bruteforce.e2e-spec.ts">
+      // app: new FastifyAdapter() + await configureApp(app) + init() + ready(), as in point 4
+
       it('blocks the 6th login attempt within a minute', async () => {
         const server = app.getHttpServer();
         for (let i = 0; i < 5; i++) {
